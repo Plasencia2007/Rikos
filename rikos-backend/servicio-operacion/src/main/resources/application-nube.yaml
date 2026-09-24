@@ -1,0 +1,5 @@
+# Perfil del despliegue central.
+# Aqui si tiene sentido el aparato completo de Spring Cloud.
+
+rikos:
+  modo: nube

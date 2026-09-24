@@ -1,0 +1,105 @@
+/**
+ * Tokens visuales de RIKO'S. Unica fuente de colores, tipografia,
+ * espaciado, radios, sombras y densidad tactil: ningun componente escribe
+ * un color o una medida propia, todo sale de aqui.
+ */
+:root {
+  /* ---- Color de marca ---- */
+  --color-marca: #9a4315;
+  --color-marca-oscura: #7f350f;   /* estado presionado */
+  --color-marca-clara: #f5e4d5;    /* fondos suaves sobre marca */
+  --color-marca-suave: #f8ece2;
+
+  /* ---- Barra lateral del panel (fondo oscuro, propio de /admin) ---- */
+  --color-lateral-fondo-arriba: #2a1308;
+  --color-lateral-fondo-abajo: #1e0c05;
+  --color-lateral-texto: #f2e6dc;
+  --color-lateral-texto-tenue: #a48e7e;
+  --color-lateral-item-hover: rgba(255, 255, 255, 0.07);
+  --color-lateral-borde-tenue: rgba(255, 255, 255, 0.1);
+  --color-lateral-activo-bg: linear-gradient(90deg, #7c3412 0%, #5d2508 100%);
+  --color-lateral-activo-borde: #f59e0b;
+  --color-lateral-activo-acento: #f5b15c;
+
+  /* ---- Superficies ---- */
+  --color-fondo-pagina: #f7f7f5;
+  --color-fondo-tarjeta: #ffffff;
+  --color-borde: #e8e5e1;
+  --color-separador: #eeece9;
+
+  /* ---- Texto ---- */
+  --color-texto-principal: #261a14;
+  --color-texto-secundario: #687386;
+  --color-texto-deshabilitado: #8a93a0;
+  --color-texto-sobre-marca: #ffffff;
+
+  /* ---- Estados semanticos (exito, aviso, error, informacion) ----
+     El aviso es su propio color (ambar), nunca una variante del error:
+     tres reglas del negocio (limite de credito del pensionista, stock
+     negativo, segundo repetido en el menu) avisan pero dejan continuar,
+     y no pueden leerse como si algo hubiera fallado. */
+  --color-exito: #15803d;
+  --color-exito-fondo: #eafbf0;
+  --color-exito-borde: #86e0ac;
+
+  --color-aviso: #92400e;
+  --color-aviso-fondo: #fef3c7;
+  --color-aviso-borde: #f2b90d;
+
+  --color-error: #b91c1c;
+  --color-error-fondo: #fef2f2;
+  --color-error-borde: #f2a8a8;
+
+  --color-informacion: #1d4ed8;
+  --color-informacion-fondo: #eef2ff;
+  --color-informacion-borde: #a8bdf2;
+
+  /* ---- Tipografia: escala de 5, cada una con su peso e interlineado ---- */
+  --fuente-familia: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --texto-xs-tamano: 12px;
+  --texto-xs-alto: 16px;
+  --texto-xs-peso: 400;
+
+  --texto-sm-tamano: 14px;
+  --texto-sm-alto: 20px;
+  --texto-sm-peso: 400;
+
+  --texto-base-tamano: 16px;
+  --texto-base-alto: 24px;
+  --texto-base-peso: 400;
+
+  --texto-lg-tamano: 20px;
+  --texto-lg-alto: 28px;
+  --texto-lg-peso: 600;
+
+  --texto-xl-tamano: 28px;
+  --texto-xl-alto: 36px;
+  --texto-xl-peso: 700;
+
+  /* ---- Espaciado: multiplos de 4 ---- */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 24px;
+  --espacio-6: 32px;
+  --espacio-7: 48px;
+
+  /* ---- Radio de borde ---- */
+  --radio-sm: 6px;
+  --radio-md: 8px;
+  --radio-lg: 12px;
+  --radio-xl: 14px;
+  --radio-2xl: 16px;
+
+  /* ---- Sombras: la interfaz es plana, sombras muy sutiles ---- */
+  --sombra-sm: 0 1px 3px rgba(40, 25, 15, 0.04);
+  --sombra-md: 0 12px 40px rgba(40, 25, 15, 0.12);
+
+  /* ---- Densidad tactil ----
+     --toque: POS y kiosco, se opera de pie con una mano.
+     --toque-compacto: panel administrativo, se opera con mouse/teclado. */
+  --toque: 56px;
+  --toque-compacto: 44px;
+}

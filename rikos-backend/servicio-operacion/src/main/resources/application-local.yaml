@@ -1,0 +1,14 @@
+# Perfil del equipo que vive dentro del restaurante.
+#
+# IMPORTANTE (DT-015): en este perfil NO se usa Config Server ni Eureka.
+# Un servicio que sale a buscar su configuracion al arrancar no levanta
+# cuando el local esta sin Internet, y eso incumple RN-086.
+# Toda la configuracion entra por variables de entorno.
+
+spring:
+  config:
+    import: ""                # sin Config Server
+
+rikos:
+  modo: local
+  local-id: ${LOCAL_ID:sanisidro}

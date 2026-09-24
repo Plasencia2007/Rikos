@@ -1,0 +1,15 @@
+# Normaliza finales de línea: el equipo trabaja en Windows,
+# pero mvnw y los scripts de shell deben conservar LF o no se ejecutan.
+* text=auto
+
+mvnw        text eol=lf
+*.sh        text eol=lf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Binarios: que git no intente normalizarlos
+*.png       binary
+*.jpg       binary
+*.pdf       binary
+*.docx      binary
+*.xlsx      binary

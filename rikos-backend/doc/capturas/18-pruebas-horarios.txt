@@ -1,0 +1,35 @@
+Salida de `mvn test -Dtest=RangoHorarioTest,ResolverServicioVigenteTest`
+(servicio-operacion), 2026-09-22.
+
+-------------------------------------------------------------------------------
+Test set: pe.rikos.operacion.identidad.aplicacion.RangoHorarioTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s
+
+  - unTurnoQueCruzaMedianocheContieneHorasDeAmbosLados
+      Turno 19:00-00:30: contiene 20:00 y 00:15, no contiene 01:00 ni 18:59.
+  - unTurnoQueNoCruzaMedianocheSeComportaComoUnRangoNormal
+  - doTurnosDelMismoDiaSinCruzarseNoSeSolapan
+  - unTurnoQueCruzaMedianocheSeSolapaConUnoQueEmpiezaTempranoAlDiaSiguiente
+      Cena 23:30-01:30 se solapa con Madrugada 01:00-02:00 (el tramo comun
+      01:00-01:30), en ambas direcciones.
+  - turnosSinRelacionNoSeSolapan
+
+-------------------------------------------------------------------------------
+Test set: pe.rikos.operacion.identidad.aplicacion.ResolverServicioVigenteTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.209 s
+
+  - sinDiaEspecialUsaElHorarioSemanalDelDiaCorrespondiente
+      Sin dia_especial para la fecha, resuelve con horario_servicio del dia
+      de la semana que corresponde.
+  - unDiaEspecialCerradoGanaAunSiElHorarioSemanalTendriaAlmuerzoEseDia
+      Un feriado marcado cerrado devuelve "sin servicio" aunque ese dia de
+      la semana normalmente tenga almuerzo. Se verifica ademas que
+      horario_servicio NI SIQUIERA se consulta (verifyNoInteractions):
+      el dia especial resuelve la pregunta antes de llegar ahi.
+  - unDiaEspecialAbiertoConHorarioPropioGanaSobreElHorarioSemanalDelMismoDia
+      Un dia especial no cerrado, con su propio horario reducido (12:00-13:30),
+      gana sobre el horario semanal normal (12:00-15:00) del mismo dia:
+      a las 13:00 resuelve "almuerzo", a las 14:00 resuelve "sin servicio"
+      -- aunque el horario semanal normal seguiria abierto a esa hora.

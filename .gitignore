@@ -1,0 +1,35 @@
+# ---- Dependencias y compilados ----
+node_modules/
+target/
+dist/
+build/
+*.tsbuildinfo
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ---- Secretos: nunca deben entrar ----
+.env
+.env.local
+.env.*.local
+*.pem
+*.p12
+*.key
+
+# ---- Herramientas locales ----
+.claude/
+.playwright-mcp/
+Claude outputs/
+.idea/
+.vscode/
+*.iml
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Logs y temporales ----
+*.log
+salida-build.txt
+logs/

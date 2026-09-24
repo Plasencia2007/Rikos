@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: operacion
+              uri: ${URL_OPERACION:http://localhost:8081}
+              predicates:
+                - Path=/api/**
+
+            - id: facturacion
+              uri: ${URL_FACTURACION:http://localhost:8082}
+              predicates:
+                - Path=/facturacion/**
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Nota: en versiones anteriores de Spring Cloud el prefijo era
+# spring.cloud.gateway.mvc.routes, hoy obsoleto. Si las rutas no
+# respondieran, revisar el prefijo vigente para la version instalada.
+#
+# En el perfil "local" (equipo del restaurante) solo existe la ruta /api/**,
+# porque servicio-facturacion vive unicamente en la nube (DT-015).

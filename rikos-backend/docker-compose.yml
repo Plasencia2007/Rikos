@@ -1,0 +1,58 @@
+# Infraestructura de DESARROLLO.
+# Levanta solo lo que los servicios necesitan alrededor; los servicios
+# se ejecutan desde el IDE mientras se programa.
+#
+#   docker compose up -d
+#
+# Postgres  -> localhost:5433   (usuario rikos / rikos)
+# RabbitMQ  -> localhost:5672   · panel en http://localhost:15672
+# Mailpit   -> captura los correos salientes, panel en http://localhost:8025
+#
+# NOTA: el puerto de Postgres se remapea a 5433 (en vez del 5432 estandar)
+# porque en las maquinas de desarrollo puede haber otro Postgres nativo
+# (fuera de Docker) ya escuchando en 5432. El contenedor sigue usando el
+# 5432 puertas adentro; solo cambia el mapeo hacia el host.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: rikos-postgres
+    environment:
+      POSTGRES_USER: rikos
+      POSTGRES_PASSWORD: rikos
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-datos:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rikos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: rikos-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: rikos
+      RABBITMQ_DEFAULT_PASS: rikos
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: rikos-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  postgres-datos:

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.local
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# HT-05: generado desde /api/v3/api-docs, nunca se edita a mano.
+# Correr "npm run generar-tipos" con el backend arriba para regenerarlo.
+src/api/generado/
