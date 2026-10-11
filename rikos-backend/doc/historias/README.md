@@ -36,6 +36,7 @@ construyo. El chat se pierde o se resume; esto queda.
 | `sprint5-motor-de-precios.md` | Sprint 5, entrega 2: motor de precios (cliente normal, pensionista con ticket, extra, segundo almuerzo, agregados, táper), tarjeta "Probar un precio" | Hecho, verificado |
 | `US-017-planes-tarifarios-y-parametros-de-cobro.md` | Sprint 5, entrega 1: planes con versiones y vigencia, parámetros de cobro (táper, segundo consumo), módulo `pensionistas`, permiso `pensionistas.administrar` | Hecho, verificado |
 | `sprint-06b-lista-de-pedidos.md` | Sprint 6b: `GET /pedidos` (en curso con líneas o cerrados, filtros y paginación), `GET /pedidos/resumen` y `mozoNombre`/`abiertoEn` en el pedido, para el rediseño del POS; 17 pruebas |
+| `cajas-registradoras.md` | Cajas registradoras en Configuración (código, principal, estado, borrado sin historial; V46) y la sesión de caja del POS (cuadro de apertura con nota, banner y tarjetas); 16 pruebas |
 | `US-032-036-pantalla-de-caja.md` | Pantalla de caja básica y provisional del POS: abrir turno, cobrar por líneas con descuentos, reabrir y cerrar; verificada en el navegador |
 | `US-035-US-036-cierre-de-turno-y-reapertura.md` | Sprint 7, entregas 4 y 5: cierre de turno inalterable con conciliación (V43) y reapertura de un cobro dentro del turno (V44); 25 pruebas |
 | `US-034-descuentos-y-anulacion-en-caja.md` | Sprint 7, entrega 3: descuentos por línea al cobrar (V42, permiso `caja.descontar`), anular lo último cierra el pedido, y los arreglos CAJ-01/03/05/06 de la auditoría |

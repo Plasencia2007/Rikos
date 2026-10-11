@@ -28,8 +28,13 @@ public class AbrirTurno {
         this.auditoria = auditoria;
     }
 
-    @Transactional
+    /** Sin nota de apertura. */
     public Resultado<TurnoCaja, ErrorCaja> ejecutar(String cajaId, Long fondoInicial, String cajeroId) {
+        return ejecutar(cajaId, fondoInicial, cajeroId, null);
+    }
+
+    @Transactional
+    public Resultado<TurnoCaja, ErrorCaja> ejecutar(String cajaId, Long fondoInicial, String cajeroId, String nota) {
         String localId = LocalDeSesion.actual().orElse(null);
         if (localId == null) {
             return Resultado.fracaso(ErrorCaja.SIN_LOCAL_ACTIVO);
@@ -44,14 +49,19 @@ public class AbrirTurno {
         if (fondoInicial == null || fondoInicial < 0) {
             return Resultado.fracaso(ErrorCaja.FONDO_INVALIDO);
         }
+        String notaLimpia = nota == null || nota.isBlank() ? null : nota.strip();
+        if (notaLimpia != null && notaLimpia.length() > 250) {
+            return Resultado.fracaso(ErrorCaja.NOTA_LARGA);
+        }
         if (turnos.findByCajaIdAndEstado(caja.getId(), TurnoCaja.ABIERTO).isPresent()) {
             return Resultado.fracaso(ErrorCaja.CAJA_CON_TURNO_ABIERTO);
         }
         if (turnos.findByCajeroIdAndEstado(cajeroId, TurnoCaja.ABIERTO).isPresent()) {
             return Resultado.fracaso(ErrorCaja.CAJERO_CON_TURNO_ABIERTO);
         }
-        TurnoCaja turno = turnos.save(new TurnoCaja(Identificador.nuevo().valor(), caja.getId(), localId, cajeroId,
-                fondoInicial));
+        TurnoCaja turno = new TurnoCaja(Identificador.nuevo().valor(), caja.getId(), localId, cajeroId, fondoInicial);
+        turno.anotarApertura(notaLimpia);
+        turno = turnos.save(turno);
         auditoria.registrar("turno_abierto", "turno_caja", turno.getId(), null,
                 RegistradorAuditoria.campos("caja", caja.getNombre(), "fondoInicial", fondoInicial));
         return Resultado.exito(turno);

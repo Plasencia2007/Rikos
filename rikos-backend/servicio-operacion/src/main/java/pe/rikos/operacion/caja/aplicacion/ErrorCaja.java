@@ -14,5 +14,13 @@ public enum ErrorCaja {
     SIN_TURNO_ABIERTO,
     /** El efectivo contado falta o es negativo. */
     CONTADO_INVALIDO,
-    OBSERVACION_LARGA
+    OBSERVACION_LARGA,
+    /** El codigo de la caja pasa de 20 caracteres. */
+    CODIGO_INVALIDO,
+    CODIGO_REPETIDO,
+    /** La caja principal no se desactiva ni se borra: primero se elige otra como principal. */
+    CAJA_PRINCIPAL,
+    /** La caja ya tuvo turnos: no se borra, se desactiva. */
+    TIENE_HISTORIAL,
+    NOTA_LARGA
 }

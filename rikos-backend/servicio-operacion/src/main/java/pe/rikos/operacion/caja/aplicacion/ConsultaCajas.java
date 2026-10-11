@@ -29,7 +29,7 @@ public class ConsultaCajas {
         this.usuarios = usuarios;
     }
 
-    /** Siembra "Caja 1" si el local no tiene ninguna: por eso escribe, aunque sea una consulta. */
+    /** Siembra "Caja Principal" (CAJ-01) si el local no tiene ninguna: por eso escribe, aunque sea una consulta. */
     @Transactional
     public Resultado<List<FilaDeCaja>, ErrorCaja> listar() {
         String localId = LocalDeSesion.actual().orElse(null);

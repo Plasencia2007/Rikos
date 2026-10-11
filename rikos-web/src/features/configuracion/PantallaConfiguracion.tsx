@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useSesion } from '../../comun/sesion/SesionContexto'
-import { listarLocales, listarMotivos } from '../../api/cliente'
+import { listarCajas, listarLocales, listarMotivos } from '../../api/cliente'
 
 interface Ajuste {
   clave: string
@@ -35,7 +35,7 @@ const AJUSTES: Ajuste[] = [
   { clave: 'produccion', titulo: 'Producción', Icono: ChefHat, descripcion: 'Define las áreas de producción (cocina caliente, cocina fría, bar) y el enrutamiento de las comandas.' },
   { clave: 'impresoras', titulo: 'Impresoras', Icono: Printer, descripcion: 'Configura las impresoras de tickets para pre cuentas, facturación y comandas de cocina/bar.' },
   { clave: 'delivery', titulo: 'Delivery', Icono: Bike, descripcion: 'Establece las zonas de entrega, tarifas, tiempos de reparto y pedidos mínimos.' },
-  { clave: 'cajas', titulo: 'Cajas registradoras', Icono: Vault, descripcion: 'Administra las cajas físicas del restaurante, asigna impresoras y valida IPs de acceso.' },
+  { clave: 'cajas', titulo: 'Cajas registradoras', Icono: Vault, ruta: '/admin/configuracion/cajas', descripcion: 'Administra las cajas físicas del restaurante: su nombre y código, cuál es la principal y cuáles están activas. El cajero elige entre ellas al abrir su turno en el POS.' },
   { clave: 'operacion', titulo: 'Operación', Icono: List, ruta: '/admin/configuracion/motivos', descripcion: 'Administra los motivos utilizados en los procesos del sistema (p. ej. anulaciones, descuentos).' },
 ]
 
@@ -54,6 +54,12 @@ export function PantallaConfiguracion() {
       .then((ls) => {
         const activos = ls.filter((l) => l.activo).length
         if (vigente) setDatos((d) => ({ ...d, locales: `${plural(ls.length, 'local', 'locales')} · ${plural(activos, 'activo', 'activos')}` }))
+      })
+      .catch(() => undefined)
+    listarCajas(token)
+      .then((cs) => {
+        const activas = cs.filter((c) => c.activo).length
+        if (vigente) setDatos((d) => ({ ...d, cajas: `${plural(cs.length, 'caja', 'cajas')} · ${plural(activas, 'activa', 'activas')}` }))
       })
       .catch(() => undefined)
     listarMotivos(token)

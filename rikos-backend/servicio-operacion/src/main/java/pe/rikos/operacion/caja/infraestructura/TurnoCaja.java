@@ -54,6 +54,9 @@ public class TurnoCaja {
     @Column(name = "cerrado_por", length = 26)
     private String cerradoPor;
 
+    @Column(name = "nota_apertura", length = 250)
+    private String notaApertura;
+
     @Version
     @Column(nullable = false)
     private int version;
@@ -76,6 +79,15 @@ public class TurnoCaja {
         this.estado = CERRADO;
         this.cerradoEn = cuando;
         this.cerradoPor = cajeroId;
+    }
+
+    /** Una nota opcional al abrir ("turno manana, billetes de 10 y 20"). */
+    public void anotarApertura(String nota) {
+        this.notaApertura = nota;
+    }
+
+    public String getNotaApertura() {
+        return notaApertura;
     }
 
     public String getCerradoPor() {

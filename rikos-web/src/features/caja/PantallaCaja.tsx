@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Lock, RefreshCw, Undo2 } from 'lucide-react'
+import { Clock, Lock, RefreshCw, Undo2 } from 'lucide-react'
 import { Aviso, Boton, EstadoCargando, EstadoError, EstadoVacio, Insignia } from '../../comun/componentes'
 import { enSoles } from '../../comun/formato/dinero'
 import {
   cobrosDelTurno,
+  listarCajas,
   listarPedidos,
   permisosPropios,
   resumenDelTurno,
   turnoActualDeCaja,
+  type CajaDelLocal,
   type CobroDelTurno,
   type ResumenDePedido,
   type ResumenDeTurno,
@@ -20,6 +22,13 @@ import { DialogoCierre, DialogoReabrir } from './DialogosDeCaja'
 function tituloDe(p: ResumenDePedido): string {
   if (p.mesaNumero) return p.mesaNombre ? `${p.mesaNombre}` : `Mesa ${p.mesaNumero}`
   return p.nombreCliente ? `Para llevar · ${p.nombreCliente}` : 'Para llevar'
+}
+
+/** "2 h 15 min" desde que se abrio la sesion. */
+function transcurrido(iso: string): string {
+  const minutos = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000))
+  const h = Math.floor(minutos / 60)
+  return h > 0 ? `${h} h ${minutos % 60} min` : `${minutos} min`
 }
 
 function hora(iso: string): string {
@@ -98,6 +107,7 @@ function PanelDelTurno({
   const [resumen, setResumen] = useState<ResumenDeTurno | null>(null)
   const [pedidos, setPedidos] = useState<ResumenDePedido[] | null>(null)
   const [cobros, setCobros] = useState<CobroDelTurno[]>([])
+  const [caja, setCaja] = useState<CajaDelLocal | null>(null)
   const [error, setError] = useState(false)
   const [cobrando, setCobrando] = useState<string | null>(pedidoInicial)
   const [cerrando, setCerrando] = useState(false)
@@ -109,14 +119,20 @@ function PanelDelTurno({
 
   const cargar = useCallback(() => {
     setError(false)
-    Promise.all([resumenDelTurno(token), listarPedidos(token, { situacion: 'en_curso', tamano: 100 }), cobrosDelTurno(token)])
-      .then(([r, p, c]) => {
+    Promise.all([
+      resumenDelTurno(token),
+      listarPedidos(token, { situacion: 'en_curso', tamano: 100 }),
+      cobrosDelTurno(token),
+      listarCajas(token),
+    ])
+      .then(([r, p, c, cs]) => {
+        setCaja(cs.find((x) => x.id === turno.cajaId) ?? null)
         setResumen(r)
         setPedidos(p.contenido.filter((x) => x.estado === 'comandado'))
         setCobros(c)
       })
       .catch(() => setError(true))
-  }, [token])
+  }, [token, turno.cajaId])
 
   useEffect(() => {
     cargar()
@@ -150,52 +166,81 @@ function PanelDelTurno({
 
   return (
     <div className="caja-panel">
-      <header className="caja-cabecera">
-        <div>
-          <h2>{turno.etiqueta ?? 'Caja'}</h2>
-          <span className="cta-nota">
-            Turno abierto desde las {hora(turno.abiertoEn)} · fondo inicial {enSoles(turno.fondoInicial)}
+      <header className="caja-banner">
+        <div className="caja-banner-texto">
+          <span className="caja-banner-etiqueta">Sesión activa</span>
+          <h2>{caja?.nombre ?? 'Caja'}</h2>
+          <span>
+            {turno.etiqueta ?? ''}
+            {caja ? ` · ${caja.codigo}` : ''}
           </span>
+          {turno.notaApertura && <span className="caja-banner-nota">«{turno.notaApertura}»</span>}
         </div>
-        <div className="caja-cabecera-acciones">
-          <Boton variante="secundario" onClick={cargar} aria-label="Actualizar">
-            <RefreshCw size={16} aria-hidden="true" />
-          </Boton>
-          {puedeCobrar && (
-            <Boton variante="peligro" onClick={() => setCerrando(true)}>
-              <Lock size={16} aria-hidden="true" /> Cerrar turno
+        <div className="caja-banner-lado">
+          <span className="caja-banner-tiempo">
+            <Clock size={16} aria-hidden="true" /> {transcurrido(turno.abiertoEn)}
+          </span>
+          <span>desde las {hora(turno.abiertoEn)}</span>
+          <div className="caja-cabecera-acciones">
+            <Boton variante="secundario" onClick={cargar} aria-label="Actualizar">
+              <RefreshCw size={16} aria-hidden="true" />
             </Boton>
-          )}
+            {puedeCobrar && (
+              <Boton variante="peligro" onClick={() => setCerrando(true)}>
+                <Lock size={16} aria-hidden="true" /> Cerrar caja
+              </Boton>
+            )}
+          </div>
         </div>
       </header>
 
       {aviso && <Aviso>{aviso}</Aviso>}
 
-      <ul className="caja-resumen" aria-label="Resumen del turno">
-        <li className="caja-resumen-grande">
-          <span>Efectivo esperado en caja</span>
-          <strong>{enSoles(resumen.efectivoEsperado)}</strong>
-          <small>
-            fondo {enSoles(resumen.fondoInicial)} + cobrado {enSoles(resumen.efectivoCobrado)}
-          </small>
+      <ul className="caja-tarjetas" aria-label="Resumen de la sesión">
+        <li>
+          <span>Monto inicial</span>
+          <strong>{enSoles(resumen.fondoInicial)}</strong>
         </li>
         <li>
-          <span>Yape</span>
-          <strong>{enSoles(resumen.totalYape)}</strong>
+          <span>Efectivo cobrado</span>
+          <strong className="caja-verde">{enSoles(resumen.efectivoCobrado)}</strong>
         </li>
         <li>
-          <span>Plin</span>
-          <strong>{enSoles(resumen.totalPlin)}</strong>
-        </li>
-        <li>
-          <span>Tarjeta</span>
-          <strong>{enSoles(resumen.totalTarjeta)}</strong>
+          <span>Monto esperado</span>
+          <strong className="caja-azul">{enSoles(resumen.efectivoEsperado)}</strong>
+          <small>Inicial + efectivo</small>
         </li>
         <li>
           <span>Cobros</span>
           <strong>{resumen.cobros}</strong>
         </li>
       </ul>
+
+      <section className="caja-metodos" aria-label="Resumen de métodos de pago">
+        <h3 className="caja-subtitulo">Resumen de métodos de pago</h3>
+        {resumen.cobros === 0 ? (
+          <p className="cta-nota">Sin pagos registrados en esta sesión.</p>
+        ) : (
+          <ul>
+            <li>
+              <span>Efectivo</span>
+              <strong>{enSoles(resumen.efectivoCobrado)}</strong>
+            </li>
+            <li>
+              <span>Yape</span>
+              <strong>{enSoles(resumen.totalYape)}</strong>
+            </li>
+            <li>
+              <span>Plin</span>
+              <strong>{enSoles(resumen.totalPlin)}</strong>
+            </li>
+            <li>
+              <span>Tarjeta</span>
+              <strong>{enSoles(resumen.totalTarjeta)}</strong>
+            </li>
+          </ul>
+        )}
+      </section>
 
       <section aria-label="Por cobrar">
         <h3 className="caja-subtitulo">Por cobrar</h3>
@@ -224,7 +269,7 @@ function PanelDelTurno({
       </section>
 
       <section aria-label="Cobrado en este turno">
-        <h3 className="caja-subtitulo">Cobrado en este turno</h3>
+        <h3 className="caja-subtitulo">Transacciones recientes</h3>
         {cobros.length === 0 ? (
           <EstadoVacio titulo="Todavía no cobraste nada" descripcion="Cada cobro de este turno aparece aquí." />
         ) : (

@@ -10,13 +10,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.caja.aplicacion.AbrirTurno;
+import pe.rikos.operacion.caja.aplicacion.ActualizarCaja;
+import pe.rikos.operacion.caja.aplicacion.CambiarEstadoCaja;
+import pe.rikos.operacion.caja.aplicacion.DefinirCajaPrincipal;
+import pe.rikos.operacion.caja.aplicacion.EliminarCaja;
 import pe.rikos.operacion.caja.aplicacion.CerrarTurno;
 import pe.rikos.operacion.caja.aplicacion.CierreRegistrado;
 import pe.rikos.operacion.caja.aplicacion.ConsultaCierre;
@@ -42,17 +48,18 @@ import java.util.Map;
 public class CajaController {
 
     public record TurnoRespuesta(String id, String cajaId, String cajeroId, String cajeroNombre, long fondoInicial,
-                                 OffsetDateTime abiertoEn, String estado, String etiqueta) {
+                                 OffsetDateTime abiertoEn, String estado, String etiqueta, String notaApertura) {
     }
 
     /** etiqueta: como se rotula la caja: "Caja de <cajero>" mientras tiene un turno abierto, y su nombre cuando no. */
-    public record CajaRespuesta(String id, String nombre, String etiqueta, boolean activo, TurnoRespuesta turnoAbierto) {
+    public record CajaRespuesta(String id, String nombre, String codigo, boolean principal, String etiqueta, boolean activo,
+                                TurnoRespuesta turnoAbierto) {
     }
 
-    public record CajaRequest(String nombre) {
+    public record CajaRequest(String nombre, String codigo) {
     }
 
-    public record TurnoRequest(Long fondoInicial) {
+    public record TurnoRequest(Long fondoInicial, String nota) {
     }
 
     public record CierreRequest(Long efectivoContado, String observacion) {
@@ -74,9 +81,18 @@ public class CajaController {
     private final AbrirTurno abrirTurno;
     private final CerrarTurno cerrarTurno;
     private final ConsultaCierre consultaCierre;
+    private final ActualizarCaja actualizarCaja;
+    private final CambiarEstadoCaja cambiarEstadoCaja;
+    private final DefinirCajaPrincipal definirPrincipal;
+    private final EliminarCaja eliminarCaja;
 
     public CajaController(ConsultaCajas consulta, CrearCaja crearCaja, AbrirTurno abrirTurno, CerrarTurno cerrarTurno,
-                          ConsultaCierre consultaCierre) {
+                          ConsultaCierre consultaCierre, ActualizarCaja actualizarCaja, CambiarEstadoCaja cambiarEstadoCaja,
+                          DefinirCajaPrincipal definirPrincipal, EliminarCaja eliminarCaja) {
+        this.actualizarCaja = actualizarCaja;
+        this.cambiarEstadoCaja = cambiarEstadoCaja;
+        this.definirPrincipal = definirPrincipal;
+        this.eliminarCaja = eliminarCaja;
         this.cerrarTurno = cerrarTurno;
         this.consultaCierre = consultaCierre;
         this.consulta = consulta;
@@ -86,12 +102,13 @@ public class CajaController {
 
     private static TurnoRespuesta turno(TurnoCaja t, String cajeroNombre) {
         return new TurnoRespuesta(t.getId(), t.getCajaId(), t.getCajeroId(), cajeroNombre, t.getFondoInicial(),
-                t.getAbiertoEn(), t.getEstado(), cajeroNombre == null ? null : "Caja de " + cajeroNombre);
+                t.getAbiertoEn(), t.getEstado(), cajeroNombre == null ? null : "Caja de " + cajeroNombre,
+                t.getNotaApertura());
     }
 
     private static CajaRespuesta caja(FilaDeCaja f) {
         TurnoRespuesta abierto = f.turnoAbierto() == null ? null : turno(f.turnoAbierto(), f.cajeroNombre());
-        return new CajaRespuesta(f.caja().getId(), f.caja().getNombre(),
+        return new CajaRespuesta(f.caja().getId(), f.caja().getNombre(), f.caja().getCodigo(), f.caja().isPrincipal(),
                 abierto != null && abierto.etiqueta() != null ? abierto.etiqueta() : f.caja().getNombre(), f.caja().isActivo(),
                 abierto);
     }
@@ -118,13 +135,59 @@ public class CajaController {
     @PostMapping("/cajas")
     public ResponseEntity<?> crear(@RequestBody CajaRequest cuerpo, @AuthenticationPrincipal String actorId) {
         return protegido(() -> {
-            Resultado<Caja, ErrorCaja> resultado = crearCaja.ejecutar(cuerpo.nombre(), actorId);
-            return resultado.esExito()
-                    ? ResponseEntity.status(HttpStatus.CREATED)
-                            .body(new CajaRespuesta(resultado.valorOLanza().getId(), resultado.valorOLanza().getNombre(),
-                                    resultado.valorOLanza().getNombre(), resultado.valorOLanza().isActivo(), null))
+            Resultado<Caja, ErrorCaja> resultado = crearCaja.ejecutar(cuerpo.nombre(), cuerpo.codigo(), actorId);
+            return resultado.esExito() ? ResponseEntity.status(HttpStatus.CREATED).body(deCaja(resultado.valorOLanza()))
                     : errorDe(resultado);
         });
+    }
+
+    private static CajaRespuesta deCaja(Caja c) {
+        return new CajaRespuesta(c.getId(), c.getNombre(), c.getCodigo(), c.isPrincipal(), c.getNombre(), c.isActivo(), null);
+    }
+
+    @Operation(summary = "Editar el nombre y el codigo de una caja")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CajaRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @PutMapping("/cajas/{id}")
+    public ResponseEntity<?> editar(@PathVariable String id, @RequestBody CajaRequest cuerpo, @AuthenticationPrincipal String actorId) {
+        return protegido(() -> {
+            Resultado<Caja, ErrorCaja> resultado = actualizarCaja.ejecutar(id, cuerpo.nombre(), cuerpo.codigo(), actorId);
+            return resultado.esExito() ? ResponseEntity.ok(deCaja(resultado.valorOLanza())) : errorDe(resultado);
+        });
+    }
+
+    @Operation(summary = "Elegir la caja principal del local (la que viene elegida al abrir turno)")
+    @PostMapping("/cajas/{id}/principal")
+    public ResponseEntity<?> principal(@PathVariable String id, @AuthenticationPrincipal String actorId) {
+        return protegido(() -> {
+            Resultado<Caja, ErrorCaja> resultado = definirPrincipal.ejecutar(id, actorId);
+            return resultado.esExito() ? ResponseEntity.ok(deCaja(resultado.valorOLanza())) : errorDe(resultado);
+        });
+    }
+
+    @Operation(summary = "Activar una caja desactivada")
+    @PostMapping("/cajas/{id}/activar")
+    public ResponseEntity<?> activar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
+        Resultado<Caja, ErrorCaja> resultado = cambiarEstadoCaja.ejecutar(id, true, actorId);
+        return resultado.esExito() ? ResponseEntity.ok(deCaja(resultado.valorOLanza())) : errorDe(resultado);
+    }
+
+    @Operation(summary = "Desactivar una caja (no la principal ni una con turno abierto)")
+    @PostMapping("/cajas/{id}/desactivar")
+    public ResponseEntity<?> desactivar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
+        Resultado<Caja, ErrorCaja> resultado = cambiarEstadoCaja.ejecutar(id, false, actorId);
+        return resultado.esExito() ? ResponseEntity.ok(deCaja(resultado.valorOLanza())) : errorDe(resultado);
+    }
+
+    @Operation(summary = "Borrar una caja que nunca se uso (con historial se desactiva)")
+    @DeleteMapping("/cajas/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
+        Resultado<Void, ErrorCaja> resultado = eliminarCaja.ejecutar(id, actorId);
+        return resultado.esExito() ? ResponseEntity.noContent().build() : errorDe(resultado);
     }
 
     @Operation(summary = "Abrir el turno de la caja con su fondo inicial (en centimos)")
@@ -138,7 +201,7 @@ public class CajaController {
     public ResponseEntity<?> abrirTurno(@PathVariable String id, @RequestBody TurnoRequest cuerpo,
                                         @AuthenticationPrincipal String actorId) {
         return protegido(() -> {
-            Resultado<TurnoCaja, ErrorCaja> resultado = abrirTurno.ejecutar(id, cuerpo.fondoInicial(), actorId);
+            Resultado<TurnoCaja, ErrorCaja> resultado = abrirTurno.ejecutar(id, cuerpo.fondoInicial(), actorId, cuerpo.nota());
             return resultado.esExito()
                     ? ResponseEntity.status(HttpStatus.CREATED).body(turno(resultado.valorOLanza(), consulta.nombreDelCajero(actorId)))
                     : errorDe(resultado);
@@ -231,6 +294,9 @@ public class CajaController {
             if (mensaje.contains("caja_nombre_unico_por_local")) {
                 return error(HttpStatus.CONFLICT, ErrorCaja.NOMBRE_REPETIDO.name());
             }
+            if (mensaje.contains("caja_codigo_unico_por_local")) {
+                return error(HttpStatus.CONFLICT, ErrorCaja.CODIGO_REPETIDO.name());
+            }
             throw e;
         }
     }
@@ -239,7 +305,8 @@ public class CajaController {
         ErrorCaja e = ((Resultado.Fracaso<?, ErrorCaja>) resultado).error();
         HttpStatus estado = switch (e) {
             case CAJA_NO_ENCONTRADA -> HttpStatus.NOT_FOUND;
-            case CAJA_CON_TURNO_ABIERTO, CAJERO_CON_TURNO_ABIERTO, CAJA_INACTIVA, NOMBRE_REPETIDO, SIN_TURNO_ABIERTO -> HttpStatus.CONFLICT;
+            case CAJA_CON_TURNO_ABIERTO, CAJERO_CON_TURNO_ABIERTO, CAJA_INACTIVA, NOMBRE_REPETIDO, SIN_TURNO_ABIERTO,
+                 CODIGO_REPETIDO, CAJA_PRINCIPAL, TIENE_HISTORIAL -> HttpStatus.CONFLICT;
             default -> HttpStatus.UNPROCESSABLE_ENTITY;
         };
         return error(estado, e.name());

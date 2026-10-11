@@ -97,7 +97,12 @@ public class ConfiguracionSeguridad {
                 // (cajero y administradores; el mozo no cobra).
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/cajas", "/cajas/**", "/turnos/**")
                     .hasAuthority("PERM_caja.ver")
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas", "/cajas/*/principal", "/cajas/*/activar",
+                        "/cajas/*/desactivar")
+                    .hasAuthority("PERM_caja.administrar")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/cajas/*")
+                    .hasAuthority("PERM_caja.administrar")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/cajas/*")
                     .hasAuthority("PERM_caja.administrar")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos", "/turnos/actual/cierre")
                     .hasAuthority("PERM_caja.crear")

@@ -12,5 +12,7 @@ public interface TurnoCajaRepositorio extends JpaRepository<TurnoCaja, String> {
 
     Optional<TurnoCaja> findByCajeroIdAndEstado(String cajeroId, String estado);
 
+    boolean existsByCajaId(String cajaId);
+
     List<TurnoCaja> findByCajaIdInAndEstado(Collection<String> cajaIds, String estado);
 }

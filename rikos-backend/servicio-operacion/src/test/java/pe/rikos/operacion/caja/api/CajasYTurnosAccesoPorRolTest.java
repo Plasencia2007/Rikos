@@ -16,8 +16,10 @@ import pe.rikos.operacion.comun.auditoria.ContextoDeSeguridadDePrueba;
 import pe.rikos.operacion.identidad.infraestructura.*;
 import pe.rikos.operacion.venta.aplicacion.PedidosBase;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -156,5 +158,71 @@ class CajasYTurnosAccesoPorRolTest extends PedidosBase {
         mvc.perform(post("/cajas/" + Identificador.nuevo().valor() + "/turnos").header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"fondoInicial\":5}"))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.error").value("CAJA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void solo_los_administradores_editan_activan_y_borran_cajas_y_todos_los_que_cobran_las_ven() throws Exception {
+        String central = tokenPara("administrador central");
+        String cajero = tokenPara("cajero");
+        String barra = com.fasterxml.jackson.databind.json.JsonMapper.builder().build().readTree(
+                mvc.perform(post("/cajas").header("Authorization", central).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nombre\":\"Caja Barra\",\"codigo\":\"caj-ba\"}"))
+                        .andExpect(status().isCreated()).andExpect(jsonPath("$.codigo").value("CAJ-BA"))
+                        .andExpect(jsonPath("$.principal").value(false)).andReturn().getResponse().getContentAsString())
+                .get("id").asText();
+
+        // El cajero ve las cajas (con codigo y la principal marcada) pero no las administra.
+        mvc.perform(get("/cajas").header("Authorization", cajero)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.principal==true)].codigo").value("CAJ-01"));
+        for (var peticion : new org.springframework.test.web.servlet.RequestBuilder[] {
+                put("/cajas/" + barra).header("Authorization", cajero).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"X\",\"codigo\":\"Y\"}"),
+                post("/cajas/" + barra + "/principal").header("Authorization", cajero),
+                post("/cajas/" + barra + "/desactivar").header("Authorization", cajero),
+                delete("/cajas/" + barra).header("Authorization", cajero)}) {
+            mvc.perform(peticion).andExpect(status().isForbidden());
+        }
+
+        mvc.perform(put("/cajas/" + barra).header("Authorization", central).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Caja de la barra\",\"codigo\":\"CAJ-B2\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.nombre").value("Caja de la barra"));
+        mvc.perform(put("/cajas/" + barra).header("Authorization", central).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Caja de la barra\",\"codigo\":\"CAJ-01\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("CODIGO_REPETIDO"));
+        mvc.perform(post("/cajas/" + barra + "/desactivar").header("Authorization", central)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(false));
+        mvc.perform(post("/cajas/" + barra + "/principal").header("Authorization", central)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("CAJA_INACTIVA"));
+        mvc.perform(post("/cajas/" + barra + "/activar").header("Authorization", central)).andExpect(status().isOk());
+        mvc.perform(post("/cajas/" + barra + "/principal").header("Authorization", central)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.principal").value(true));
+        // Ahora la principal es la barra: no se desactiva ni se borra.
+        mvc.perform(post("/cajas/" + barra + "/desactivar").header("Authorization", central)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("CAJA_PRINCIPAL"));
+        mvc.perform(delete("/cajas/" + barra).header("Authorization", central)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("CAJA_PRINCIPAL"));
+    }
+
+    @Test
+    void se_borra_una_caja_sin_uso_y_la_nota_de_apertura_viaja_con_el_turno() throws Exception {
+        String central = tokenPara("administrador central");
+        String cajero = tokenPara("cajero");
+        String extra = com.fasterxml.jackson.databind.json.JsonMapper.builder().build().readTree(
+                mvc.perform(post("/cajas").header("Authorization", central).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nombre\":\"Caja Extra\"}"))
+                        .andExpect(status().isCreated()).andExpect(jsonPath("$.codigo").value("CAJ-02")).andReturn()
+                        .getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(post("/cajas/" + extra + "/turnos").header("Authorization", cajero).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"fondoInicial\":100,\"nota\":\"Turno mañana\"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.notaApertura").value("Turno mañana"));
+        mvc.perform(delete("/cajas/" + extra).header("Authorization", central)).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("TIENE_HISTORIAL"));
+
+        String sinUso = com.fasterxml.jackson.databind.json.JsonMapper.builder().build().readTree(
+                mvc.perform(post("/cajas").header("Authorization", central).contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"nombre\":\"Caja Sin Uso\"}"))
+                        .andReturn().getResponse().getContentAsString()).get("id").asText();
+        mvc.perform(delete("/cajas/" + sinUso).header("Authorization", central)).andExpect(status().isNoContent());
+        mvc.perform(delete("/cajas/" + sinUso).header("Authorization", central)).andExpect(status().isNotFound());
     }
 }

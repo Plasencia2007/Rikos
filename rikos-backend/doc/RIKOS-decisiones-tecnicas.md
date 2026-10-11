@@ -1235,3 +1235,10 @@ El descuento se aplica **por línea** al cobrar (monto en céntimos o porcentaje
 **Estado:** Implementado (V44, 2026-10-11)
 
 Un cobro se reabre mientras su turno de origen siga abierto (RN-073): queda con `revertido_en/por` y el motivo, sus líneas vuelven a `comandado` y sus `cobro_linea` dejan de ser `vigente` (el único por línea es un índice parcial), el pedido vuelve a `comandado` si el cobro lo había cerrado, y el cargo al pensionista se devuelve con un **ajuste a favor** (el libro es de solo agregado). Nada se borra. Con el turno cerrado no se reabre: la corrección es una operación compensatoria (sprint 11, con el comprobante electrónico, RF-014).
+
+### DT-069 — Las cajas se registran en Configuración y el POS solo elige entre ellas
+**Estado:** Implementado (V46, 2026-10-11)
+
+`caja` lleva código único por local (índice sobre `lower(codigo)`) y `principal` (índice único parcial: una por local). El POS no crea cajas. La principal no se desactiva ni se borra; una caja con turnos no se borra (historial) sino que se
+desactiva. La caja sembrada ("Caja Principal", CAJ-01) se crea con `INSERT ... ON CONFLICT DO NOTHING` (DT-066), y al cambiar la principal se quita primero la anterior y se escribe antes de marcar la nueva, porque el índice parcial no admite dos a la vez.
+La nota de apertura vive en `turno_caja.nota_apertura`.

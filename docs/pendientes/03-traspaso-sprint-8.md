@@ -22,7 +22,7 @@ Modelo de datos ya escrito (sin migración todavía): `pre_ticket` (§7.10) y `a
 - **Cargo al pensionista al cobrar:** ya funciona (`cobro_cargo`, avisa si supera el tope sin bloquear).
 - **Pensionista en la mesa:** hoy se busca por DNI o nombre (`DialogoPensionista`); el pre-ticket lo reemplaza (el diálogo queda como respaldo si el kiosco falla). Hay un pendiente anotado en `docs/pendientes/README.md`.
 - **PIN del pensionista:** se genera y se muestra una vez (sprint 5); el bloqueo por intentos fallidos existe para el PIN del mozo (`LimitadorIntentosPin`) y se puede tomar como patrón para RN-091.
-- **Convenciones:** ULID de 26 caracteres, `Resultado<T, E>` para errores esperados, montos en céntimos, Flyway nunca se edita (la siguiente migración es **V46**), un test de acceso por rol por cada endpoint nuevo,
+- **Convenciones:** ULID de 26 caracteres, `Resultado<T, E>` para errores esperados, montos en céntimos, Flyway nunca se edita (la siguiente migración es **V47**), un test de acceso por rol por cada endpoint nuevo,
   eventos de bitácora nuevos requieren su fila en `auditoria_evento_check` y su frase en `ListarAuditoria`.
 
 ## Cosas que muerden (aprendidas)

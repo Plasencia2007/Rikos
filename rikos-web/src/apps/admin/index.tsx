@@ -13,7 +13,7 @@ import {
   PantallaRecetaFormulario,
 } from '../../features/catalogo'
 import { PantallaProveedores, PantallaProveedorFormulario } from '../../features/proveedores'
-import { PantallaConfiguracion, PantallaMotivos } from '../../features/configuracion'
+import { PantallaCajas, PantallaConfiguracion, PantallaMotivos } from '../../features/configuracion'
 import { PantallaMenuNormalYExtra, PantallaProgramacionSemanal, PantallaDisponibilidad } from '../../features/menu'
 import { PantallaAuditoria } from '../../features/auditoria'
 import {
@@ -75,6 +75,7 @@ function Panel() {
           <Route path="menu/disponibilidad" element={<PantallaDisponibilidad />} />
           <Route path="configuracion" element={<PantallaConfiguracion />} />
           <Route path="configuracion/motivos" element={<PantallaMotivos />} />
+          <Route path="configuracion/cajas" element={<PantallaCajas />} />
           <Route path="configuracion/parametros-de-cobro" element={<PantallaParametrosDeCobro />} />
           <Route path="pensionistas/planes" element={<PantallaPlanes />} />
           <Route path="pensionistas" element={<PantallaPensionistas />} />

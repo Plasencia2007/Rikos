@@ -1500,11 +1500,17 @@ export interface TurnoDeCaja {
   estado: 'abierto' | 'cerrado'
   /** "Caja de <cajero>": como se rotula la caja mientras el turno esta abierto. */
   etiqueta: string | null
+  /** Nota opcional que el cajero escribio al abrir. */
+  notaApertura: string | null
 }
 
 export interface CajaDelLocal {
   id: string
   nombre: string
+  /** Codigo corto unico en el local (CAJ-01...). */
+  codigo: string
+  /** La que viene elegida al abrir turno; una sola por local. */
+  principal: boolean
   etiqueta: string
   activo: boolean
   turnoAbierto: TurnoDeCaja | null
@@ -1512,11 +1518,31 @@ export interface CajaDelLocal {
 
 export const listarCajas = (token: string) => pedirAutenticado<CajaDelLocal[]>('/api/cajas', token)
 
-export const abrirTurnoDeCaja = (token: string, cajaId: string, fondoInicial: number) =>
+export const abrirTurnoDeCaja = (token: string, cajaId: string, fondoInicial: number, nota?: string | null) =>
   pedirAutenticado<TurnoDeCaja>(`/api/cajas/${cajaId}/turnos`, token, {
     method: 'POST',
-    body: JSON.stringify({ fondoInicial }),
+    body: JSON.stringify({ fondoInicial, nota: nota ?? null }),
   })
+
+// Cajas registradoras (Configuracion): se administran desde el panel; el POS solo elige entre las registradas.
+export const crearCaja = (token: string, datos: { nombre: string; codigo?: string | null }) =>
+  pedirAutenticado<CajaDelLocal>('/api/cajas', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const editarCaja = (token: string, id: string, datos: { nombre: string; codigo: string }) =>
+  pedirAutenticado<CajaDelLocal>(`/api/cajas/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const definirCajaPrincipal = (token: string, id: string) =>
+  pedirAutenticado<CajaDelLocal>(`/api/cajas/${id}/principal`, token, { method: 'POST' })
+
+export const activarCaja = (token: string, id: string) =>
+  pedirAutenticado<CajaDelLocal>(`/api/cajas/${id}/activar`, token, { method: 'POST' })
+
+export const desactivarCaja = (token: string, id: string) =>
+  pedirAutenticado<CajaDelLocal>(`/api/cajas/${id}/desactivar`, token, { method: 'POST' })
+
+/** Solo una caja que nunca se uso; con historial se desactiva (409 TIENE_HISTORIAL). */
+export const eliminarCaja = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/cajas/${id}`, token, { method: 'DELETE' })
 
 /** El turno abierto de quien pregunta; null si no tiene (el servidor responde 204). */
 export const turnoActualDeCaja = (token: string) => pedirAutenticado<TurnoDeCaja | null>('/api/turnos/actual', token)

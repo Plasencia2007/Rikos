@@ -77,7 +77,7 @@ class AbrirTurnoTest extends PedidosBase {
         var lista = consulta.listar().valorOLanza();
 
         assertThat(lista).hasSize(1);
-        assertThat(lista.get(0).caja().getNombre()).isEqualTo("Caja 1");
+        assertThat(lista.get(0).caja().getNombre()).isEqualTo("Caja Principal");
         assertThat(lista.get(0).caja().isActivo()).isTrue();
         assertThat(lista.get(0).turnoAbierto()).isNull();
         // Pedirla otra vez no crea otra.

@@ -37,6 +37,11 @@ coincide con lo cobrado en efectivo más el fondo, y una diferencia de S/ 0,01 a
 - **La caja se rotula "Caja de <nombre del cajero>"** mientras tiene un turno abierto (campo `etiqueta` de la API; el nombre de la caja sigue siendo el de la lista, "Caja 1" por defecto).
 - **El cajero puede descontar siempre y cuando haya un descuento habilitado** (un motivo de tipo descuento activo): `caja.descontar` es también del cajero (V45).
 
+### 2 ter. Cajas registradoras (2026-10-11)
+
+Las cajas se administran desde **Configuración → Cajas registradoras** (código, principal, activa, borrar sin historial) y el POS solo elige entre las registradas al abrir la sesión, con una nota
+opcional. La caja sembrada pasa a "Caja Principal" (CAJ-01). Ver `rikos-backend/doc/historias/cajas-registradoras.md` (migración V46).
+
 ## 3. Qué queda fuera, y por qué
 
 - **Descuento de inventario al vender** (US-033 CA5): depende del inventario (sprint 9). El snapshot de la venta **sí** guarda la receta aplicada, para que el sprint 9 la use.

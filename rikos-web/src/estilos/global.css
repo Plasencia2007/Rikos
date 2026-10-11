@@ -3231,3 +3231,57 @@ button.prog-opcion:hover { border-color: var(--color-marca); }
   .caja-fila { grid-template-columns: 1fr auto; }
   .caja-fila > button, .caja-fila > span { grid-column: 1 / -1; }
 }
+
+/* Sesion de caja del POS: banner y tarjetas (caja-*) y administracion de cajas en Configuracion (cjr-*) */
+.caja-banner { display: flex; justify-content: space-between; gap: var(--espacio-4); flex-wrap: wrap; padding: var(--espacio-5); border-radius: 18px; background: linear-gradient(135deg, #1f5e50, #2b7a68); color: #fff; }
+.caja-banner-texto { display: grid; gap: 4px; }
+.caja-banner-texto h2 { margin: 0; font-size: 28px; }
+.caja-banner-etiqueta { font-size: 13px; font-weight: 700; opacity: .85; text-transform: uppercase; letter-spacing: .04em; }
+.caja-banner-nota { opacity: .85; font-style: italic; }
+.caja-banner-lado { display: grid; gap: 6px; justify-items: end; align-content: space-between; text-align: right; }
+.caja-banner-tiempo { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 800; }
+.caja-tarjetas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--espacio-3); }
+.caja-tarjetas li { display: grid; gap: 2px; padding: var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-tarjetas li span { font-size: 13px; color: var(--color-texto-secundario); }
+.caja-tarjetas li strong { font-size: 26px; font-variant-numeric: tabular-nums; }
+.caja-tarjetas li small { color: var(--color-texto-secundario); }
+.caja-verde { color: #1f8a5b; }
+.caja-azul { color: #1d4ed8; }
+.caja-metodos { padding: var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-metodos ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--espacio-3); }
+.caja-metodos li { display: grid; gap: 2px; }
+.caja-metodos li span { font-size: 13px; color: var(--color-texto-secundario); }
+.caja-metodos li strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.cjr-resumen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--espacio-4); }
+.cjr-resumen li { display: grid; gap: 4px; padding: var(--espacio-4) var(--espacio-5); border: 1px solid var(--color-separador); border-radius: 16px; background: #fff; }
+.cjr-resumen li span { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: #56655f; }
+.cjr-resumen li strong { font-size: 30px; }
+.cjr-verde span { color: #1f8a5b !important; }
+.cjr-naranja span { color: #c2670a !important; }
+.cjr-rojo span { color: #b42318 !important; }
+.cjr-filtros { display: flex; align-items: flex-end; gap: var(--espacio-3); flex-wrap: wrap; padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.cjr-buscador { flex: 1; min-width: 220px; display: flex; align-items: center; gap: var(--espacio-2); min-height: 44px; padding: 0 var(--espacio-3); border: 1px solid var(--color-separador); border-radius: 10px; }
+.cjr-buscador input { flex: 1; border: 0; outline: 0; background: transparent; font: inherit; }
+.cjr-tabla-envoltorio { overflow-x: auto; border: 1px solid var(--color-separador); border-radius: 16px; background: #fff; }
+.cjr-tabla { width: 100%; border-collapse: collapse; }
+.cjr-tabla th { padding: var(--espacio-3) var(--espacio-4); text-align: left; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #56655f; background: #f6f8f7; }
+.cjr-tabla td { padding: var(--espacio-3) var(--espacio-4); border-top: 1px solid var(--color-separador); vertical-align: middle; }
+.cjr-inactiva { opacity: .6; }
+.cjr-nombre { display: flex; align-items: center; gap: var(--espacio-3); }
+.cjr-nombre > div { display: grid; gap: 2px; }
+.cjr-icono { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #f1ecfb; color: #7c3aed; flex-shrink: 0; }
+.cjr-default { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 6px; background: #fff0c2; color: #8a5a00; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.cjr-codigo { font-size: 12px; color: #56655f; background: #eef1f0; border-radius: 6px; padding: 1px 6px; justify-self: start; }
+.cjr-abierta { color: #c2670a; font-weight: 700; }
+.cjr-cerrada { color: #7b8985; }
+.cjr-acciones { display: flex; gap: var(--espacio-2); }
+.cjr-icono-boton { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: #56655f; cursor: pointer; }
+.cjr-icono-boton:hover:not(:disabled) { background: #eef1f0; }
+.cjr-icono-boton:disabled { opacity: .35; cursor: default; }
+.cjr-vacio { text-align: center; color: #56655f; padding: var(--espacio-5) !important; }
+.cjr-ayuda { display: flex; gap: var(--espacio-3); max-width: 640px; padding: var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.cjr-ayuda p { margin: 4px 0 0; color: #56655f; line-height: 1.5; }
+@media (max-width: 900px) {
+  .caja-banner-lado { justify-items: start; text-align: left; }
+  .caja-tarjetas, .caja-metodos ul, .cjr-resumen { grid-template-columns: repeat(2, 1fr); }
+}

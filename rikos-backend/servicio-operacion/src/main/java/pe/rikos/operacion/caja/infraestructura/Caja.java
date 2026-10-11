@@ -27,6 +27,14 @@ public class Caja {
     @Column(nullable = false, length = 60)
     private String nombre;
 
+    /** Codigo corto unico en el local (CAJ-01...): lo que se ve en el selector al abrir turno. */
+    @Column(nullable = false, length = 20)
+    private String codigo;
+
+    /** La caja que viene elegida al abrir turno; a lo sumo una por local. */
+    @Column(nullable = false)
+    private boolean principal;
+
     @Column(nullable = false)
     private boolean activo = true;
 
@@ -44,16 +52,38 @@ public class Caja {
     protected Caja() {
     }
 
-    public Caja(String id, String localId, String nombre, String creadoPor) {
+    public Caja(String id, String localId, String nombre, String codigo, String creadoPor) {
         this.id = id;
         this.localId = localId;
         this.nombre = nombre;
+        this.codigo = codigo;
         this.creadoPor = creadoPor;
         this.creadoEn = OffsetDateTime.now();
     }
 
     public void desactivar() {
         this.activo = false;
+    }
+
+    public void activar() {
+        this.activo = true;
+    }
+
+    public void actualizar(String nombre, String codigo) {
+        this.nombre = nombre;
+        this.codigo = codigo;
+    }
+
+    public void marcarPrincipal(boolean principal) {
+        this.principal = principal;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public boolean isPrincipal() {
+        return principal;
     }
 
     public String getId() {
