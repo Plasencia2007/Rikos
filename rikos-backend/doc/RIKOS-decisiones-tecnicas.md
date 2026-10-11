@@ -2,7 +2,7 @@
 
 Documento complementario al `claude/08-product-backlog-inicial.md`
 Estado: vivo — se actualiza conforme se cierran pendientes
-Última actualización: 24 de septiembre de 2026
+Última actualización: 25 de septiembre de 2026 (tercera pasada)
 Origen: sesiones de trabajo sobre arquitectura, facturación electrónica y ejecución del Sprint 0
 
 ---
@@ -276,6 +276,17 @@ Requisito operativo, no técnico: debe existir una pantalla con los comprobantes
 | P-19 | Revisar el bloqueo del PIN si cambia el diseño de esa pantalla. Si algún día el mozo eligiera su nombre antes de teclear el PIN, el contador podría volver al usuario y `bloqueo_pin` sobraría | Equipo técnico | DT-039 |
 | P-20 | Confirmar con el propietario los campos agregados en V12: enlaces de redes sociales, logo del local y tiempos mínimo y máximo de entrega. Los tres estaban descartados por la especificación y se agregaron durante el sprint 1 ampliado | Propietario | DT-046 |
 | P-21 | Definir dónde se mostrarán los enlaces de redes y el logo. Hoy se guardan y no los consume ninguna pantalla | Propietario | DT-046 |
+| P-22 | Reemplazar `ResponseEntity<?>` por el tipo concreto en los 47 métodos del backend donde aparece. El comodín hace invisible el DTO para la especificación OpenAPI, y con él la generación de tipos del frontend pierde valor a medida que crecen los endpoints | Equipo técnico | HT-05 |
+| P-23 | Decidir cómo se carga el catálogo real de productos. Hoy hay **un** producto de prueba, y la importación masiva desde Excel está excluida del alcance (`README`). Cargar a mano el catálogo completo de un restaurante es una jornada de trabajo | Propietario y equipo | US-008, sprint 4 |
+| ~~P-25~~ | **Cerrado el 25/09/2026.** `esquema.d.ts` regenerado contra el backend real reiniciado; los cuatro campos parchados a mano ahora vienen del esquema | — | — |
+| P-26 | **Comprobar si `/error` está permitido en la configuración de seguridad.** La investigación del 25/09 no encontró ningún código que convierta una excepción en 403, y tiene razón. Pero el 403 se observó dos veces y está documentado. La explicación más probable es otra: cuando algo revienta, Spring **reenvía la petición a `/error`**, y si esa ruta no está en `permitAll`, la cadena de seguridad bloquea ese reenvío y el cliente ve un 403 en lugar del 500 real. El manejador global lo tapa para lo que ocurre dentro de un controlador, pero no para lo que falle en un filtro | Equipo técnico | DT-049, DT-052 |
+| P-30 | **`GET /productos` devuelve el costo a cualquiera con `catalogo.ver`** (cocina, cajero, mozo). US-010 CA6 oculta los costos de las recetas a quien no tiene `recetas.ver_costos`, pero el costo de cada insumo sigue a la vista en el catálogo, y con eso el costo de la receta se reconstruye a mano. Filtrarlo con `inventario.ver_costos` en `ProductoController` | Equipo técnico | US-010, RN-012 |
+| P-31 | **Cambiar la unidad base de un producto que ya está en recetas.** `ActualizarProducto` lo permite, y desde ese momento las cantidades guardadas en las recetas quedan en una unidad que puede no tener conversión: el costo se calcularía mal (sin conversión el ingrediente no suma). Bloquearlo o exigir conversión antes de aceptar el cambio | Equipo técnico | DT-054 |
+| P-32 | **Desactivar recetas.** El permiso `recetas.desactivar` existe pero no hay caso de uso: desactivar una subreceta deja sin costo a todas las recetas que la usan, y hay que decidir si se bloquea o se avisa | Equipo técnico | US-010 |
+| P-29 | **Revisar que un despliegue nuevo al perfil `nube` pueda arrancar.** `V9` crea el usuario semilla sin condición y `GuardaSemillaDesarrollo` detiene el arranque si lo encuentra: en un entorno nuevo las dos cosas ocurren en el mismo arranque, así que el servicio no levantaría nunca | Equipo técnico | DT-053 |
+| P-27 | Confirmar con el propietario los umbrales de margen que colorean la lista de productos (hoy 55 % y 35 %). Son una decisión de diseño, no una regla del negocio, y un margen marcado en rojo que el restaurante considera normal genera desconfianza en el sistema | Propietario | US-008 |
+| P-28 | Agregar la comprobación de historial en `EliminarProveedor` cuando exista la tabla de compras. Hoy no hay nada que lo referencie, así que el borrado siempre procede | Equipo técnico | DT-051, sprint 9 |
+| P-24 | Implementar o retirar los endpoints de desactivar y activar categoría. `ConfiguracionSeguridad` declara los matchers pero el controlador no expone los endpoints: es configuración muerta | Equipo técnico | US-008 |
 | P-17 | Comprobar que el puerto de Postgres se lee de una variable de entorno y no está escrito en el código, para que el remapeo al 5433 no se arrastre al despliegue | Equipo técnico | DT-036 |
 
 ---
@@ -841,7 +852,7 @@ El login devuelve un token con el usuario, sus roles y sus locales asignados. Se
 ---
 
 ### DT-039 — El bloqueo del PIN se cuenta por dispositivo y se persiste
-**Estado:** Decidido — corrige un supuesto del modelo de datos
+**Estado:** Decidido — **implementado en V17** (25/09/2026)
 
 El modelo ligaba `usuario.intentos_fallidos` y `usuario.bloqueado_hasta` tanto al ingreso por contraseña como al del PIN. **No funciona para el PIN**, y el motivo es de diseño de pantalla: el PIN se teclea a ciegas, cuatro dígitos sin elegir usuario antes (DT-028). Un intento fallido no dice qué usuario falló, así que no hay fila de `usuario` a la cual sumarle el intento.
 
@@ -994,3 +1005,195 @@ Al construir la administración de roles apareció un defecto que llevaba semana
 No se había detectado porque hasta entonces nadie había iniciado sesión con ese rol: todas las pruebas usaban el administrador central.
 
 **La lección, que vale para los sprints que vienen:** hace falta al menos una prueba de acceso **por cada rol del sistema**, no solo del administrador. Un rol que nadie usa en las pruebas es un rol que nadie sabe si funciona.
+
+---
+
+## 11. Convenciones establecidas en el Sprint 2
+
+Sprint 2 ejecutado el 24 de septiembre de 2026: catálogo de productos, unidades y presentaciones, proveedores, generación de tipos desde OpenAPI y teclado numérico compartido. 58 pruebas en verde, 7 tablas nuevas, tres migraciones.
+
+---
+
+### DT-048 — Costo inicial manual, reemplazado por la primera compra
+**Estado:** Decidido — temporal por diseño
+
+RN-047 valoriza los insumos con el **costo de la última compra**, pero las compras llegan en el sprint 9. Sin una salida, el catálogo nace con todos los costos en cero y el costeo de recetas del sprint 4 no se puede probar con números reales.
+
+**La solución:** `producto.origen_costo`, con dos valores. Un costo cargado a mano nace como `manual` y se muestra marcado como provisional. Cuando una compra confirmada lo reemplaza, el origen pasa a `compra` y **el campo deja de ser editable**: un intento posterior se rechaza con `COSTO_YA_CONFIRMADO_POR_COMPRA`.
+
+**Por qué el bloqueo importa:** sin él, alguien podría pisar con una estimación un costo que ya viene de una factura, y el reporte de margen mentiría sin que nadie lo note.
+
+Es un requisito fuera del backlog original, añadido por necesidad del arranque. Queda registrado como tal.
+
+---
+
+### DT-049 — Los controladores llevan `@Transactional` porque `open-in-view` está desactivado
+**Estado:** Decidido — y conviene conocer el síntoma
+
+Con `open-in-view: false`, la sesión de Hibernate se cierra al salir del caso de uso. Un controlador que después lee una relación `@ManyToOne` perezosa para armar su respuesta lanza `LazyInitializationException`.
+
+**Lo que hace este caso digno de registrarse es el síntoma: Spring la traducía a un 403, no a un 500.** Parecía un problema de permisos, y se perdió tiempo revisando roles antes de encontrar la causa real. Se confirmó con un token que sí tenía el permiso correcto y seguía fallando.
+
+**La regla:** todo controlador que arme una respuesta leyendo relaciones perezosas lleva `@Transactional(readOnly = true)` a nivel de método.
+
+**Y la señal de alarma para el futuro:** un 403 que no cuadra con los permisos del usuario **no siempre es un problema de permisos**. Antes de revisar roles, mirar el log del servidor.
+
+---
+
+### DT-050 — El chequeo de tipos del frontend es `tsc -b`, no `tsc --noEmit`
+**Estado:** Decidido — corrige un método de verificación que no verificaba nada
+
+El `tsconfig.json` raíz está en modo *solution*: `"files": []` con referencias a `tsconfig.app.json` y `tsconfig.node.json`. **`tsc --noEmit` contra ese archivo no revisa nada**, y devuelve limpio siempre.
+
+Durante el sprint 1, el bloque de diseño y buena parte del sprint 2 se usó ese comando como punto de control. Al correr por primera vez `tsc -b`, el build real, aparecieron de inmediato dos problemas que llevaban semanas ahí: un import sin usar y la falta de `@types/node`, que bloqueaba la compilación real desde antes.
+
+**La regla:** el punto de control del frontend es `npx tsc -b` o `npm run build`. El otro comando no debe volver a usarse como evidencia de nada.
+
+**La lección más general:** un checkpoint que siempre pasa no está confirmando que todo esté bien; lo más probable es que no esté mirando.
+
+---
+
+### 11.1 El hallazgo del sprint: funcionalidad completa salvo el endpoint
+
+En la revisión final apareció que **el botón «Activar» no funcionaba en ninguna parte**. Existía la función en el cliente de la API, existía el botón con su modal de confirmación en las pantallas de productos y proveedores, existían hasta los matchers de seguridad que protegían la ruta — **y no existía el endpoint**. Cualquier administrador que desactivara un producto y quisiera reactivarlo habría recibido un 404.
+
+**Lo que más importa de este caso:** ni las 54 pruebas del backend ni la verificación en el navegador lo detectaron. Las pruebas cubrían desactivar; la verificación en vivo también. **Ninguna recorría el ciclo completo desactivar → reactivar.**
+
+**La regla que queda:** cuando una operación tiene su inversa —desactivar y activar, abrir y cerrar, vincular y desvincular, emitir y anular—, la prueba cubre **el ciclo completo**, no cada mitad por separado. Media función probada da la misma sensación de seguridad que una función entera, y es lo que hace peligroso este tipo de hueco.
+
+Aplica directamente a lo que viene: abrir y cerrar turno de caja, vincular y anular un pre-ticket, emitir y anular un comprobante, transferir entre locales.
+
+---
+
+### 11.2 Lo que la generación de tipos ya está evitando
+
+HT-05 se probó de verdad, y conviene que quede el resultado: se renombró un campo en el backend, se regeneraron los tipos, y el compilador del frontend señaló **los cuatro usos reales** de ese campo, con archivo y línea. Después se revirtió.
+
+Sin eso, ese renombre habría llegado a la pantalla como un valor vacío, sin error, sin aviso — que es exactamente lo que pasó con el factor de las presentaciones (bug 6 del sprint): el campo no existía en el DTO, `undefined` se renderizó en silencio, y se descubrió comparando una captura contra el texto esperado.
+
+**El límite que hay que levantar:** 47 métodos del backend devuelven `ResponseEntity<?>`. Para la especificación OpenAPI, ese comodín hace **invisible** el DTO, y esos endpoints quedan fuera de la red de seguridad. Está anotado como P-22.
+
+---
+
+### DT-051 — Borrado real con bloqueo previo, extendido a producto, proveedor, categoría, rol y usuario
+**Estado:** Decidido por el equipo — misma naturaleza que DT-043
+
+Tras el cierre del sprint 2 se extendió el borrado físico que DT-043 introdujo para el local. Ahora también se pueden borrar productos, proveedores, categorías, roles y usuarios.
+
+**El patrón adoptado, y es el correcto:** antes de borrar se **consulta** si existe algo que referencie al registro, y se devuelve un error de negocio claro —«este producto ya tiene presentaciones de compra registradas»— en lugar de dejar que reviente la clave foránea. El usuario ve una explicación, no un error del servidor, y se le sugiere desactivar en su lugar.
+
+**La excepción es `usuario`**, y la solución merece quedar registrada. Casi todas las tablas del sistema apuntan a `usuario` por `creado_por`, `actualizado_por` o `registrado_por`. Consultar tabla por tabla obligaría a recordar actualizar esa lista cada vez que se agregue una tabla nueva — y nadie se acuerda. Se optó por intentar el borrado y capturar la violación.
+
+**Eso expuso un comportamiento de PostgreSQL que conviene conocer:** una vez que una violación de clave foránea aborta la transacción, **toda la transacción queda inutilizable**, incluidas las lecturas posteriores, aunque la excepción ya se haya capturado en Java. La solución fue envolver el borrado en una transacción genuinamente nueva (`REQUIRES_NEW`), para que su aborto no contamine la del llamador. Está documentado en la propia clase.
+
+**Lo que sigue en tensión con la especificación:** `01` § Reglas de historial dice que desactivar no elimina el historial, y US-005 CA2 pide conservar la atribución de las operaciones pasadas. El bloqueo previo lo protege en la práctica —un usuario con actividad registrada no se puede borrar—, pero la regla escrita dice otra cosa. Queda como decisión consciente del equipo, igual que DT-043.
+
+---
+
+### 11.3 Dos cosas que conviene arreglar antes del sprint 3
+
+**El archivo de tipos generado se editó a mano.** `esquema.d.ts` está en `.gitignore` y se le agregaron cuatro campos manualmente en lugar de regenerarlo. Eso anula justamente lo que HT-05 existe para dar: la garantía de que un cambio en el backend rompe la compilación del frontend en vez de llegar como un valor vacío. Esos cuatro campos hoy no están verificados contra nada.
+
+Y tiene un efecto secundario para el equipo: al estar en `.gitignore`, quien clone el repositorio **no puede compilar el frontend** hasta levantar el backend y regenerar los tipos. Hay que decirlo en la guía de arranque.
+
+**Las excepciones inesperadas siguen apareciendo como 403.** Ya van dos: una `LazyInitializationException` en el sprint 2 y una `NullPointerException` al crear subcategorías. Las dos costaron tiempo revisando permisos que estaban bien.
+
+Un fallo interno que se presenta como «no tienes permiso» es de los que más caro salen, porque manda a buscar en el lugar equivocado. Vale la pena encontrar qué lo está traduciendo —muy probablemente la configuración de seguridad o un manejador global— y hacer que un error inesperado devuelva 500 con su traza. Es una tarde de trabajo que se paga sola en el primer bug del sprint 3.
+
+---
+
+### DT-052 — Manejador global de errores con referencia de correlación
+**Estado:** Decidido — implementado el 25/09/2026
+
+Hasta ahora no existía ningún manejador global: una excepción no prevista caía en la página de error por defecto de Spring Boot, un 500 sin cuerpo útil y sin forma de relacionarlo con el log.
+
+`ManejadorGlobalDeErrores` hace dos cosas:
+
+- **Re-lanza** `AccessDeniedException` y `AuthenticationException` tal cual, para que Spring Security siga devolviendo sus 401 y 403 reales. Un manejador que se las come convierte un problema de permisos en un 500 genérico, que es peor que el problema original.
+- Para cualquier otra excepción: registra la traza completa del lado del servidor con una **referencia corta**, y responde 500 con esa referencia y nada más. El cliente nunca ve el tipo ni el mensaje de la excepción —que puede filtrar estructura interna— pero quien atiende el problema puede ir al log y encontrar exactamente qué pasó.
+
+Esa referencia es lo que convierte «me salió un error» en algo investigable. Sin ella, un fallo en el local a las nueve de la noche es una llamada telefónica sin datos.
+
+---
+
+### DT-053 — Guarda de la semilla de desarrollo en el perfil de nube
+**Estado:** Implementado — **con un efecto que hay que revisar (P-29)**
+
+`GuardaSemillaDesarrollo` se ejecuta al arrancar solo bajo el perfil `nube`: si encuentra el usuario semilla —buscado por su identificador fijo, no por nombre, para no confundirlo con un administrador real que también se llame «admin»— detiene el arranque con un mensaje explícito.
+
+**La decisión de fondo es correcta:** fallar cerrado. Un sistema que arranca en producción con `admin` / `cambiar123` es peor que uno que no arranca.
+
+**El efecto que hay que revisar:** en un despliegue **nuevo** al perfil `nube`, la migración `V9` crea el usuario semilla y el guarda lo encuentra en ese mismo arranque. El servicio no levantaría nunca, y alguien tendría que borrar la fila a mano contra la base de producción antes del primer arranque exitoso.
+
+Dos salidas limpias, cualquiera sirve:
+
+1. **Que el guarda desactive el usuario** en lugar de detener el arranque, con una advertencia bien visible en el log. Sigue siendo seguro —la cuenta no sirve para entrar— y el despliegue funciona.
+2. **Que la semilla no se ejecute en `nube`**, con los datos de desarrollo en una ubicación de migración aparte que solo se active en los perfiles locales.
+
+La primera es más simple y no toca el historial de Flyway.
+
+---
+
+## 12. Convenciones establecidas en el Sprint 4
+
+### DT-054 — El costo de una receta se calcula por unidad base, también el de las subrecetas
+**Estado:** Implementado (US-010) — corrige la fórmula del modelo de datos §5.3
+
+El modelo multiplicaba la cantidad de una subreceta usada como ingrediente por su **costo por porción**. Solo es correcto si la cantidad está en porciones, y en la cocina no se piensa así: el seco lleva "300 g de aderezo", no "0,4 porciones de aderezo".
+
+**La regla:** el rendimiento de una receta va siempre en la **unidad base de su producto**, y el costo por unidad base de una subreceta es `costo_total / rendimiento` — el mismo papel que `costo_ultima_compra` en un insumo. Así un ingrediente se costea de una sola manera:
+
+```
+costo del ingrediente = cantidad convertida a la unidad base × costo por unidad base
+```
+
+**Consecuencias en el código:**
+
+- `CalculadoraCostoReceta` es el único lugar que hace la cuenta. La conversión usa `conversion_unidad` del producto del ingrediente, en los dos sentidos (`1 origen = factor destino`). Sin conversión, la receta **no se guarda** (`SIN_CONVERSION`, con el ingrediente culpable): un costo mal convertido es peor que no tener costo.
+- Si un ingrediente no tiene costo todavía, la receta queda con costo **nulo** — "incompleta" en pantalla —, nunca cero. Cero mentiría un margen.
+- Costos con 6 decimales y redondeo mitad arriba (la escala de las columnas); se redondean a céntimos solo al mostrarlos. P-15 sigue abierto para `Dinero`.
+- **Recálculo en cascada:** al cambiar el costo de un insumo (hoy, el costo manual de DT-048; en el sprint 9, la compra) o al guardar una receta, se recalculan las recetas que usan ese producto y, hacia arriba, las que usan a esas. Termina porque los ciclos se rechazan al guardar (`CICLO`).
+- **Quién ve el costo lo decide el backend** (`RecetaController`): sin `recetas.ver_costos` los campos de costo salen nulos. Ver P-30 para el hueco que queda en el catálogo.
+- Se quitaron `receta.nombre` (la receta se llama como su producto) y `unidad_rendimiento_id` (siempre es la unidad base).
+
+---
+
+## 13. Convenciones establecidas en el Sprint 6
+
+Decisiones tomadas al construir la venta en mesa (US-027 a US-031, sprint 6b). Detalle y pruebas en `historias/`.
+
+### DT-055 — El estado de una mesa se deriva de sus pedidos, no se guarda
+**Estado:** Implementado (US-027, regla ajustada el 2026-10-01 en sprint 6b)
+
+`CalculadorDeEstadoDeMesa` calcula libre, ocupada, unida o bloqueada desde los pedidos y la tabla de uniones; no hay columna de estado que pueda quedar desincronizada.
+**Ocupada significa pedido comandado.** Un pedido abierto sin comandar deja la mesa `libre` con la marca `tomandoPedido`, así una mesa no queda "ocupada" por alguien que solo abrió la pantalla. Consecuencias: abrir un pedido sobre una mesa con pedido abierto devuelve ese mismo (200 en vez de 201); una mesa con pedido en curso no se une como secundaria (`TIENE_PEDIDO_ABIERTO`). Enmienda al criterio US-07 CA2 del backlog v3 en `docs/producto/prd/05-enmiendas-al-backlog-v3.md`.
+
+### DT-056 — Bloqueo optimista en `pedido` y `detalle_pedido`
+**Estado:** Implementado (V37)
+
+Dos mozos tocando el mismo pedido o la misma línea no se pisan: `@Version` en ambos. Los controladores de venta reintentan hasta 3 veces ante una violación de unicidad o de versión (`protegido()`) y, si persiste, devuelven 409. Cualquier escritura nueva sobre pedidos o líneas debe pasar por ese mismo envoltorio.
+
+### DT-057 — La comanda es una foto, y el contador de impresiones es atómico
+**Estado:** Implementado (V33, V36)
+
+`detalle_comanda` guarda `etiqueta_persona` y las cantidades al momento de comandar: si después se traslada una línea o se cambia el nombre, la comanda impresa no cambia. Reimprimir se marca como copia (RN-063). `sumarImpresion` es un `UPDATE … RETURNING` nativo, para que dos reimpresiones simultáneas no pierdan una cuenta; el caso de uso refresca la entidad ya cargada.
+
+### DT-058 — El precio lo decide el servidor; al trasladar solo se recalcula si interviene un pensionista
+**Estado:** Implementado (US-028, US-029)
+
+El mozo solo escribe el precio de un "extra libre" (queda marcado `manual` y auditado). Al trasladar líneas entre personas, el precio del menú normal se recalcula únicamente si el origen o el destino es pensionista (cambia entre público y plan); el resto conserva su precio. La anulación exige `venta.anular` y un motivo de tipo `anulacion` (RN-072); reorganizar exige `venta.modificar`.
+
+### DT-059 — "Terminar pedido" es un cierre sin cobro, provisional hasta el sprint 7
+**Estado:** Decidido, provisional (V38, 2026-10-01; confirmado por el dueño el 2026-10-05)
+
+Deja el pedido `cerrado` y la mesa libre, sin cobro, sin motivo y con solo `venta.modificar`. Es una brecha conocida contra US-09 CA3 / RN-072 / RN-065 / RN-005 (ver `docs/producto/plan/04-comparacion-backlog-v3.md`). **No se endurece**: el sprint 7 lo reemplaza por el cobro real. Mientras tanto, esos pedidos no cuentan como ventas ni se usan en reportes.
+
+### DT-060 — El grupo de un producto de la carta sale de su categoría raíz, nunca de su nombre
+**Estado:** Implementado (sprint 6b, 2026-10-01)
+
+`ProductoOfrecido(id, nombre, precio, grupo, categoria)`: `grupo` es `entrada`, `segundo` o `extra` según la categoría raíz (naturaleza `extra`, o `componente_menu` con componente entrada/segundo) y `null` para bebidas, postres y guarniciones. La carta incluye las categorías `componente_menu`, que antes quedaban fuera, y sale ordenada por grupo y nombre. El frontend filtra por `grupo`, nunca por texto.
+
+### DT-061 — El User-Agent se recorta antes de guardarse
+**Estado:** Implementado (2026-10-05)
+
+El User-Agent de un navegador real supera las columnas: `bloqueo_pin.dispositivo` mide 120 y `sesion.dispositivo` 255. `LimitadorIntentosPin` recorta la huella a 120 y `Sesion` a 255. Antes, un PIN incorrecto desde un navegador real daba 500 y el fallo no se contaba, o sea que el bloqueo por intentos no funcionaba (US-54 CA3).

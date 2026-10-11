@@ -185,13 +185,18 @@ aunque el repositorio sea privado.
 
 ## Estado
 
+Ver `docs/producto/plan/README.md` para el detalle y las rutas para
+probar cada cosa en vivo.
+
 | Sprint | Contenido | Estado |
 |---|---|---|
 | 0 | Esqueleto que camina, migraciones, tipos base | Completo |
 | 1 | Empresa y locales, usuarios, autenticación, PIN del mozo | Completo |
 | 1+ | Sistema de diseño, dashboard, horarios por día, permisos granulares y roles | Completo |
-| 2 | Catálogo de productos, unidades y presentaciones, proveedores | En curso |
-| 3 a 14 | Menú, pensionistas, POS, caja, inventario, offline, facturación, delivery, reportes | Pendiente |
+| 2 | Catálogo de productos, unidades y presentaciones, proveedores | Completo |
+| 3 | Permisos granulares, auditoría transversal, motivos, verificación de fronteras | Completo (HT-08 movido al sprint 10) |
+| 4 | Costos y menú | Completo -- recetas, menú normal y extra, programación semanal, agotados por local |
+| 5 a 14 | Pensionistas, venta en mesa, caja, inventario, offline, comprobantes, delivery, portal, reportes | Pendiente -- ver `docs/producto/plan/` |
 
 Quince sprints en total. El plan completo está en el product backlog.
 

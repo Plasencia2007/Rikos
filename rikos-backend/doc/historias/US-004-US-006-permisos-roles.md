@@ -147,3 +147,83 @@ generaron despues de esa recuperacion, contra la misma base de datos.
 - `/admin/usuarios/{id}/editar` -- los 4 bloques, incluida la seccion
   colapsable "Permisos individuales" con el origen (rol/excepcion) por
   permiso
+
+## Pantalla de Usuarios: lista con ficha al lado (2026-09-29)
+
+**Qué se pidió.** Rediseñar la lista de usuarios (antes una tabla) como lista de cuentas con la
+ficha de la persona seleccionada al lado, en el tema verde. Diseño primero en el canvas
+("Usuarios (lista y detalle)"), aprobado antes de programar.
+
+**Qué se construyó.**
+- Backend: `UsuarioRespuesta` trae ahora `locales` (todos los asignados, no solo el principal) y
+  cada rol su `descripcion`. Caso de uso nuevo `ObtenerActividadUsuario` y ruta
+  `GET /usuarios/{id}/actividad`: mezcla los últimos accesos (`sesion`) con lo que la persona
+  hizo como actor (`auditoria`), lo más reciente primero, tope de 5. Devuelve datos crudos
+  (tipo, evento, entidad); el texto lo arma la pantalla. Test `ObtenerActividadUsuarioTest`.
+- Frontend: `PantallaUsuarios.tsx` (lista + `FichaUsuario`), `estilos/usuarios.css`. Filtros por
+  local, búsqueda y Todos/Activos/Inactivos. Ficha con Acceso (rol y su descripción, local
+  principal, locales), Seguridad (último acceso con IP) y Actividad reciente. Editar abre el
+  formulario existente; el menú ⋮ ofrece Eliminar (con el aviso de historial); el botón de abajo
+  desactiva o reactiva la cuenta con confirmación.
+- El administrador central figura con "Todos los locales" (opera en cualquier local activo), no
+  con su única asignación.
+
+**Se dejó fuera, a propósito.**
+- **"Restablecer contraseña / Enviar enlace de acceso"** del diseño: no hay envío de correos ni
+  flujo de restablecimiento en el sistema. Queda para cuando exista (correo transaccional).
+- El texto de los eventos de actividad cubre los eventos de auditoría actuales; uno nuevo se
+  muestra con su nombre crudo hasta agregarlo a `VERBO_EVENTO` en la pantalla.
+
+**Corrección de una regresión propia.** El componente `Interruptor` del asistente de locales
+usaba la clase `.interruptor`, que ya existía para el formulario de usuario (otro tamaño y
+marcado); se renombró a `.conmutador` para no pisarla.
+
+**Verificado en vivo** (admin): lista de 6 cuentas, ficha con rol/descripción/locales/último
+acceso/actividad, filtros (local, búsqueda, inactivos), desactivar y reactivar con
+confirmación, menú ⋮ (Escape lo cierra). `npx tsc -b --force` sin errores; suite backend 222
+pruebas, solo falla `ArquitecturaDeModulosTest` (ciclo `comun ↔ identidad`, ya reportado).
+
+## Roles rediseñados: tarjetas, crear/editar con permisos por módulo y "restaurar predeterminados" (2026-09-29)
+
+**Qué se pidió.** Rehacer Roles (lista), Crear rol y Editar rol en el tema verde, diseñado primero
+en el canvas ("Roles (tarjetas)", "Crear rol (permisos por módulo)", "Editar rol cajero
+(restaurar predeterminados)"). En la edición de un rol del sistema, poder cambiar permisos y
+volver a los predeterminados.
+
+**Qué se construyó.**
+- Backend:
+  - `GET /roles/{id}/permisos-predeterminados` (caso de uso `ObtenerPermisosPredeterminados`):
+    los permisos con los que nació un rol del sistema, tomados del catálogo del sembrador
+    (`SembradorCatalogoPermisos.codigosPredeterminados`). Vacío para roles personalizados. No
+    modifica nada: la pantalla los carga en el formulario y recién se guardan con "Guardar
+    cambios".
+  - `RolRespuesta.cantidadUsuarios` (`UsuarioRolRepositorio.countByRolId`).
+  - Pruebas en `PermisosPredeterminadosTest`.
+- Frontend: `PantallaRoles.tsx` (roles del sistema y personalizados en secciones),
+  `PantallaRolFormulario.tsx` (una sola pantalla para crear y editar), `rolesVisual.ts` (iconos,
+  descripción de módulos y acciones sensibles), `estilos/roles.css`.
+  - Nombre bloqueado en roles del sistema; descripción y color editables.
+  - Marcas "Añadido"/"Quitado" y punto ámbar en el módulo, frente al predeterminado.
+  - Modal de confirmación que lista lo que se va a deshacer.
+  - "Acceso sensible" derivado de la acción (anular, reabrir, descontar, aprobar, ver_costos,
+    administrar, administrar_permisos), sin campo nuevo en el backend.
+  - "Lo tienen" en cada permiso (qué roles ya lo incluyen).
+  - "Revisar accesos seleccionados" con el bloque de cambios.
+
+**Bug de fondo encontrado al diseñar la edición.** `SembradorCatalogoPermisos` corre en cada
+arranque y solo agregaba: si un administrador quitaba un permiso a un rol del sistema, el
+siguiente arranque lo volvía a poner. Ahora un rol que ya tiene permisos solo recibe los
+permisos que acaban de nacer en el catálogo; un rol vacío (primera vez) recibe todos. Prueba:
+`elSembradorNoRestituyeUnPermisoQueSeQuito`.
+
+**Se dejó fuera, a propósito.**
+- El botón "restaurar" no existe en roles personalizados (no tienen predeterminado).
+- La descripción por módulo y los iconos viven en el frontend, no en la base.
+- El aviso "3 personas tienen este rol" cuenta asignaciones en `usuario_rol`.
+
+**Verificado en vivo** (admin): lista con 6 roles del sistema (52/14/5/6/2/41 permisos, con
+cantidad de usuarios) y los personalizados; editar cajero (14 de 52, nombre bloqueado, sensibles
+marcados), quitar y añadir permisos, marcas y puntos, revisión, modal y restaurar; guardar un
+cambio y volver a restaurar y guardar (cajero volvió a 14); crear un rol propio (validaciones,
+color, guardado) y eliminarlo. `npx tsc -b --force` sin errores; suite backend en verde salvo
+`ArquitecturaDeModulosTest` (ciclo `comun ↔ identidad`, ya reportado).
