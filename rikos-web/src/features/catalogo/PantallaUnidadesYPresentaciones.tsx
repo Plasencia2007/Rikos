@@ -195,7 +195,7 @@ export function PantallaUnidadesYPresentaciones() {
               <ul className="lista-simple">
                 {presentaciones.map((p) => (
                   <li key={p.id}>
-                    {p.nombre} — factor {p.factorAUnidadBase} {p.esPredeterminada && '(predeterminada)'}
+                    {p.nombre} — factor {p.factor} {p.esPredeterminada && '(predeterminada)'}
                   </li>
                 ))}
               </ul>

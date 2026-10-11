@@ -1,0 +1,29 @@
+/* Portada de Configuración (tema verde). */
+
+.cfg-pagina { gap: 24px; }
+.cfg-miga-enlace { color: #2b7a68; }
+.cfg-titulo { margin: 8px 0 0; font-size: 36px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+.cfg-subtitulo { margin: 6px 0 0; font-size: 16px; color: #56655f; }
+.cfg-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; align-items: stretch; }
+.cfg-tarjeta {
+  box-sizing: border-box; min-height: 168px; background: #fff; border: 1px solid #e6eae9; border-radius: 12px; padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: inherit;
+  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+a.cfg-tarjeta { cursor: pointer; }
+a.cfg-tarjeta:hover { border-color: #b9d6cd; box-shadow: 0 4px 16px rgba(15, 39, 36, 0.08); transform: translateY(-1px); }
+a.cfg-tarjeta:focus-visible { outline: 2px solid #2b7a68; outline-offset: 2px; }
+.cfg-tarjeta-pronto { background: #fbfcfb; cursor: default; }
+.cfg-tarjeta-cabecera { display: flex; align-items: center; gap: 16px; }
+.cfg-tarjeta-cabecera h2 { margin: 0; flex: 1; font-size: 18px; font-weight: 800; }
+.cfg-tarjeta-pronto h2 { color: #33443f; }
+.cfg-icono {
+  width: 52px; height: 52px; border-radius: 50%; background: #e3f1ec; color: #2b7a68; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cfg-tarjeta-pronto .cfg-icono { background: #eef1f0; color: #7b8985; }
+.cfg-flecha { color: #2b7a68; flex-shrink: 0; }
+.cfg-pronto { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: #eef1f0; color: #56655f; white-space: nowrap; }
+.cfg-tarjeta p { margin: 0; font-size: 14.5px; line-height: 1.5; color: #56655f; }
+.cfg-dato { margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #1f5e50; }
+.cfg-dato > span { width: 7px; height: 7px; border-radius: 50%; background: #2fa36b; }

@@ -5,7 +5,6 @@ import {
   Aviso,
   Boton,
   Campo,
-  Checkbox,
   EntradaNumerica,
   EstadoCargando,
   EstadoError,
@@ -371,7 +370,7 @@ export function PantallaUsuarioFormulario() {
                   checked={formulario.rolesIds.includes(rol.id)}
                   onChange={() => alternarSeleccion('rolesIds', rol.id)}
                 />
-                <span className="usuario-rol-punto" style={{ background: rol.color ?? '#8a3b12' }} aria-hidden="true" />
+                <span className="usuario-rol-punto" style={{ background: rol.color ?? '#2b7a68' }} aria-hidden="true" />
                 <span className="usuario-opcion-etiqueta">{rol.nombre}</span>
               </label>
             ))}

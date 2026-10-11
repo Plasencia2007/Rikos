@@ -1,0 +1,173 @@
+/* Salones y mesas (tema verde): lista, salón con sus mesas, formularios y editor de plano. Reusa .cfg-*, .as-*, .loc-*, .rf-* y .mot-estado. */
+
+.sal-pagina { gap: 18px; }
+.sal-cabecera { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.sal-tile { border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sal-filtros { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sal-buscador { width: 340px; max-width: none; flex: 0 1 340px; height: 46px; box-sizing: border-box; }
+.sal-resumen { margin-left: auto; font-size: 14px; color: #56655f; }
+
+.sal-tabla { background: #fff; border: 1px solid #e6eae9; border-radius: 12px; overflow: hidden; }
+.sal-fila {
+  display: grid; grid-template-columns: 1.2fr 1.6fr 150px 130px 210px; align-items: center; gap: 16px; min-height: 84px;
+  padding: 12px 24px; border-top: 1px solid #e6eae9;
+}
+.sal-fila:hover { background: #fafcfb; }
+.sal-fila-cabecera { min-height: 44px; border-top: 0; background: #f5f7f6; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; color: #56655f; }
+.sal-fila-cabecera:hover { background: #f5f7f6; }
+.sal-nombre { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.sal-nombre strong { display: block; font-size: 16px; font-weight: 800; }
+.sal-nombre strong.inactivo { color: #8a9893; }
+.sal-nombre span { font-size: 12.5px; color: #56655f; }
+.sal-descripcion { margin: 0; font-size: 14px; color: #56655f; line-height: 1.45; }
+.sal-estado { display: flex; align-items: center; gap: 12px; font-size: 13.5px; font-weight: 700; color: #7b8985; cursor: pointer; }
+.sal-estado .activo { color: #1f8a5b; }
+.sal-mesas { display: flex; flex-direction: column; gap: 2px; }
+.sal-mesas strong { font-size: 14.5px; }
+.sal-mesas span { font-size: 12.5px; color: #56655f; }
+.sal-acciones { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.sal-ver { height: 36px; padding: 0 14px; font-size: 13px; margin-right: 6px; }
+.sal-pie-tabla { padding: 14px 24px; border-top: 1px solid #e6eae9; font-size: 13px; color: #56655f; }
+.sal-sin-resultados { margin: 0; padding: 32px; text-align: center; color: #56655f; font-size: 14px; }
+.as-icono-boton:disabled { color: #c9d2cf; cursor: not-allowed; }
+.as-icono-boton:disabled:hover { background: transparent; }
+
+.sal-encabezado-salon { display: flex; align-items: flex-start; gap: 14px; }
+.sal-encabezado-salon .as-volver { margin-top: 4px; }
+.sal-encabezado-texto { flex: 1; min-width: 0; }
+.sal-encabezado-texto > div { display: flex; align-items: center; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+.sal-encabezado-texto h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+.sal-encabezado-texto p { margin: 4px 0 0; font-size: 14px; color: #56655f; }
+.sal-insignia { font-size: 11.5px; font-weight: 800; letter-spacing: 0.03em; padding: 4px 10px; border-radius: 6px; background: #e3f1ec; color: #1f5e50; }
+.sal-insignia.inactivo { background: #eef1f0; color: #56655f; }
+.sal-banner {
+  display: flex; gap: 12px; align-items: flex-start; padding: 13px 18px; border-radius: 10px; background: #e9f4f0;
+  border: 1px solid #c6e2d8; color: #1f4a40;
+}
+.sal-banner svg { color: #2b7a68; margin-top: 2px; flex-shrink: 0; }
+.sal-banner strong { display: block; font-size: 14px; }
+.sal-banner span { display: block; font-size: 13px; line-height: 1.45; margin-top: 1px; }
+
+.sal-fila-mesa { grid-template-columns: 100px 1.5fr 90px 150px 90px 120px 110px; min-height: 74px; }
+.sal-codigo { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #f1f4f3; padding: 5px 10px; border-radius: 6px; width: fit-content; }
+.sal-identificador { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sal-identificador strong { font-size: 15.5px; font-weight: 800; }
+.sal-identificador strong.inactivo { color: #8a9893; }
+.sal-identificador > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.sal-chip { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 5px; background: #e3f1ec; color: #1f5e50; }
+.sal-chip.vip { background: #efe9fb; color: #6d28d9; }
+.sal-chip.fumador { background: #fdece2; color: #c2410c; }
+.sal-sillas { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 700; }
+.sal-sillas svg { color: #56655f; }
+.sal-forma { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #33443f; }
+.sal-forma svg { color: #56655f; }
+.sal-fila-mesa .mot-estado { justify-self: start; width: fit-content; white-space: nowrap; }
+
+/* Formularios */
+.sal-form-cuerpo { display: flex; gap: 22px; align-items: flex-start; }
+.sal-form-columna { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.sal-form-columna .as-tarjeta { gap: 20px; }
+.sal-form-fila { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
+.sal-form-fila.sal-dos { grid-template-columns: 1fr 1fr; }
+.rf-campo textarea {
+  box-sizing: border-box; border: 1px solid var(--color-borde); border-radius: 8px; padding: 12px 14px; font: inherit;
+  font-size: 14.5px; font-weight: 400; resize: none; color: #1b2b28;
+}
+.rf-campo select {
+  height: 44px; box-sizing: border-box; border: 1px solid var(--color-borde); border-radius: 8px; padding: 0 12px; font: inherit;
+  font-size: 14.5px; font-weight: 400; background: #fff; color: #1b2b28;
+}
+.sal-iconos { display: flex; gap: 12px; flex-wrap: wrap; }
+.sal-opcion-icono {
+  width: 52px; height: 52px; box-sizing: border-box; border-radius: 10px; border: 2px solid #e6eae9; background: #fff; color: #56655f;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sal-opcion-icono.elegido { border-color: #2b7a68; background: #f1f8f5; color: #2b7a68; }
+.sal-colores { display: flex; gap: 16px; padding: 4px 6px; }
+.sal-color-piso { display: flex; height: 46px; box-sizing: border-box; border: 1px solid var(--color-borde); border-radius: 8px; overflow: hidden; }
+.sal-color-piso.invalido { border-color: #b42318; }
+.sal-color-piso input[type='color'] { width: 52px; height: 100%; padding: 0; border: 0; border-right: 1px solid var(--color-borde); cursor: pointer; background: none; }
+.sal-color-piso input[type='text'] { flex: 1; min-width: 0; border: 0; padding: 0 14px; font: inherit; font-size: 14.5px; font-family: ui-monospace, Menlo, monospace; height: auto; }
+.sal-form-lateral { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
+.sal-acciones-tarjeta { width: auto; position: static; }
+.sal-estado-form { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sal-estado-form strong { display: block; font-size: 15px; }
+.sal-estado-form span { font-size: 12.5px; color: #56655f; }
+.sal-vista-previa { background: #f9fafa; border: 1px solid #e6eae9; border-radius: 12px; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+.sal-vista-previa > span { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; color: #56655f; }
+.sal-vista-previa > div:not(.sal-vista-plano) { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid #e6eae9; border-radius: 10px; padding: 12px 14px; }
+.sal-vista-previa strong { display: block; font-size: 16px; font-weight: 800; }
+.sal-vista-previa > div > div > span { font-size: 12.5px; }
+.sal-vista-previa .as-ayuda { margin: 0; line-height: 1.4; }
+.sal-vista-plano {
+  display: flex; align-items: center; justify-content: center; min-height: 130px; border-radius: 10px; background-color: #f3eedf;
+  background-image: radial-gradient(#d9d1b8 1px, transparent 1px); background-size: 16px 16px; padding: 20px 10px; overflow: hidden;
+}
+.sal-formas { display: flex; gap: 10px; }
+.sal-forma-opcion {
+  flex: 1; height: 46px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--color-borde); background: #fff;
+  color: #56655f; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.sal-forma-opcion.elegida { border: 2px solid #2b7a68; background: #f1f8f5; color: #1f5e50; }
+.sal-rasgo { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 1px solid #e6eae9; border-radius: 10px; background: #fff; }
+.sal-rasgo strong { display: block; font-size: 15px; font-weight: 800; }
+.sal-rasgo span { font-size: 13px; color: #56655f; }
+
+/* Mesa dibujada (vista previa y plano) */
+.sal-mesa { position: relative; flex-shrink: 0; user-select: none; }
+.sal-silla { position: absolute; border-radius: 5px; }
+.sal-mesa-cuerpo {
+  position: absolute; inset: 0; box-sizing: border-box; background: #fff; border: 1px solid #dcd5c2; box-shadow: 0 2px 6px rgba(60, 50, 20, 0.12);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; line-height: 1.15;
+  font-size: 13px; color: #1b2b28; border-radius: 12px; overflow: hidden;
+}
+.sal-mesa-cuerpo.redonda { border-radius: 50%; }
+.sal-mesa-cuerpo b { font-weight: 800; padding: 0 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sal-mesa-cuerpo span { font-size: 12px; font-weight: 600; color: #56655f; }
+.sal-mesa.seleccionada .sal-mesa-cuerpo { background: #f1f8f5; border: 3px solid #2b7a68; color: #1f5e50; }
+
+/* Editor de plano */
+.plano-pagina { display: flex; flex-direction: column; height: calc(100vh - 62px); min-height: 520px; }
+.plano-barra {
+  flex-shrink: 0; min-height: 64px; box-sizing: border-box; background: #fff; border-bottom: 1px solid #e6eae9; display: flex;
+  align-items: center; gap: 14px; padding: 0 24px; flex-wrap: wrap;
+}
+.plano-separador { width: 1px; height: 30px; background: #e6eae9; }
+.plano-titulo { flex: 1; min-width: 160px; display: flex; flex-direction: column; }
+.plano-titulo strong { font-size: 17px; font-weight: 800; }
+.plano-titulo span { font-size: 12.5px; color: #56655f; }
+.plano-pendiente { font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #fdf3dc; color: #8a5a00; }
+.plano-activo { border-color: #2b7a68; background: #e3f1ec; color: #1f5e50; }
+.plano-contenedor { position: relative; flex: 1; min-height: 0; }
+.plano-desplazable { position: absolute; inset: 0; overflow: auto; background: #ece7d6; }
+.plano-lienzo {
+  position: relative; background-image: radial-gradient(#d9d1b8 1px, transparent 1px); background-size: 20px 20px; margin: 0;
+}
+.plano-pista {
+  position: absolute; right: 20px; top: 16px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85); font-size: 12.5px; color: #33443f; border: 1px solid #e2dcc8; pointer-events: none;
+}
+.plano-herramientas {
+  position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 12px 20px;
+  border-radius: 14px; background: #fff; border: 1px solid #e6eae9; box-shadow: 0 8px 24px rgba(15, 39, 36, 0.14);
+}
+.plano-herramientas > span { font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: #56655f; padding-right: 14px; margin-right: 6px; border-right: 1px solid #e6eae9; }
+.plano-herramientas button {
+  width: 84px; border: 0; background: transparent; border-radius: 8px; padding: 6px 0; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; font: inherit; font-size: 12.5px; color: #33443f; cursor: pointer;
+}
+.plano-herramientas button:hover { background: #f1f4f3; }
+.plano-modal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 22px; align-items: start; }
+.plano-par { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.plano-par .rf-campo, .plano-modal .rf-campo { min-width: 0; }
+.plano-modal input, .plano-modal select { width: 100%; }
+.plano-cajas { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.plano-error { grid-column: 1 / -1; margin: 0; }
+.plano-retirar { margin-right: auto; }
+
+@media (max-width: 1000px) {
+  .sal-fila, .sal-fila-mesa { grid-template-columns: 1fr 1fr; }
+  .sal-form-cuerpo { flex-direction: column; }
+  .sal-form-lateral { width: 100%; position: static; }
+  .sal-form-fila, .sal-form-fila.sal-dos { grid-template-columns: 1fr; }
+}

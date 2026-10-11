@@ -1,0 +1,6 @@
+export { PantallaPlanes } from './PantallaPlanes'
+export { PantallaPensionistas } from './PantallaPensionistas'
+export { PantallaPensionistaFormulario } from './PantallaPensionistaFormulario'
+export { PantallaParametrosDeCobro } from './PantallaParametrosDeCobro'
+export { PantallaCuentaPensionista } from './PantallaCuentaPensionista'
+export { PantallaCuentasCorrientes } from './PantallaCuentasCorrientes'

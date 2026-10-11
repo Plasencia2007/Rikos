@@ -30,6 +30,12 @@ export function EntradaNumerica({ valor, onCambiar, largoFijo, oculto, alComplet
   }
 
   function borrar() {
+    if (deshabilitado) return
+    onCambiar(valor.slice(0, -1))
+  }
+
+  function limpiar() {
+    if (deshabilitado) return
     onCambiar('')
   }
 
@@ -47,7 +53,12 @@ export function EntradaNumerica({ valor, onCambiar, largoFijo, oculto, alComplet
         </div>
       )}
 
-      <TecladoNumerico onDigito={agregarDigito} onBorrar={borrar} deshabilitado={deshabilitado} />
+      <TecladoNumerico
+        onDigito={agregarDigito}
+        onBorrar={borrar}
+        onLimpiar={limpiar}
+        deshabilitado={deshabilitado}
+      />
     </div>
   )
 }

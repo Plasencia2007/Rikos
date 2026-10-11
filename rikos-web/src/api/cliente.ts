@@ -27,7 +27,8 @@ export class ErrorApi extends Error {
   constructor(
     public readonly estado: number,
     mensaje: string,
-    public readonly cuerpo?: { error?: string; segundosRestantes?: number },
+    /** productoId: en errores de recetas, el ingrediente que fallo (US-010). */
+    public readonly cuerpo?: { error?: string; segundosRestantes?: number; productoId?: string | null },
   ) {
     super(mensaje)
   }
@@ -103,6 +104,19 @@ export const iniciarSesionConPin = (localCodigo: string, pin: string) =>
     body: JSON.stringify({ localCodigo, pin }),
   })
 
+/**
+ * US-006, hallazgo de revision: el token lleva el local activo (claim
+ * "localActivo", lo lee RegistradorAuditoria para saber donde ocurrio
+ * cada evento auditado). Cambiar de local sin pedir un token nuevo dejaba
+ * ese claim desactualizado -- todo quedaba auditado contra el local del
+ * login. Esto reemite el token con el local nuevo.
+ */
+export const cambiarLocalActivo = (token: string, localId: string) =>
+  pedirAutenticado<SesionIniciada>('/api/auth/cambiar-local', token, {
+    method: 'POST',
+    body: JSON.stringify({ localId }),
+  })
+
 // ---- Locales (US-001) --------------------------------------------------
 
 export type Local = Required<Esquemas['LocalRespuesta']>
@@ -141,6 +155,8 @@ export const actualizarLocal = (
     instagramUrl?: string | null
     tiktokUrl?: string | null
     logoUrl?: string | null
+    colorPrincipal?: string | null
+    portadaUrl?: string | null
     deliveryHabilitado: boolean
     recojoHabilitado: boolean
     tiempoMinEntregaMin?: number | null
@@ -152,6 +168,12 @@ export const cambiarEstadoLocal = (token: string, id: string, activo: boolean) =
   pedirAutenticado<Local>(`/api/locales/${id}/${activo ? 'activar' : 'desactivar'}`, token, { method: 'POST' })
 
 /** Borrado real (distinto de desactivar): solo funciona si el local nunca tuvo uso. */
+export const desactivarLocal = (token: string, id: string) =>
+  pedirAutenticado<Local>(`/api/locales/${id}/desactivar`, token, { method: 'POST' })
+
+export const activarLocal = (token: string, id: string) =>
+  pedirAutenticado<Local>(`/api/locales/${id}/activar`, token, { method: 'POST' })
+
 export const eliminarLocal = (token: string, id: string) =>
   pedirAutenticado<void>(`/api/locales/${id}`, token, { method: 'DELETE' })
 
@@ -221,6 +243,10 @@ export const listarRoles = (token: string) => pedirAutenticado<Rol[]>('/api/role
 export const permisosDeRol = (token: string, rolId: string) =>
   pedirAutenticado<string[]>(`/api/roles/${rolId}/permisos`, token)
 
+/** Con qué permisos nació un rol del sistema; vacío para un rol personalizado. No cambia nada. */
+export const permisosPredeterminadosDeRol = (token: string, rolId: string) =>
+  pedirAutenticado<string[]>(`/api/roles/${rolId}/permisos-predeterminados`, token)
+
 export const crearRol = (token: string, datos: { nombre: string; descripcion?: string; color?: string }) =>
   pedirAutenticado<Rol>('/api/roles', token, { method: 'POST', body: JSON.stringify(datos) })
 
@@ -236,6 +262,9 @@ export const asignarPermisosARol = (token: string, rolId: string, permisosIds: s
     method: 'PUT',
     body: JSON.stringify({ permisosIds }),
   })
+
+export const eliminarRol = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/roles/${id}`, token, { method: 'DELETE' })
 
 export type Permiso = Required<Esquemas['PermisoRespuesta']>
 
@@ -272,9 +301,13 @@ export type UltimoAcceso = Required<Esquemas['UltimoAcceso']>
  * ultimoAcceso sigan siendo "| null" (pueden faltar de verdad: un usuario
  * recien creado no tiene ultimoAcceso todavia).
  */
-export type Usuario = Required<Omit<Esquemas['UsuarioRespuesta'], 'roles' | 'localPrincipal' | 'ultimoAcceso'>> & {
+export type Usuario = Required<
+  Omit<Esquemas['UsuarioRespuesta'], 'roles' | 'localPrincipal' | 'locales' | 'ultimoAcceso'>
+> & {
   roles: RolResumen[]
   localPrincipal: LocalPrincipalResumen | null
+  /** Todos los locales asignados (no solo el principal). */
+  locales: LocalPrincipalResumen[]
   ultimoAcceso: UltimoAcceso | null
 }
 
@@ -304,6 +337,17 @@ export interface UsuarioDetalle {
 }
 
 export const listarUsuarios = (token: string) => pedirAutenticado<Usuario[]>('/api/usuarios', token)
+
+/** Un acceso al sistema ("sesion") o una accion que la persona hizo ("auditoria"). */
+export interface ActividadUsuario {
+  ocurridoEn: string
+  tipo: 'sesion' | 'auditoria'
+  evento: string
+  entidad: string | null
+}
+
+export const actividadDeUsuario = (token: string, id: string) =>
+  pedirAutenticado<ActividadUsuario[]>(`/api/usuarios/${id}/actividad`, token)
 
 export const obtenerUsuario = (token: string, id: string) =>
   pedirAutenticado<UsuarioDetalle>(`/api/usuarios/${id}`, token)
@@ -346,11 +390,19 @@ export const asignarPin = (token: string, id: string, pin: string) =>
 export const cambiarEstadoUsuario = (token: string, id: string, activo: boolean) =>
   pedirAutenticado<Usuario>(`/api/usuarios/${id}/${activo ? 'activar' : 'desactivar'}`, token, { method: 'POST' })
 
+export const eliminarUsuario = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/usuarios/${id}`, token, { method: 'DELETE' })
+
 // ---- Catalogo (US-008, US-009, US-011) ---------------------------------
 
 export type Categoria = Required<Esquemas['CategoriaRespuesta']>
 export type Unidad = Required<Esquemas['UnidadRespuesta']>
-export type Producto = Required<Esquemas['ProductoRespuesta']>
+/** tipoMenu: 'normal' | 'extra' en los dos productos del menu (US-014), null en el resto. */
+export type Producto = Omit<Required<Esquemas['ProductoRespuesta']>, 'tipoMenu' | 'imagen'> & {
+  tipoMenu: string | null
+  /** Foto como data URL (JPEG reducido en el navegador); null si no tiene. */
+  imagen: string | null
+}
 export type Presentacion = Required<Esquemas['PresentacionRespuesta']>
 export type ConversionUnidad = Required<Esquemas['ConversionRespuesta']>
 export type Proveedor = Required<Esquemas['ProveedorRespuesta']>
@@ -364,6 +416,16 @@ export const crearCategoria = (
 
 export const actualizarCategoria = (token: string, id: string, datos: { nombre: string; orden: number }) =>
   pedirAutenticado<Categoria>(`/api/categorias/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+/** Guarda de un solo golpe el nuevo orden de un grupo de hermanas (arrastrar y soltar). */
+export const reordenarCategorias = (
+  token: string,
+  datos: { categoriaPadreId: string | null; ids: string[] },
+) => pedirAutenticado<void>('/api/categorias/orden', token, { method: 'PUT', body: JSON.stringify(datos) })
+
+/** Borrado real: solo si la categoria esta vacia (sin subcategorias ni productos). */
+export const eliminarCategoria = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/categorias/${id}`, token, { method: 'DELETE' })
 
 export const listarUnidades = (token: string) => pedirAutenticado<Unidad[]>('/api/unidades', token)
 
@@ -396,10 +458,20 @@ export const desactivarProducto = (token: string, id: string) =>
 export const activarProducto = (token: string, id: string) =>
   pedirAutenticado<void>(`/api/productos/${id}/activar`, token, { method: 'POST' })
 
+export const eliminarProducto = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/productos/${id}`, token, { method: 'DELETE' })
+
 export const registrarCostoManual = (token: string, productoId: string, costo: number) =>
   pedirAutenticado<Producto>(`/api/productos/${productoId}/costo-manual`, token, {
     method: 'PUT',
     body: JSON.stringify({ costo }),
+  })
+
+/** Pone la foto del producto (data URL de imagen) o la quita con null. */
+export const ponerImagenDeProducto = (token: string, productoId: string, imagen: string | null) =>
+  pedirAutenticado<Producto>(`/api/productos/${productoId}/imagen`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ imagen }),
   })
 
 export const asignarServiciosProducto = (token: string, productoId: string, servicios: string[]) =>
@@ -447,3 +519,970 @@ export const desactivarProveedor = (token: string, id: string) =>
 
 export const activarProveedor = (token: string, id: string) =>
   pedirAutenticado<void>(`/api/proveedores/${id}/activar`, token, { method: 'POST' })
+
+export const eliminarProveedor = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/proveedores/${id}`, token, { method: 'DELETE' })
+
+// ---- Recetas (US-010) ----------------------------------------------------
+
+/**
+ * Los costos son null cuando el usuario no tiene recetas.ver_costos (el
+ * backend los quita, costosVisibles=false) o cuando la receta esta
+ * incompleta -- algun ingrediente sin costo todavia. Required<...> los
+ * volveria obligatorios, asi que se reabren a mano.
+ */
+type ConCostos<T, K extends keyof T> = Omit<Required<T>, K> & { [P in K]: number | null }
+
+export type RecetaResumen = ConCostos<
+  Esquemas['RecetaResumen'],
+  'costoTotal' | 'costoPorPorcion'
+> & { costoIncompleto: boolean | null }
+export type IngredienteReceta = ConCostos<Esquemas['IngredienteRespuesta'], 'costoUnitario' | 'costoLinea'>
+export type RecetaDetalle = Omit<
+  ConCostos<Esquemas['RecetaDetalle'], 'costoTotal' | 'costoPorPorcion'>,
+  'ingredientes' | 'costoIncompleto' | 'actualizadoEn'
+> & { ingredientes: IngredienteReceta[]; costoIncompleto: boolean | null; actualizadoEn: string | null }
+
+export interface DatosReceta {
+  rendimiento: number
+  porciones: number
+  ingredientes: { productoId: string; cantidad: number; unidadId: string }[]
+}
+
+export const listarRecetas = (token: string) => pedirAutenticado<RecetaResumen[]>('/api/recetas', token)
+
+export const obtenerReceta = (token: string, id: string) =>
+  pedirAutenticado<RecetaDetalle>(`/api/recetas/${id}`, token)
+
+export const crearReceta = (token: string, datos: DatosReceta & { productoId: string }) =>
+  pedirAutenticado<RecetaDetalle>('/api/recetas', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const actualizarReceta = (token: string, id: string, datos: DatosReceta) =>
+  pedirAutenticado<RecetaDetalle>(`/api/recetas/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+// ---- Menu normal y extra (US-014) ----------------------------------------
+
+/** precioVenta en centimos; null mientras el dueno no lo defina (RF-002). */
+export type TipoMenu = Omit<Required<Esquemas['TipoMenuRespuesta']>, 'precioVenta'> & { precioVenta: number | null }
+
+export const listarTiposMenu = (token: string) => pedirAutenticado<TipoMenu[]>('/api/menu/tipos', token)
+
+export const cambiarPrecioMenu = (token: string, tipo: string, precioVenta: number) =>
+  pedirAutenticado<TipoMenu>(`/api/menu/${tipo}/precio`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ precioVenta }),
+  })
+
+// ---- Programacion semanal (US-013) --------------------------------------
+
+export interface OpcionMenu {
+  id: string
+  productoId: string
+  productoNombre: string
+  /** entrada | segundo | guarnicion | refresco | postre (derivado de la categoria del producto). */
+  componente: string
+  tipoMenu: 'normal' | 'extra'
+  porcionesEstimadas: number | null
+}
+
+export interface AdvertenciaMenu {
+  fecha: string
+  productoId: string
+  productoNombre: string
+  /** El dia anterior (el mas cercano) en que ya se sirvio. */
+  repetidoEl: string
+}
+
+/**
+ * Espejo de SemanaRespuesta (ProgramacionMenuController). estadoVisible
+ * agrega 'en_servicio' y 'pasada', que se calculan por fecha. Los siete
+ * dias siempre vienen. Escrito a mano (no Required<...>) porque varios
+ * campos son nulos de verdad; la forma se contrasta con el esquema abajo.
+ */
+export interface SemanaMenu {
+  id: string
+  fechaInicio: string
+  fechaFin: string
+  estado: 'borrador' | 'confirmado'
+  estadoVisible: 'borrador' | 'confirmado' | 'en_servicio' | 'pasada'
+  confirmadaEn: string | null
+  hoy: string
+  dias: { fecha: string; cerrado: boolean; opciones: OpcionMenu[] }[]
+  advertencias: AdvertenciaMenu[]
+}
+
+// HT-05: si el backend renombra o quita un campo, tsc lo marca aca.
+type ClavesSemanaDelBackend = keyof Required<Esquemas['SemanaRespuesta']>
+const _semanaCoincide: Record<ClavesSemanaDelBackend, true> = {
+  id: true, fechaInicio: true, fechaFin: true, estado: true, estadoVisible: true, confirmadaEn: true, hoy: true,
+  dias: true, advertencias: true,
+} satisfies Record<keyof SemanaMenu, true>
+void _semanaCoincide
+
+/** null si esa semana todavia no se creo (404). */
+export async function obtenerSemanaMenu(token: string, lunes: string): Promise<SemanaMenu | null> {
+  try {
+    return await pedirAutenticado<SemanaMenu>(`/api/menu/semanas?lunes=${lunes}`, token)
+  } catch (e) {
+    if (e instanceof ErrorApi && e.estado === 404) return null
+    throw e
+  }
+}
+
+export const crearSemanaMenu = (token: string, fechaInicio: string) =>
+  pedirAutenticado<SemanaMenu>('/api/menu/semanas', token, { method: 'POST', body: JSON.stringify({ fechaInicio }) })
+
+export const agregarOpcionMenu = (
+  token: string,
+  semanaId: string,
+  datos: { fecha: string; productoId: string; tipoMenu: string; porcionesEstimadas: number | null },
+) =>
+  pedirAutenticado<SemanaMenu>(`/api/menu/semanas/${semanaId}/opciones`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+export const actualizarOpcionMenu = (
+  token: string,
+  opcionId: string,
+  datos: { tipoMenu: string; porcionesEstimadas: number | null },
+) => pedirAutenticado<SemanaMenu>(`/api/menu/opciones/${opcionId}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const quitarOpcionMenu = (token: string, opcionId: string) =>
+  pedirAutenticado<SemanaMenu>(`/api/menu/opciones/${opcionId}`, token, { method: 'DELETE' })
+
+export const confirmarSemanaMenu = (token: string, semanaId: string) =>
+  pedirAutenticado<SemanaMenu>(`/api/menu/semanas/${semanaId}/confirmar`, token, { method: 'POST' })
+
+export const descartarSemanaMenu = (token: string, semanaId: string) =>
+  pedirAutenticado<void>(`/api/menu/semanas/${semanaId}`, token, { method: 'DELETE' })
+
+// ---- Planes tarifarios y parametros de cobro (sprint 5) -------------------
+
+/** Precios en centimos; null = todavia sin precio. */
+export interface VersionPlan {
+  vigenteDesde: string
+  vigenteHasta: string | null
+  precioDesayuno: number | null
+  precioAlmuerzo: number | null
+  precioCena: number | null
+  /** vigente (rige hoy), programada (empieza despues) o cerrada (ya termino). */
+  estado: 'vigente' | 'programada' | 'cerrada'
+}
+
+/** versiones: el historial completo, la mas nueva primero. hoy: la fecha del servidor (zona Lima). */
+export interface PlanTarifario {
+  id: string
+  nombre: string
+  descripcion: string | null
+  hoy: string
+  versiones: VersionPlan[]
+}
+
+export interface PreciosDePlan {
+  precioDesayuno: number | null
+  precioAlmuerzo: number | null
+  precioCena: number | null
+}
+
+export const listarPlanes = (token: string) => pedirAutenticado<PlanTarifario[]>('/api/planes', token)
+
+export const crearPlan = (
+  token: string,
+  datos: PreciosDePlan & { nombre: string; descripcion: string | null; vigenteDesde: string | null },
+) => pedirAutenticado<PlanTarifario>('/api/planes', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const cambiarPreciosPlan = (
+  token: string,
+  planId: string,
+  datos: PreciosDePlan & { vigenteDesde: string | null },
+) =>
+  pedirAutenticado<PlanTarifario>(`/api/planes/${planId}/precios`, token, {
+    method: 'PUT',
+    body: JSON.stringify(datos),
+  })
+
+/** taperPrecio en centimos; null = sin monto (no se cobra taper). */
+export interface ParametrosDeCobro {
+  taperPrecio: number | null
+  reglaSegundoConsumo: 'precio_del_plan' | 'precio_normal'
+}
+
+export const obtenerParametros = (token: string) => pedirAutenticado<ParametrosDeCobro>('/api/parametros', token)
+
+export const cambiarParametro = (token: string, clave: 'taper_precio' | 'segundo_consumo_regla', valor: string | null) =>
+  pedirAutenticado<ParametrosDeCobro>(`/api/parametros/${clave}`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ valor }),
+  })
+
+/** Motor de precios (sprint 5, 3.5). Todo en centimos; precio null = no calculable, mira los avisos. */
+export interface SolicitudDePrecio {
+  tipo: 'menu_del_dia' | 'menu_extra' | 'agregado'
+  comida: 'desayuno' | 'almuerzo' | 'cena'
+  precioNormal: number | null
+  /** El plan del pensionista con ticket; null = cliente normal. */
+  planId: string | null
+  segundoDelDia: boolean
+  paraLlevar: boolean
+}
+
+export interface PrecioCalculado {
+  precio: number | null
+  taper: number | null
+  total: number | null
+  avisos: ('SIN_PRECIO_NORMAL' | 'PLAN_SIN_PRECIO' | 'TAPER_SIN_MONTO')[]
+  explicacion: string[]
+}
+
+export const calcularPrecio = (token: string, datos: SolicitudDePrecio) =>
+  pedirAutenticado<PrecioCalculado>('/api/precios/calculo', token, { method: 'POST', body: JSON.stringify(datos) })
+
+// ---- Pensionistas (US-016) ------------------------------------------------
+
+export type ComidaHabitual = 'desayuno' | 'almuerzo' | 'cena'
+
+export interface ResumenPensionista {
+  id: string
+  dni: string
+  nombres: string
+  apellidos: string
+  institucion: string | null
+  planId: string
+  planNombre: string | null
+  comidas: ComidaHabitual[]
+  activo: boolean
+}
+
+export interface ResponsablePensionista {
+  nombreCompleto: string
+  dni: string
+  telefono: string
+  correo: string
+  parentesco: string
+  direccion: string
+}
+
+/** Sin PIN ni contrasena, nunca: el backend no los devuelve. limiteCredito null = el tope se calcula. */
+export interface DetallePensionista {
+  id: string
+  dni: string
+  nombres: string
+  apellidos: string
+  telefono: string | null
+  correo: string | null
+  institucion: string | null
+  codigoEstudiante: string | null
+  carrera: string | null
+  ciclo: string | null
+  planId: string
+  planNombre: string | null
+  comidas: ComidaHabitual[]
+  frecuenciaAbono: string | null
+  limiteCredito: number | null
+  activo: boolean
+  cuentaId: string | null
+  responsable: ResponsablePensionista | null
+  creadoEn: string
+}
+
+export interface DatosPensionista {
+  dni: string
+  nombres: string
+  apellidos: string
+  telefono: string | null
+  correo: string | null
+  institucion: string | null
+  codigoEstudiante: string | null
+  carrera: string | null
+  ciclo: string | null
+  planId: string
+  comidas: ComidaHabitual[]
+  frecuenciaAbono: string | null
+  responsable: ResponsablePensionista
+}
+
+export const listarPensionistas = (token: string) => pedirAutenticado<ResumenPensionista[]>('/api/pensionistas', token)
+
+export const obtenerPensionista = (token: string, id: string) =>
+  pedirAutenticado<DetallePensionista>(`/api/pensionistas/${id}`, token)
+
+/** pin: en claro, SOLO en esta respuesta. */
+export const crearPensionista = (token: string, datos: DatosPensionista) =>
+  pedirAutenticado<{ pensionista: DetallePensionista; pin: string }>('/api/pensionistas', token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+export const actualizarPensionista = (token: string, id: string, datos: DatosPensionista) =>
+  pedirAutenticado<DetallePensionista>(`/api/pensionistas/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const desactivarPensionista = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/pensionistas/${id}/desactivar`, token, { method: 'POST' })
+
+export const activarPensionista = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/pensionistas/${id}/activar`, token, { method: 'POST' })
+
+/** El PIN nuevo, en claro, una sola vez. */
+export const regenerarPinPensionista = (token: string, id: string) =>
+  pedirAutenticado<{ pin: string }>(`/api/pensionistas/${id}/pin`, token, { method: 'POST' })
+
+// ---- Cuenta corriente del pensionista (US-018) ----------------------------
+
+export type SignoMovimiento = 'cargo' | 'credito'
+export type TipoMovimientoCuenta = 'consumo' | 'abono' | 'ajuste' | 'arrastre' | 'saldo_inicial'
+
+/** monto null = no se pudo calcular (ver aviso); el tope es un recordatorio, nunca un limite. */
+export interface TopeDeCredito {
+  monto: number | null
+  origen: 'calculado' | 'fijado'
+  aviso: 'PLAN_SIN_PRECIO' | 'SIN_DIAS_DE_ATENCION' | null
+  comidasContadas: number
+}
+
+/** Todo en centimos. saldo negativo = deuda. */
+export interface ResumenDeCuenta {
+  saldo: number
+  deuda: number
+  saldoAFavor: number
+  tope: TopeDeCredito
+  creditoDisponible: number | null
+  superaTope: boolean
+}
+
+export interface MovimientoDeCuenta {
+  id: string
+  tipo: TipoMovimientoCuenta
+  signo: SignoMovimiento
+  importe: number
+  localId: string
+  localNombre: string | null
+  pedidoId: string | null
+  motivo: string | null
+  descripcion: string | null
+  ocurridoEn: string
+  registradoEn: string
+  registradoPorNombre: string | null
+}
+
+export interface CuentaDePensionista {
+  resumen: ResumenDeCuenta
+  movimientos: MovimientoDeCuenta[]
+}
+
+/** Una fila de la lista de cuentas corrientes; todo en centimos, la mayor deuda primero. */
+export interface FilaDeCuentaCorriente {
+  pensionistaId: string
+  dni: string
+  nombres: string
+  apellidos: string
+  planNombre: string | null
+  activo: boolean
+  saldo: number
+  deuda: number
+  saldoAFavor: number
+  tope: TopeDeCredito
+  creditoDisponible: number | null
+  superaTope: boolean
+}
+
+export const listarCuentasCorrientes = (token: string) =>
+  pedirAutenticado<FilaDeCuentaCorriente[]>('/api/pensionistas/cuentas', token)
+
+export const obtenerCuenta = (token: string, pensionistaId: string) =>
+  pedirAutenticado<CuentaDePensionista>(`/api/pensionistas/${pensionistaId}/cuenta`, token)
+
+/** Una sola vez por cuenta y solo oficina central. */
+export const cargarSaldoInicial = (
+  token: string,
+  pensionistaId: string,
+  datos: { importe: number; signo: SignoMovimiento; fechaCorte: string | null; descripcion: string | null },
+) =>
+  pedirAutenticado<CuentaDePensionista>(`/api/pensionistas/${pensionistaId}/cuenta/saldo-inicial`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+export const registrarAjusteDeCuenta = (
+  token: string,
+  pensionistaId: string,
+  datos: { importe: number; signo: SignoMovimiento; motivoId: string; observacion: string | null },
+) =>
+  pedirAutenticado<CuentaDePensionista>(`/api/pensionistas/${pensionistaId}/cuenta/ajustes`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+/** limite null = que el tope se calcule. */
+export const fijarTopeDeCredito = (token: string, pensionistaId: string, limite: number | null) =>
+  pedirAutenticado<CuentaDePensionista>(`/api/pensionistas/${pensionistaId}/tope`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ limite }),
+  })
+
+// ---- Mesas (US-027) --------------------------------------------------------
+
+export type EstadoDeMesa = 'libre' | 'ocupada' | 'unida' | 'pendiente_cierre' | 'bloqueada'
+
+/** Siempre del local activo del token: el local nunca viaja en la peticion. El estado se deriva en el servidor. */
+export interface Mesa {
+  id: string
+  numero: string
+  nombre: string | null
+  capacidad: number | null
+  estado: EstadoDeMesa
+  motivoBloqueo: string | null
+  mesaPrincipalId: string | null
+  activo: boolean
+  /** El salon donde esta. Null solo en una fila insertada por fuera del alta. */
+  salonId: string | null
+  forma: FormaDeMesa
+  vip: boolean
+  zonaExterior: boolean
+  zonaFumadores: boolean
+  /** Lugar en el plano de su salon (esquina superior izquierda, px); null si nunca se ubico. */
+  posX: number | null
+  posY: number | null
+  ancho: number
+  alto: number
+  /** Desde cuando esta abierto el pedido en curso (ISO); null o ausente si no hay pedido. */
+  abiertaEn?: string | null
+  /** Libre pero con un pedido abierto sin comandar (alguien esta tomando el pedido): no se la ofrezcas a otro cliente. */
+  tomandoPedido?: boolean
+}
+
+export type FormaDeMesa = 'cuadrada' | 'redonda' | 'rectangular'
+
+export interface DatosMesa {
+  numero: string
+  nombre: string | null
+  capacidad: number | null
+  /** Sin salon va al "Principal" del local; sin forma es cuadrada; sin medidas, las de la forma. */
+  salonId?: string | null
+  forma?: FormaDeMesa | null
+  vip?: boolean
+  zonaExterior?: boolean
+  zonaFumadores?: boolean
+  ancho?: number | null
+  alto?: number | null
+}
+
+/** todas=true incluye las inactivas (administracion); el mapa del POS pide solo las activas. */
+export const listarMesas = (token: string, todas = false) =>
+  pedirAutenticado<Mesa[]>(`/api/mesas${todas ? '?todas=true' : ''}`, token)
+
+export const crearMesa = (token: string, datos: DatosMesa) =>
+  pedirAutenticado<Mesa>('/api/mesas', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const actualizarMesa = (token: string, id: string, datos: DatosMesa) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const desactivarMesa = (token: string, id: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${id}/desactivar`, token, { method: 'POST' })
+
+export const activarMesa = (token: string, id: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${id}/activar`, token, { method: 'POST' })
+
+export const bloquearMesa = (token: string, id: string, motivo: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${id}/bloquear`, token, { method: 'POST', body: JSON.stringify({ motivo }) })
+
+export const liberarMesa = (token: string, id: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${id}/liberar`, token, { method: 'POST' })
+
+// ---- Salones y plano de mesas ------------------------------------------------
+
+export type IconoDeSalon = 'terraza' | 'cubiertos' | 'copa' | 'arbol' | 'taza' | 'mesa'
+export type ColorDeSalon = 'verde' | 'azul' | 'violeta' | 'ambar' | 'turquesa' | 'gris'
+
+/** mesas: todas las del salon; mesasActivas y capacidad: solo las activas. Siempre del local activo del token. */
+export interface Salon {
+  id: string
+  nombre: string
+  descripcion: string | null
+  icono: IconoDeSalon
+  color: ColorDeSalon
+  activo: boolean
+  anchoPlano: number
+  altoPlano: number
+  colorPiso: string
+  mesas: number
+  mesasActivas: number
+  capacidad: number
+}
+
+export interface DatosSalon {
+  nombre: string
+  descripcion: string | null
+  icono: IconoDeSalon
+  color: ColorDeSalon
+  anchoPlano: number | null
+  altoPlano: number | null
+  colorPiso: string | null
+}
+
+export const listarSalones = (token: string) => pedirAutenticado<Salon[]>('/api/salones', token)
+
+export const obtenerSalon = (token: string, id: string) => pedirAutenticado<Salon>(`/api/salones/${id}`, token)
+
+export const crearSalon = (token: string, datos: DatosSalon) =>
+  pedirAutenticado<Salon>('/api/salones', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const actualizarSalon = (token: string, id: string, datos: DatosSalon) =>
+  pedirAutenticado<Salon>(`/api/salones/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const cambiarEstadoSalon = (token: string, id: string, activo: boolean) =>
+  pedirAutenticado<Salon>(`/api/salones/${id}/${activo ? 'activar' : 'desactivar'}`, token, { method: 'POST' })
+
+/** Un salon con mesas no se elimina (409 TIENE_MESAS): se desactiva. */
+export const eliminarSalon = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/salones/${id}`, token, { method: 'DELETE' })
+
+export interface MesaEnPlano {
+  mesaId: string
+  x: number
+  y: number
+  ancho: number
+  alto: number
+}
+
+/** Guarda de una vez donde queda cada mesa del salon y cuanto mide (todo o nada). */
+export const guardarPlano = (token: string, salonId: string, mesas: MesaEnPlano[]) =>
+  pedirAutenticado<void>(`/api/salones/${salonId}/plano`, token, { method: 'PUT', body: JSON.stringify({ mesas }) })
+
+/** Los permisos efectivos del usuario autenticado (a diferencia de permisosDeUsuario, no exige ser administrador). */
+export const permisosPropios = (token: string) => pedirAutenticado<string[]>('/api/auth/mis-permisos', token)
+
+// ---- Pedidos (US-028) ----------------------------------------------------------
+
+export type TipoDeLinea = 'menu_normal' | 'menu_extra' | 'plan_desayuno' | 'plan_cena' | 'producto' | 'extra_libre'
+export type ServicioDelPedido = 'desayuno' | 'almuerzo' | 'cena'
+
+export interface ComponenteDelPedido {
+  componente: string
+  productoNombre: string | null
+}
+
+/** Todo en centimos. Una linea anulada no suma. */
+export interface LineaDelPedido {
+  id: string
+  tipoLinea: TipoDeLinea
+  productoId: string | null
+  productoNombre: string | null
+  descripcion: string | null
+  cantidad: number
+  observacion: string | null
+  estado: 'pendiente' | 'comandado' | 'anulado'
+  precioUnitario: number
+  taperUnitario: number
+  tarifaOrigen: 'publico' | 'plan' | 'extra' | 'manual'
+  segundoDelDia: boolean
+  componentes: ComponenteDelPedido[]
+  /** Solo con estado "anulado" (US-031): la receta ya se gasto porque cocina la habia recibido. */
+  anuladaPostComanda: boolean
+  motivoAnulacion: string | null
+}
+
+export interface PersonaDelPedido {
+  id: string
+  etiqueta: string
+  tipoCliente: 'regular' | 'pensionista'
+  pensionistaId: string | null
+  lineas: LineaDelPedido[]
+  subtotal: number
+  taper: number
+  total: number
+}
+
+/** avisos: por ahora TAPER_SIN_MONTO (es para llevar y el duenio no ha puesto el monto del taper). */
+export interface Pedido {
+  id: string
+  numero: string
+  canal: 'mesa' | 'para_llevar'
+  servicio: ServicioDelPedido
+  mesaId: string | null
+  estado: 'abierto' | 'comandado' | 'pendiente_cierre' | 'cerrado'
+  personas: PersonaDelPedido[]
+  subtotal: number
+  taper: number
+  total: number
+  avisos: string[]
+  /** A nombre de quien es el pedido (opcional, solo para reconocer la mesa). */
+  nombreCliente: string | null
+  /** Nombre de usuario del mozo que abrio el pedido. */
+  mozoNombre?: string | null
+  abiertoEn?: string | null
+}
+
+export interface OpcionOfrecida {
+  opcionMenuId: string
+  productoNombre: string
+}
+
+export interface ComponenteOfrecido {
+  componente: string
+  opciones: OpcionOfrecida[]
+}
+
+export interface ProductoOfrecido {
+  id: string
+  nombre: string
+  precio: number
+  /** Segun la categoria raiz del producto; null para bebidas, postres, etc. (solo salen en "Todo"). */
+  grupo: "entrada" | "segundo" | "extra" | null
+  /** Nombre de su subcategoria (para el subtitulo de la tarjeta). */
+  categoria: string
+  /** Su foto (data URL) o null. */
+  imagen: string | null
+}
+
+export interface OfertaDelDia {
+  fecha: string
+  servicio: ServicioDelPedido
+  hayMenu: boolean
+  precioMenuNormal: number | null
+  precioMenuExtra: number | null
+  normal: ComponenteOfrecido[]
+  extra: ComponenteOfrecido[]
+  carta: ProductoOfrecido[]
+}
+
+export interface DatosDeLinea {
+  personaId: string
+  tipo: TipoDeLinea
+  cantidad: number
+  productoId?: string
+  observacion?: string | null
+  componentes?: { componente: string; opcionMenuId: string }[]
+  /** Solo en extra_libre. */
+  descripcion?: string
+  /** Solo en extra_libre, en centimos: el unico precio que escribe el mozo. */
+  precio?: number
+}
+
+export const abrirPedido = (
+  token: string,
+  datos: {
+    canal: 'mesa' | 'para_llevar'
+    mesaId?: string
+    servicio?: ServicioDelPedido
+    /** 1 a 30; con N se crean las personas "Persona 1" a "Persona N". */
+    comensales?: number
+    nombreCliente?: string
+  },
+) => pedirAutenticado<Pedido>('/api/pedidos', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export type EstadoDelPedido = Pedido['estado']
+
+export interface LineaDeResumen {
+  cantidad: number
+  nombre: string
+  componentes: string[]
+  estado: string
+}
+
+/** Una fila de la lista de pedidos del local. lineas solo viene en los pedidos en curso (sin las anuladas). */
+export interface ResumenDePedido {
+  id: string
+  numero: string
+  canal: 'mesa' | 'para_llevar'
+  servicio: ServicioDelPedido
+  estado: EstadoDelPedido
+  mesaId: string | null
+  mesaNumero: string | null
+  mesaNombre: string | null
+  salonNombre: string | null
+  nombreCliente: string | null
+  comensales: number
+  mozoNombre: string | null
+  abiertoEn: string
+  total: number
+  lineas: LineaDeResumen[] | null
+}
+
+export interface PaginaDePedidos {
+  contenido: ResumenDePedido[]
+  pagina: number
+  tamano: number
+  total: number
+  totalPaginas: number
+}
+
+export interface FiltrosDePedidos {
+  situacion?: 'en_curso' | 'cerrados'
+  canal?: 'mesa' | 'para_llevar'
+  estado?: EstadoDelPedido
+  q?: string
+  /** AAAA-MM-DD */
+  desde?: string
+  hasta?: string
+  pagina?: number
+  tamano?: number
+}
+
+export const listarPedidos = (token: string, filtros: FiltrosDePedidos = {}) => {
+  const parametros = new URLSearchParams()
+  Object.entries(filtros).forEach(([clave, valor]) => {
+    if (valor !== undefined && valor !== '') parametros.set(clave, String(valor))
+  })
+  const consulta = parametros.toString()
+  return pedirAutenticado<PaginaDePedidos>(`/api/pedidos${consulta ? `?${consulta}` : ''}`, token)
+}
+
+/** Conteos baratos para el menu del POS y el Inicio. porCobrar = pedidos pendientes de cierre. */
+export const resumenDePedidos = (token: string) =>
+  pedirAutenticado<{ enCurso: number; porCobrar: number }>('/api/pedidos/resumen', token)
+
+export const obtenerPedido = (token: string, id: string) => pedirAutenticado<Pedido>(`/api/pedidos/${id}`, token)
+
+/** 404 si la mesa no tiene un pedido en curso. */
+export const obtenerPedidoDeMesa = (token: string, mesaId: string) =>
+  pedirAutenticado<Pedido>(`/api/mesas/${mesaId}/pedido`, token)
+
+export const ofertaDelPedido = (token: string, id: string) =>
+  pedirAutenticado<OfertaDelDia>(`/api/pedidos/${id}/oferta`, token)
+
+export const agregarPersonaAlPedido = (token: string, pedidoId: string, etiqueta?: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/personas`, token, {
+    method: 'POST',
+    body: JSON.stringify({ etiqueta: etiqueta ?? null }),
+  })
+
+export const asignarPensionistaAPersona = (token: string, pedidoId: string, personaId: string, pensionistaId: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/personas/${personaId}/pensionista`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ pensionistaId }),
+  })
+
+export const quitarPersonaDelPedido = (token: string, pedidoId: string, personaId: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/personas/${personaId}`, token, { method: 'DELETE' })
+
+export const agregarLineaAlPedido = (token: string, pedidoId: string, datos: DatosDeLinea) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/lineas`, token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const modificarLineaDelPedido = (
+  token: string,
+  pedidoId: string,
+  lineaId: string,
+  datos: { cantidad: number; observacion: string | null },
+) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/lineas/${lineaId}`, token, {
+    method: 'PUT',
+    body: JSON.stringify(datos),
+  })
+
+export const quitarLineaDelPedido = (token: string, pedidoId: string, lineaId: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/lineas/${lineaId}`, token, { method: 'DELETE' })
+
+// ---- Comanda y anulaciones (US-030, US-031) -------------------------------------
+
+export interface ComandaResumen {
+  id: string
+  numero: number
+  emitidaEn: string
+  impresiones: number
+  ultimaImpresionEn: string | null
+  estadoImpresion: 'pendiente' | 'impresa' | 'fallida'
+}
+
+export interface LineaDeComanda {
+  cantidad: number
+  nombre: string
+  componentes: string[]
+  observacion: string | null
+}
+
+export interface PersonaDeComanda {
+  etiqueta: string
+  lineas: LineaDeComanda[]
+}
+
+/** Lo que se mando a cocina, listo para imprimir. mesa es null si es para llevar. */
+export interface ComandaDetalle {
+  id: string
+  numero: number
+  pedidoNumero: string
+  canal: 'mesa' | 'para_llevar'
+  mesa: string | null
+  servicio: ServicioDelPedido
+  mozo: string | null
+  emitidaEn: string
+  impresiones: number
+  personas: PersonaDeComanda[]
+}
+
+/** copia: es la segunda impresion o posterior, y sale con la leyenda COPIA. */
+export interface ImpresionRegistrada {
+  id: string
+  numero: number
+  impresiones: number
+  copia: boolean
+}
+
+export const comandarPedido = (token: string, pedidoId: string) =>
+  pedirAutenticado<ComandaResumen>(`/api/pedidos/${pedidoId}/comandas`, token, { method: 'POST', body: '{}' })
+
+export const listarComandasDelPedido = (token: string, pedidoId: string) =>
+  pedirAutenticado<ComandaResumen[]>(`/api/pedidos/${pedidoId}/comandas`, token)
+
+export const obtenerComanda = (token: string, id: string) =>
+  pedirAutenticado<ComandaDetalle>(`/api/comandas/${id}`, token)
+
+export const registrarImpresionDeComanda = (token: string, id: string) =>
+  pedirAutenticado<ImpresionRegistrada>(`/api/comandas/${id}/impresiones`, token, { method: 'POST' })
+
+/** Requiere venta.anular. Devuelve el pedido completo. */
+export const anularLineaDelPedido = (
+  token: string,
+  pedidoId: string,
+  lineaId: string,
+  datos: { motivoId: string; observacion: string | null },
+) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/lineas/${lineaId}/anular`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+// ---- Reorganizar (US-029) ---------------------------------------------------------
+
+/** personaDestinoId null = una persona nueva (dividir la cuenta). Devuelve el pedido completo, con el precio ya recalculado. */
+export const trasladarLineasDelPedido = (
+  token: string,
+  pedidoId: string,
+  lineaIds: string[],
+  personaDestinoId: string | null,
+) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/lineas/trasladar`, token, {
+    method: 'POST',
+    body: JSON.stringify({ lineaIds, personaDestinoId }),
+  })
+
+/** Cierre SIN cobro (provisional hasta el sprint 7): el pedido queda cerrado y la mesa libre. Devuelve el pedido. */
+export const terminarPedido = (token: string, pedidoId: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/terminar`, token, { method: 'POST' })
+
+export const moverPedidoDeMesa = (token: string, pedidoId: string, mesaId: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/mesa`, token, { method: 'PUT', body: JSON.stringify({ mesaId }) })
+
+export const unirMesa = (token: string, mesaId: string, principalId: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${mesaId}/unir`, token, { method: 'POST', body: JSON.stringify({ principalId }) })
+
+export const separarMesa = (token: string, mesaId: string) =>
+  pedirAutenticado<Mesa>(`/api/mesas/${mesaId}/separar`, token, { method: 'POST' })
+
+/** Por nombre o DNI (el mozo lo necesita para asignar un pensionista). */
+export const buscarPensionistas = (token: string, q: string) =>
+  pedirAutenticado<ResumenPensionista[]>(`/api/pensionistas?q=${encodeURIComponent(q)}`, token)
+
+// ---- Disponibilidad por local (US-015) -----------------------------------
+
+/** Siempre del local activo del token: el local nunca viaja en la peticion. */
+export interface Agotado {
+  productoId: string
+  productoNombre: string
+  marcadoEn: string
+}
+
+export const listarAgotados = (token: string) => pedirAutenticado<Agotado[]>('/api/disponibilidad/agotados', token)
+
+export const marcarAgotado = (token: string, productoId: string) =>
+  pedirAutenticado<void>(`/api/disponibilidad/${productoId}/agotar`, token, { method: 'POST' })
+
+export const reactivarProducto = (token: string, productoId: string, motivoId: string, observacion: string | null) =>
+  pedirAutenticado<void>(`/api/disponibilidad/${productoId}/reactivar`, token, {
+    method: 'POST',
+    body: JSON.stringify({ motivoId, observacion }),
+  })
+
+/** Menu confirmado de un dia, con "agotado" segun el local activo. null si no hay menu confirmado (404). */
+export interface MenuDelDia {
+  fecha: string
+  opciones: (OpcionMenu & { agotado: boolean })[]
+}
+
+export async function obtenerMenuDelDia(token: string, fecha: string): Promise<MenuDelDia | null> {
+  try {
+    return await pedirAutenticado<MenuDelDia>(`/api/menu/dias/${fecha}`, token)
+  } catch (e) {
+    if (e instanceof ErrorApi && e.estado === 404) return null
+    throw e
+  }
+}
+
+// ---- Motivos configurables (US-012) --------------------------------------
+
+export type Motivo = Required<Esquemas['MotivoRespuesta']>
+
+export const listarMotivos = (token: string, tipo?: string) =>
+  pedirAutenticado<Motivo[]>(`/api/motivos${tipo ? `?tipo=${encodeURIComponent(tipo)}` : ''}`, token)
+
+export const crearMotivo = (
+  token: string,
+  datos: { tipo: string; descripcion: string; requiereObservacion: boolean },
+) => pedirAutenticado<Motivo>('/api/motivos', token, { method: 'POST', body: JSON.stringify(datos) })
+
+export const actualizarMotivo = (
+  token: string,
+  id: string,
+  datos: { descripcion: string; requiereObservacion: boolean },
+) => pedirAutenticado<Motivo>(`/api/motivos/${id}`, token, { method: 'PUT', body: JSON.stringify(datos) })
+
+export const desactivarMotivo = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/motivos/${id}/desactivar`, token, { method: 'POST' })
+
+export const activarMotivo = (token: string, id: string) =>
+  pedirAutenticado<void>(`/api/motivos/${id}/activar`, token, { method: 'POST' })
+
+// ---- Bitácora de auditoría (US-006, ADM-31) ------------------------------
+
+/**
+ * Espejo de AuditoriaRespuesta.java. "descripcion" ya viene armada en
+ * español desde el backend (CA3) -- es el texto principal de cada fila.
+ * valorAnterior/valorNuevo son JSON crudo en texto, solo para el detalle
+ * al expandir, nunca para volver a parsearlos en el frontend.
+ */
+export interface RegistroAuditoria {
+  id: string
+  evento: string
+  entidad: string
+  entidadId: string | null
+  usuarioId: string | null
+  usuarioNombre: string | null
+  localId: string | null
+  localNombre: string | null
+  descripcion: string
+  valorAnterior: string | null
+  valorNuevo: string | null
+  observacion: string | null
+  ocurridoEn: string
+}
+
+/** Forma minima de un Page<T> de Spring que esta pantalla necesita. */
+export interface PaginaAuditoria {
+  content: RegistroAuditoria[]
+  totalElements: number
+  totalPages: number
+  number: number
+  size: number
+}
+
+export interface FiltroAuditoria {
+  localId?: string
+  usuarioId?: string
+  evento?: string
+  desde?: string
+  hasta?: string
+  pagina?: number
+  tamano?: number
+}
+
+export const listarAuditoria = (token: string, filtro: FiltroAuditoria = {}) => {
+  const parametros = new URLSearchParams()
+  if (filtro.localId) parametros.set('localId', filtro.localId)
+  if (filtro.usuarioId) parametros.set('usuarioId', filtro.usuarioId)
+  if (filtro.evento) parametros.set('evento', filtro.evento)
+  if (filtro.desde) parametros.set('desde', filtro.desde)
+  if (filtro.hasta) parametros.set('hasta', filtro.hasta)
+  parametros.set('pagina', String(filtro.pagina ?? 0))
+  parametros.set('tamano', String(filtro.tamano ?? 30))
+  return pedirAutenticado<PaginaAuditoria>(`/api/auditoria?${parametros.toString()}`, token)
+}

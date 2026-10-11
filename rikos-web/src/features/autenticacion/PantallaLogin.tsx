@@ -42,7 +42,7 @@ export function PantallaLogin() {
         <svg viewBox="0 0 300 240" fill="none" preserveAspectRatio="none">
           <path
             d="M 60 0 C 140 35, 175 75, 210 110 C 255 155, 275 190, 300 240 L 300 0 Z"
-            fill="#7b3512"
+            fill="#1f5e50"
           />
         </svg>
       </div>
@@ -52,7 +52,7 @@ export function PantallaLogin() {
         <svg viewBox="0 0 360 380" fill="none" preserveAspectRatio="none">
           <path
             d="M 0 90 C 85 105, 120 185, 150 250 C 185 320, 220 355, 270 380 L 0 380 Z"
-            fill="#7b3512"
+            fill="#1f5e50"
           />
         </svg>
       </div>
@@ -60,21 +60,21 @@ export function PantallaLogin() {
       {/* Ilustraciones lineales tenues de fondo (Doodles tono beige cálido) */}
       <div className="login-doodles" aria-hidden="true">
         {/* Gorro de chef arriba a la izquierda */}
-        <svg className="doodle doodle-chef-izq" viewBox="0 0 120 110" fill="none" stroke="#e8ded4" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="doodle doodle-chef-izq" viewBox="0 0 120 110" fill="none" stroke="#d9e6e2" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M 28 78 C 14 70, 10 46, 26 34 C 20 18, 40 8, 56 14 C 66 2, 86 2, 94 16 C 108 16, 116 32, 108 48 C 116 64, 104 80, 92 80" />
           <path d="M 26 78 L 94 78" />
           <path d="M 30 88 L 90 88" />
         </svg>
 
         {/* Gorro de chef arriba a la derecha */}
-        <svg className="doodle doodle-chef-der" viewBox="0 0 110 100" fill="none" stroke="#e8ded4" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="doodle doodle-chef-der" viewBox="0 0 110 100" fill="none" stroke="#d9e6e2" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M 24 70 C 12 62, 10 42, 24 30 C 20 16, 38 7, 50 12 C 60 2, 78 2, 85 14 C 98 14, 104 28, 97 42 C 104 56, 94 70, 84 70" />
           <path d="M 23 70 L 85 70" />
           <path d="M 26 78 L 82 78" />
         </svg>
 
         {/* Cubiertos (Tenedor y Cuchillo) en el lateral derecho */}
-        <svg className="doodle doodle-cubiertos-der" viewBox="0 0 100 130" fill="none" stroke="#e8ded4" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="doodle doodle-cubiertos-der" viewBox="0 0 100 130" fill="none" stroke="#d9e6e2" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
           {/* Tenedor */}
           <path d="M 26 15 L 26 44 C 26 50, 36 50, 36 44 L 36 15" />
           <path d="M 31 15 L 31 45" />
@@ -84,7 +84,7 @@ export function PantallaLogin() {
         </svg>
 
         {/* Campana de plato / Cloche abajo a la derecha */}
-        <svg className="doodle doodle-campana-der" viewBox="0 0 150 110" fill="none" stroke="#e8ded4" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="doodle doodle-campana-der" viewBox="0 0 150 110" fill="none" stroke="#d9e6e2" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="75" cy="22" r="7" />
           <path d="M 75 29 L 75 35" />
           <path d="M 20 78 C 24 45, 46 35, 75 35 C 104 35, 126 45, 130 78 Z" />
@@ -92,14 +92,14 @@ export function PantallaLogin() {
         </svg>
 
         {/* Chispas / rayos decorativos inferiores derechos */}
-        <svg className="doodle-chispas chispas-derecha" viewBox="0 0 60 60" fill="none" stroke="#7b3512" strokeWidth="4.5" strokeLinecap="round">
+        <svg className="doodle-chispas chispas-derecha" viewBox="0 0 60 60" fill="none" stroke="#1f5e50" strokeWidth="4.5" strokeLinecap="round">
           <line x1="8" y1="22" x2="26" y2="30" />
           <line x1="38" y1="14" x2="48" y2="30" />
           <line x1="16" y1="46" x2="36" y2="44" />
         </svg>
 
         {/* Chispas / rayos decorativos junto al plato de comida */}
-        <svg className="doodle-chispas chispas-plato" viewBox="0 0 60 60" fill="none" stroke="#7b3512" strokeWidth="4.5" strokeLinecap="round">
+        <svg className="doodle-chispas chispas-plato" viewBox="0 0 60 60" fill="none" stroke="#1f5e50" strokeWidth="4.5" strokeLinecap="round">
           <line x1="16" y1="12" x2="22" y2="30" />
           <line x1="38" y1="14" x2="48" y2="32" />
           <line x1="8" y1="40" x2="26" y2="44" />
@@ -125,21 +125,21 @@ export function PantallaLogin() {
               <path
                 d="M 22 56 C 14 50, 11 36, 21 26 C 16 14, 30 5, 42 9 C 50 1, 64 2, 69 11 C 80 8, 88 18, 82 28 C 89 38, 84 52, 73 56 Z"
                 fill="#ffffff"
-                stroke="#7b3512"
+                stroke="#1f5e50"
                 strokeWidth="3.6"
                 strokeLinejoin="round"
               />
               {/* Pliegues verticales suaves */}
-              <path d="M 36 20 C 37 30, 36 40, 35 46" stroke="#7b3512" strokeWidth="2.4" strokeLinecap="round" />
-              <path d="M 60 20 C 59 30, 60 40, 61 46" stroke="#7b3512" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M 36 20 C 37 30, 36 40, 35 46" stroke="#1f5e50" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M 60 20 C 59 30, 60 40, 61 46" stroke="#1f5e50" strokeWidth="2.4" strokeLinecap="round" />
               {/* Cejas pícaras inclinadas hacia abajo al centro */}
-              <path d="M 37 38 L 44 42" stroke="#7b3512" strokeWidth="3" strokeLinecap="round" />
-              <path d="M 59 38 L 52 42" stroke="#7b3512" strokeWidth="3" strokeLinecap="round" />
+              <path d="M 37 38 L 44 42" stroke="#1f5e50" strokeWidth="3" strokeLinecap="round" />
+              <path d="M 59 38 L 52 42" stroke="#1f5e50" strokeWidth="3" strokeLinecap="round" />
               {/* Ojos determinados */}
-              <circle cx="43" cy="46" r="2.5" fill="#7b3512" />
-              <circle cx="53" cy="46" r="2.5" fill="#7b3512" />
+              <circle cx="43" cy="46" r="2.5" fill="#1f5e50" />
+              <circle cx="53" cy="46" r="2.5" fill="#1f5e50" />
               {/* Banda base del gorro */}
-              <rect x="22" y="56" width="52" height="12" rx="3.5" fill="#7b3512" />
+              <rect x="22" y="56" width="52" height="12" rx="3.5" fill="#1f5e50" />
               <line x1="25" y1="62" x2="71" y2="62" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
 
@@ -231,7 +231,7 @@ export function PantallaLogin() {
           <div className="login-pie-divisor">
             <span className="divisor-linea" />
             <span className="divisor-icono" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#a4633b">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#2b7a68">
                 <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7z" />
                 <path d="M19 2c-2.76 0-5 2.24-5 5v5h2v10h3V2h0z" />
               </svg>

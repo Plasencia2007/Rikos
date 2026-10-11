@@ -1,0 +1,6 @@
+export { PantallaSalones } from './PantallaSalones'
+export { PantallaSalonDetalle } from './PantallaSalonDetalle'
+export { PantallaSalonFormulario } from './PantallaSalonFormulario'
+export { PantallaMesaFormulario } from './PantallaMesaFormulario'
+export { PantallaPlano } from './PantallaPlano'
+export { posicionesDeSillas } from './VistaDeMesa'

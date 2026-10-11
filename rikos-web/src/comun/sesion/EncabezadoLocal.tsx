@@ -31,7 +31,16 @@ export function EncabezadoLocal({ onAbrirMenu }: { onAbrirMenu?: () => void }) {
         <select
           aria-label="Local activo"
           value={sesion.localActivoId ?? ''}
-          onChange={(e) => cambiarLocalActivo(e.target.value)}
+          onChange={(e) => {
+            cambiarLocalActivo(e.target.value).catch(() => {
+              // El selector solo ofrece los locales ya asignados al usuario
+              // (sesion.locales) -- si aun asi falla, es un problema de red o
+              // de sesion vencida, no algo que el usuario pueda resolver
+              // eligiendo otra opcion. Se deja el error en consola; la
+              // proxima accion que use el token vencido ya lo va a mostrar.
+              console.error('No se pudo cambiar de local')
+            })
+          }}
           disabled={sesion.locales.length <= 1}
         >
           {sesion.locales.map((local) => (

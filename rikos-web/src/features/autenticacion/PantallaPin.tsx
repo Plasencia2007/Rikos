@@ -10,6 +10,7 @@ const LOCAL_CODIGO = import.meta.env.VITE_LOCAL_CODIGO ?? 'sanisidro'
 
 const MENSAJES: Record<string, string> = {
   CREDENCIALES_INVALIDAS: 'PIN incorrecto.',
+  LOCAL_INACTIVO: 'Este local está desactivado. Contacta a un administrador.',
 }
 
 export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => void }) {
@@ -44,6 +45,28 @@ export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => 
     }
   }
 
+  useEffect(() => {
+    function manejarTeclado(e: KeyboardEvent) {
+      if (verificando || bloqueo.activa) return
+      if (/^[0-9]$/.test(e.key)) {
+        setPin((actual) => {
+          if (actual.length >= LARGO_PIN) return actual
+          const nuevo = actual + e.key
+          if (nuevo.length === LARGO_PIN) {
+            intentar(nuevo)
+          }
+          return nuevo
+        })
+      } else if (e.key === 'Backspace') {
+        setPin((actual) => actual.slice(0, -1))
+      } else if (e.key === 'Escape') {
+        setPin('')
+      }
+    }
+
+    window.addEventListener('keydown', manejarTeclado)
+    return () => window.removeEventListener('keydown', manejarTeclado)
+  }, [verificando, bloqueo.activa])
 
   return (
     <div className="pantalla-pin">
@@ -54,7 +77,7 @@ export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => 
           <svg viewBox="0 0 500 600" fill="none" preserveAspectRatio="none" className="pin-onda-oscura">
             <path
               d="M0 250 C120 220, 160 380, 240 450 C320 520, 360 560, 420 600 L0 600 Z"
-              fill="#4a1c05"
+              fill="#133b33"
             />
           </svg>
         </div>
@@ -136,11 +159,11 @@ export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => 
           <svg viewBox="0 0 340 260" fill="none" preserveAspectRatio="none">
             <path
               d="M 60 0 C 140 30, 180 80, 220 125 C 260 170, 290 205, 340 260 L 340 0 Z"
-              fill="#7b3512"
+              fill="#1f5e50"
             />
           </svg>
           {/* Espiga de trigo botánica en trazo claro */}
-          <svg className="pin-espiga-trigo" viewBox="0 0 140 180" fill="none" stroke="#f6eee5" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="pin-espiga-trigo" viewBox="0 0 140 180" fill="none" stroke="#eef5f3" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M 120 20 C 85 60, 45 110, 25 160" />
             {/* Hojas / granos de trigo emparejados */}
             <path d="M 105 32 C 102 24, 94 25, 96 36 C 98 42, 106 40, 105 32 Z" />
@@ -157,14 +180,14 @@ export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => 
         {/* Doodles inferiores derechos del panel de acceso */}
         <div className="pin-doodles-der" aria-hidden="true">
           {/* Gorro de chef */}
-          <svg className="pin-doodle-chef-der" viewBox="0 0 110 100" fill="none" stroke="#ebdcd0" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="pin-doodle-chef-der" viewBox="0 0 110 100" fill="none" stroke="#dce9e5" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M 24 70 C 12 62, 10 42, 24 30 C 20 16, 38 7, 50 12 C 60 2, 78 2, 85 14 C 98 14, 104 28, 97 42 C 104 56, 94 70, 84 70" />
             <path d="M 23 70 L 85 70" />
             <path d="M 26 78 L 82 78" />
           </svg>
 
           {/* Rayos / chispas decorativas */}
-          <svg className="pin-chispas-der" viewBox="0 0 60 60" fill="none" stroke="#7b3512" strokeWidth="4.5" strokeLinecap="round">
+          <svg className="pin-chispas-der" viewBox="0 0 60 60" fill="none" stroke="#1f5e50" strokeWidth="4.5" strokeLinecap="round">
             <line x1="8" y1="22" x2="26" y2="30" />
             <line x1="38" y1="14" x2="48" y2="30" />
             <line x1="16" y1="46" x2="36" y2="44" />
@@ -175,7 +198,7 @@ export function PantallaPin({ onExito }: { onExito: (sesion: SesionIniciada) => 
         <div className="pin-tarjeta">
           <header className="pin-tarjeta-cabecera">
             <h2 className="pin-tarjeta-titulo">
-              <svg className="pin-icono-candado" viewBox="0 0 24 24" fill="#61260b" aria-hidden="true">
+              <svg className="pin-icono-candado" viewBox="0 0 24 24" fill="#133b33" aria-hidden="true">
                 <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
               </svg>
               <span>Ingresa tu PIN</span>

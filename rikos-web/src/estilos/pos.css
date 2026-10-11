@@ -1,0 +1,589 @@
+/* Shell del POS: barra lateral, cabezal y avisos. Ver docs/producto/ui-ux/03-pos-rediseno.md */
+.pos-raiz { display: flex; height: 100vh; background: #f5f7f6; color: #1b2b28; }
+.pos-lateral {
+  width: 250px; flex-shrink: 0; background: #0f2724; display: flex; flex-direction: column; padding: 18px 14px; box-sizing: border-box;
+  gap: 6px; transition: width 160ms ease; overflow: hidden;
+}
+.pos-colapsada .pos-lateral { width: 78px; }
+.pos-marca { display: flex; align-items: center; gap: 12px; padding: 4px 6px 18px; }
+.pos-marca-logo {
+  width: 40px; height: 40px; border-radius: 10px; background: #2b7a68; color: #fff; display: flex; align-items: center;
+  justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0;
+}
+.pos-marca-texto { flex: 1; line-height: 1.2; min-width: 0; }
+.pos-marca-texto strong { display: block; font-size: 16px; font-weight: 800; color: #fff; }
+.pos-marca-texto span { font-size: 12px; color: #a7b8b4; }
+.pos-alternar { border: 0; background: transparent; color: #a7b8b4; cursor: pointer; padding: 6px; border-radius: 8px; display: flex; }
+.pos-alternar:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.pos-menu { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.pos-item {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; min-height: 52px; border: 0; border-radius: 10px; background: transparent;
+  color: #c9d6d2; font: inherit; text-align: left; cursor: pointer; width: 100%; box-sizing: border-box;
+}
+.pos-item:hover:not(:disabled) { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.pos-item.activo { background: #2b7a68; color: #fff; }
+.pos-item:disabled { color: #6e8480; cursor: not-allowed; }
+.pos-item svg { flex-shrink: 0; }
+.pos-item-texto { flex: 1; min-width: 0; line-height: 1.2; }
+.pos-item-texto strong { display: block; font-size: 14.5px; font-weight: 700; white-space: nowrap; }
+.pos-item-texto .pos-detalle { display: block; font-size: 12px; opacity: 0.75; white-space: nowrap; }
+.pos-corto { display: none; }
+.pos-pronto {
+  font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #a7b8b4; font-style: normal;
+}
+.pos-pronto-claro { background: #eef1f0; color: #56655f; margin-left: 6px; }
+.pos-separador { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 10px 4px; }
+.pos-mozo { display: flex; align-items: center; gap: 11px; padding: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 6px; }
+.pos-avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: #e3f1ec; color: #1f5e50; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+.pos-mozo-texto { line-height: 1.2; min-width: 0; }
+.pos-mozo-texto strong { display: block; font-size: 14px; font-weight: 700; color: #fff; }
+.pos-mozo-texto span { font-size: 12px; color: #a7b8b4; }
+.pos-cambiar {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; min-height: 46px; border-radius: 10px; background: transparent; color: #c9d6d2;
+  border: 1px solid rgba(255, 255, 255, 0.14); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.pos-cambiar:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+.pos-colapsada .pos-marca-texto, .pos-colapsada .pos-item-texto, .pos-colapsada .pos-pronto, .pos-colapsada .pos-mozo-texto,
+.pos-colapsada .pos-cambiar span { display: none; }
+.pos-colapsada .pos-marca { flex-direction: column; gap: 8px; padding-bottom: 12px; }
+.pos-colapsada .pos-item, .pos-colapsada .pos-cambiar { justify-content: center; padding-left: 0; padding-right: 0; }
+.pos-colapsada .pos-mozo { justify-content: center; }
+
+.pos-principal { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.pos-cabezal {
+  height: 68px; flex-shrink: 0; box-sizing: border-box; background: #fff; border-bottom: 1px solid #e6eae9; display: flex; align-items: center;
+  gap: 14px; padding: 0 26px;
+}
+.pos-cabezal-icono { width: 42px; height: 42px; border-radius: 10px; background: #e3f1ec; color: #2b7a68; display: flex; align-items: center; justify-content: center; }
+.pos-cabezal-titulo { line-height: 1.25; min-width: 0; }
+.pos-cabezal-titulo h1 { margin: 0; font-size: 19px; font-weight: 800; }
+.pos-cabezal-titulo span { font-size: 13px; color: #56655f; }
+.pos-cabezal-espacio { flex-grow: 1; }
+.pos-local {
+  display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: #e3f1ec;
+  color: #1f5e50; white-space: nowrap;
+}
+.pos-contenido { flex: 1; min-height: 0; overflow: auto; }
+
+/* Avisos flotantes (comun/componentes/Avisos.tsx) */
+.avisos-pila { position: fixed; right: 22px; top: 82px; z-index: 1000; display: grid; gap: 10px; }
+.aviso-flotante {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 14px; border-radius: 12px; background: #fff; border: 1px solid #e6eae9;
+  border-left: 4px solid #2b7a68; box-shadow: 0 10px 30px rgba(15, 39, 36, 0.18); font-size: 14.5px; font-weight: 700; color: #2b7a68;
+}
+.aviso-flotante span { color: #1b2b28; }
+.aviso-flotante-error { border-left-color: #b42318; color: #b42318; }
+.aviso-flotante button { border: 0; background: transparent; color: #56655f; cursor: pointer; display: flex; padding: 4px; }
+
+/* Inicio */
+.pos-inicio { padding: 20px 26px; display: grid; gap: 16px; }
+.pos-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.pos-kpi { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.pos-kpi-pronto { opacity: 0.7; }
+.pos-kpi-icono { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.pos-tinta-verde { background: #e3f1ec; color: #2b7a68; }
+.pos-tinta-ambar { background: #fdf0dc; color: #b7791f; }
+.pos-kpi-etiqueta { font-size: 13.5px; color: #56655f; }
+.pos-kpi-valor { font-size: 30px; font-weight: 800; line-height: 1.05; color: #1f5e50; }
+.pos-kpi-nota { font-size: 12.5px; color: #56655f; }
+.pos-acciones { border-radius: 14px; padding: 22px 24px; background: linear-gradient(135deg, #2b7a68 0%, #1f5e50 100%); display: grid; gap: 14px; }
+.pos-acciones h2 { margin: 0; font-size: 18px; font-weight: 800; color: #fff; }
+.pos-acciones > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.pos-acciones button {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.14);
+  color: #fff; border: 1px solid rgba(255, 255, 255, 0.22); font: inherit; cursor: pointer; text-align: center; min-height: 112px;
+}
+.pos-acciones button strong { font-size: 16px; font-weight: 800; }
+.pos-acciones button span { font-size: 12.5px; opacity: 0.85; }
+.pos-acciones button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.pos-acciones button:disabled { opacity: 0.55; cursor: not-allowed; }
+.pos-dos-columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.pos-tarjeta { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; padding: 18px 22px; display: grid; gap: 12px; align-content: start; }
+.pos-tarjeta h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.pos-vacio { margin: 0; color: #56655f; font-size: 14px; }
+.pos-lista { list-style: none; margin: 0; padding: 0; }
+.pos-lista li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eef1f0; }
+.pos-lista li > div { flex: 1; display: grid; }
+.pos-lista li strong { font-size: 14.5px; font-weight: 800; }
+.pos-lista li span { font-size: 12.5px; color: #56655f; }
+.pos-tiempo { font-size: 13px; color: #56655f; }
+.pos-barras { display: grid; gap: 14px; }
+.pos-barra { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.pos-barra > span:first-child { width: 130px; font-weight: 700; }
+.pos-barra-pista { flex: 1; height: 10px; border-radius: 999px; background: #eef1f0; overflow: hidden; }
+.pos-barra-pista span { display: block; height: 100%; background: #c0392b; border-radius: 999px; }
+.pos-barra-pct { width: 48px; text-align: right; color: #56655f; }
+.pos-enlace { border: 0; background: transparent; color: #2b7a68; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; text-align: left; }
+
+/* Contador, pestañas y estados */
+.pos-contador {
+  min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: #fff; color: #1f5e50;
+  font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.pos-colapsada .pos-contador { display: none; }
+.pos-tinta-azul { background: #e6eefb; color: #2563eb; }
+.pos-estado {
+  display: inline-flex; width: fit-content; white-space: nowrap; font-size: 12.5px; font-weight: 700; padding: 3px 11px; border-radius: 999px;
+  background: #e6eefb; color: #1d4ed8;
+}
+.pos-estado-abierto { background: #e6eefb; color: #1d4ed8; }
+.pos-estado-comandado { background: #e3f1ec; color: #1f8a5b; }
+.pos-estado-pendiente_cierre { background: #fdf0dc; color: #8a5a00; }
+
+.pos-ordenes, .pos-historial { padding: 0 26px 20px; display: grid; gap: 16px; align-content: start; }
+.pos-pestanas { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #e6eae9; margin: 0 -26px; padding: 0 26px; background: #fff; flex-wrap: wrap; }
+.pos-pestanas button {
+  height: 46px; padding: 0 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #56655f; font: inherit;
+  font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 9px; cursor: pointer;
+}
+.pos-pestanas button.elegida { color: #1f5e50; border-bottom-color: #2b7a68; }
+.pos-pestanas button span { min-width: 22px; height: 22px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #eef1f0; color: #56655f; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.pos-pestanas button.elegida span { background: #2b7a68; color: #fff; }
+.pos-pestana-inactiva { color: #9aa8a3 !important; cursor: not-allowed !important; }
+.pos-pestanas-espacio { flex: 1; }
+.pos-actualizar { border-radius: 8px !important; height: 38px !important; }
+.pos-girando { animation: pos-gira 0.9s linear infinite; }
+@keyframes pos-gira { to { transform: rotate(360deg); } }
+
+.pos-tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.pos-orden { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-height: 320px; box-shadow: 0 1px 3px rgba(15, 39, 36, 0.06); }
+.pos-orden-cabeza { color: #fff; padding: 12px 16px; display: grid; gap: 3px; font-size: 12.5px; min-height: 92px; box-sizing: border-box; align-content: start; }
+.pos-orden-cabeza.mesa { background: #1f5e50; }
+.pos-orden-cabeza.llevar { background: #2563eb; }
+.pos-orden-titulo { display: flex; align-items: center; gap: 8px; }
+.pos-orden-titulo strong { flex: 1; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pos-orden-titulo span { font-size: 12px; opacity: 0.9; }
+.pos-orden-lineas { flex: 1; margin: 0; padding: 12px 16px; list-style: none; display: grid; gap: 6px; align-content: start; font-size: 13.5px; overflow: hidden; }
+.pos-orden-lineas em { display: block; padding-left: 14px; color: #56655f; font-size: 13px; }
+.pos-orden-sin-lineas { color: #56655f; }
+.pos-orden-pie { padding: 10px 16px 14px; border-top: 1px solid #eef1f0; display: grid; gap: 10px; }
+.pos-orden-fila { display: flex; align-items: center; gap: 8px; }
+.pos-orden-total { margin-left: auto; font-size: 19px; font-weight: 800; }
+.pos-tiempo-pildora { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #f1f4f3; color: #56655f; }
+.pos-orden-ver, .pos-hist-pie button {
+  height: 44px; border: 0; border-radius: 8px; background: #2b7a68; color: #fff; font: inherit; font-size: 14.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+}
+.pos-orden-ver:hover, .pos-hist-pie button:hover { background: #1f5e50; }
+
+.pos-historial { padding-top: 20px; }
+.pos-filtros { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pos-filtro-busqueda { position: relative; flex: 1; min-width: 220px; display: block; }
+.pos-filtro-busqueda svg { position: absolute; left: 12px; top: 12px; color: #56655f; }
+.pos-filtro-busqueda input { width: 100%; height: 42px; box-sizing: border-box; border: 1px solid #dce2e0; border-radius: 8px; padding: 0 14px 0 40px; font: inherit; font-size: 14px; }
+.pos-filtros select, .pos-filtro-fecha { height: 42px; box-sizing: border-box; border: 1px solid #dce2e0; border-radius: 8px; background: #fff; font: inherit; font-size: 14px; padding: 0 12px; }
+.pos-filtro-fecha { display: flex; align-items: center; gap: 8px; color: #56655f; }
+.pos-filtro-fecha input { border: 0; font: inherit; font-size: 14px; color: #1b2b28; background: transparent; }
+.pos-tarjetas-historial { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.pos-hist { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; align-content: start; }
+.pos-hist-cabeza { display: flex; align-items: flex-start; gap: 10px; }
+.pos-hist-cabeza > div { flex: 1; display: grid; gap: 2px; }
+.pos-hist-cabeza strong { font-size: 16px; font-weight: 800; }
+.pos-hist-cabeza span { font-size: 12.5px; color: #56655f; }
+.pos-hist-cuerpo { display: grid; gap: 6px; font-size: 14px; border-top: 1px solid #eef1f0; padding-top: 12px; }
+.pos-hist-cuerpo span { display: flex; align-items: center; gap: 9px; }
+.pos-hist-cuerpo em { color: #56655f; font-style: normal; font-size: 12.5px; }
+.pos-hist-mozo { padding-left: 25px; color: #56655f; font-size: 13px; }
+.pos-hist-pie { display: flex; align-items: center; gap: 12px; }
+.pos-hist-pie strong { flex: 1; font-size: 20px; font-weight: 800; }
+.pos-hist-pie button { padding: 0 18px; }
+.pos-paginacion { display: flex; align-items: center; justify-content: center; gap: 14px; color: #56655f; font-size: 14px; }
+
+/* Responsive: tableta vertical y móvil */
+@media (max-width: 900px) {
+  .pos-cabezal { padding: 0 16px; gap: 10px; }
+  .pos-inicio { padding: 16px; }
+  .pos-ordenes, .pos-historial { padding-left: 16px; padding-right: 16px; }
+  .pos-pestanas { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+}
+@media (max-width: 700px) {
+  .pos-cabezal { height: 60px; padding: 0 12px; }
+  .pos-cabezal-icono { display: none; }
+  .pos-cabezal-titulo span { display: none; }
+  .pos-cabezal-titulo h1 { font-size: 17px; }
+  .pos-local { padding: 5px 10px; font-size: 12px; }
+  .pos-inicio { padding: 12px; gap: 12px; }
+  .pos-kpi-valor { font-size: 26px; }
+  .pos-acciones { padding: 16px; }
+  .pos-dos-columnas { grid-template-columns: 1fr; }
+  .pos-ordenes, .pos-historial { padding-left: 12px; padding-right: 12px; }
+  .pos-pestanas { margin-left: -12px; margin-right: -12px; padding-left: 12px; padding-right: 12px; overflow-x: auto; flex-wrap: nowrap; }
+  .pos-pestanas button { white-space: nowrap; }
+  .pos-tarjetas { grid-template-columns: 1fr; }
+  .pos-filtros { padding: 10px 12px; }
+  .pos-filtro-busqueda { min-width: 0; flex-basis: 100%; }
+  .pos-filtros select, .pos-filtro-fecha { flex: 1 1 100%; }
+  .avisos-pila { left: 12px; right: 12px; top: 68px; }
+  .pos-barra > span:first-child { width: 96px; }
+}
+
+/* Celular: el menu es un cajon que se abre con la hamburguesa de la barra superior (ya no hay barra inferior) */
+.pos-movil-barra, .pos-fondo-menu, .pos-cerrar-menu { display: none; }
+@media (max-width: 600px) {
+  .pos-raiz { height: 100vh; height: 100dvh; }
+  .pos-movil-barra {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; height: 56px; box-sizing: border-box; padding: 0 10px; background: #fff;
+    border-bottom: 1px solid #e6eae9;
+  }
+  .pos-movil-barra strong { flex: 1; min-width: 0; font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pos-hamburguesa {
+    width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px;
+    background: #e3f1ec; color: #1f5e50; cursor: pointer;
+  }
+  .pos-cabezal { display: none; }
+  .pos-lateral, .pos-colapsada .pos-lateral {
+    position: fixed; top: 0; left: 0; bottom: 0; width: min(300px, 84vw); z-index: 1100; padding: 18px 14px calc(14px + env(safe-area-inset-bottom));
+    transform: translateX(-102%); transition: transform 180ms ease; overflow-y: auto; box-shadow: none;
+  }
+  .pos-menu-abierto .pos-lateral { transform: none; box-shadow: 0 0 40px rgba(0, 0, 0, 0.4); }
+  .pos-fondo-menu { position: fixed; inset: 0; z-index: 1090; background: rgba(15, 39, 36, 0.5); opacity: 0; pointer-events: none; transition: opacity 180ms ease; }
+  .pos-menu-abierto .pos-fondo-menu { display: block; opacity: 1; pointer-events: auto; }
+  .pos-alternar { display: none; }
+  .pos-cerrar-menu { display: flex; border: 0; background: transparent; color: #a7b8b4; padding: 8px; border-radius: 8px; cursor: pointer; }
+  /* dentro del cajon se ve completo, como la barra expandida */
+  .pos-colapsada .pos-marca-texto, .pos-colapsada .pos-item-texto, .pos-colapsada .pos-mozo-texto, .pos-colapsada .pos-cambiar span { display: block; }
+  .pos-colapsada .pos-marca { flex-direction: row; gap: 12px; padding-bottom: 18px; }
+  .pos-colapsada .pos-item, .pos-colapsada .pos-cambiar { justify-content: flex-start; padding-left: 14px; padding-right: 14px; }
+  .pos-colapsada .pos-mozo { justify-content: flex-start; }
+  .pos-colapsada .pos-pronto { display: inline; }
+  .pos-colapsada .pos-contador { display: flex; }
+  .pos-corto { display: none; }
+  .pos-cambiar .pos-corto, .pos-colapsada .pos-cambiar .pos-corto { display: none; }
+  .pos-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pos-kpi { padding: 12px 14px; gap: 4px; }
+  .pos-kpi-icono { width: 34px; height: 34px; }
+  .pos-kpi-valor { font-size: 24px; }
+  .pos-kpi-nota { font-size: 11.5px; }
+  .pos-local { max-width: 45%; overflow: hidden; }
+}
+
+/* Celular: pantalla del pedido (clases ped2-*, de la sesion de pedidos) sin tocar su CSS ni su TSX */
+@media (max-width: 600px) {
+  .pos-contenido .ped2-barra { gap: var(--espacio-2); }
+  .pos-contenido .ped2-barra > .boton:first-child { order: 1; }
+  .pos-contenido .ped2-barra > .boton:last-child { order: 2; margin-left: auto; }
+  .pos-contenido .ped2-resumen { order: 3; flex: 1 1 100%; min-width: 0; }
+  .pos-contenido .ped2-titulo { font-size: 20px; }
+  .pos-contenido .ped2-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; }
+  .pos-contenido .ped2-datos li + li::before { display: none; }
+  .pos-contenido .ped2-persona { min-width: 104px; padding: 0 12px; }
+  .pos-contenido .ped2-persona-nueva { min-width: 92px; }
+  .pos-contenido .ped2-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Pantalla del pedido (escritorio y tableta horizontal): a pantalla completa, sin desplazar toda la página.
+   Personas compactas arriba; a la izquierda el catalogo con buscador y pestañas fijos y las tarjetas que se
+   desplazan solas; a la derecha la orden a TODO el alto, con las lineas desplazables y el total y "Comandar" siempre
+   a la vista. (Reglas sobre las clases ped2 y ped3 de la sesion de pedidos, sin tocar su CSS.) */
+@media (min-width: 901px) {
+  .pos-contenido:has(> .ped3) { overflow: hidden; }
+  .pos-contenido > .ped3 { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 12px 20px 16px; }
+  .ped3 > .ped2-barra, .ped3 > .ped2-personas { flex-shrink: 0; }
+  .ped3 > .ped2-cuerpo { flex: 1; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) clamp(340px, 31vw, 460px); }
+  .ped3 > .ped2-cuerpo > * { min-height: 0; }
+  .ped3 .ped3-catalogo { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
+  .ped3 .ped3-catalogo > label, .ped3 .ped3-catalogo > .ped3-barra-catalogo { flex-shrink: 0; }
+  .ped3 .ped3-catalogo > ul { flex: 1; min-height: 0; overflow-y: auto; align-content: start; padding-right: 4px; }
+  .ped3 .ped2-orden.ped3-orden { position: static; height: 100%; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+  .ped3 .ped2-orden > header, .ped3 .ped2-orden > .ped3-pensionista { flex-shrink: 0; }
+  .ped3 .ped2-orden > ul.ped3-lineas { flex: 1; min-height: 0; max-height: none; overflow-y: auto; align-content: start; }
+  .ped3 .ped2-orden > footer.ped2-orden-pie { flex-shrink: 0; margin-top: auto; }
+}
+/* Personas mas chicas (todas las anchuras) */
+.ped3 .ped2-personas { gap: 6px; padding-bottom: 2px; }
+.ped3 .ped2-persona { min-height: 44px; min-width: 84px; padding: 0 10px; }
+.ped3 .ped2-persona span { font-size: 11.5px; }
+.ped3 .ped2-persona strong, .ped3 .ped2-persona em { font-size: 14px; }
+.ped3 .ped3-persona-envoltura .ped2-persona { min-width: 88px; padding-right: 30px; }
+.ped3 .ped3-persona-envoltura-activa .ped2-persona { min-width: 124px; }
+.ped3 .ped3-quitar-persona { top: 4px; right: 3px; width: 28px; height: 28px; }
+.ped3 .ped3-tarjeta .boton { width: 100%; justify-content: center; }
+
+/* Pedido rapido (para llevar) */
+.pos-rapido { padding: 20px 26px; display: grid; gap: 16px; max-width: 760px; }
+.pos-rapido-canales { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pos-canal {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 66px; border-radius: 12px; border: 1px solid #dce2e0; background: #fff;
+  font: inherit; text-align: left; cursor: pointer; color: #1b2b28;
+}
+.pos-canal:disabled { opacity: 0.6; cursor: not-allowed; }
+.pos-canal.elegido { border: 2px solid #2b7a68; background: #f1f8f5; }
+.pos-canal-icono { width: 42px; height: 42px; border-radius: 10px; background: #eef1f0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pos-canal.elegido .pos-canal-icono { background: #2b7a68; color: #fff; }
+.pos-canal span:nth-child(2) { flex: 1; display: grid; line-height: 1.25; }
+.pos-canal strong { font-size: 15px; font-weight: 800; }
+.pos-canal small { font-size: 12.5px; color: #56655f; }
+.pos-canal i { width: 11px; height: 11px; border-radius: 50%; background: #2b7a68; }
+.pos-rapido-tarjeta { background: #fff; border: 1px solid #e6eae9; border-radius: 14px; padding: 20px 22px; display: grid; gap: 14px; }
+.pos-rapido-tarjeta h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.pos-rapido-tarjeta p { margin: 0; color: #56655f; font-size: 14px; }
+@media (max-width: 700px) { .pos-rapido { padding: 14px 12px; } }
+
+/* Orden mas grande: ancho de 340 a 460 px segun la pantalla, textos y botones mayores */
+@media (min-width: 901px) {
+  .pos-raiz { overflow: hidden; }
+  .ped3 .ped2-orden .ped3-orden-titulo h2 { font-size: 19px; }
+  .ped3 .ped2-orden .ped3-linea strong { font-size: 16px; }
+  .ped3 .ped2-orden .ped2-totales .ped-total dd { font-size: 32px; }
+  .ped3 .ped2-orden .ped2-comandar { min-height: 64px; font-size: 19px; }
+  .ped3 .ped2-orden { padding: 18px 20px; gap: 14px; }
+}
+
+/* Orden de arriba a abajo: el carrito sube hasta el borde superior, al lado del titulo y de las personas.
+   El cuerpo deja de ser una caja (display: contents) y el catalogo y la orden pasan a ser celdas de .ped3. */
+@media (min-width: 901px) {
+  .pos-contenido > .ped3 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 31vw, 460px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    column-gap: 20px;
+    row-gap: 10px;
+  }
+  .ped3 > .ped2-barra, .ped3 > .ped2-personas { grid-column: 1; min-width: 0; }
+  .ped3 > .ped2-cuerpo { display: contents; }
+  .ped3 > .ped2-cuerpo > .ped2-catalogo { grid-column: 1; grid-row: 3; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .ped3 > .ped2-cuerpo > .ped2-catalogo > .ped3-catalogo { flex: 1; }
+  .ped3 > .ped2-cuerpo > .ped2-orden { grid-column: 2; grid-row: 1 / -1; min-height: 0; }
+}
+
+/* Tarjetas del catalogo: nunca se recortan. Las filas miden lo que mide su contenido (antes quedaban en 230 px
+   y el boton "Agregar" se cortaba) y la lista es la que se desplaza. */
+.ped3 .ped3-rejilla { grid-auto-rows: max-content; }
+.ped3 .ped3-tarjeta { height: auto; min-height: 0; overflow: visible; grid-template-rows: auto auto auto; align-content: start; }
+.ped3 .ped3-tarjeta .ped3-pie { margin-top: 2px; }
+
+/* Orden de la mesa (OrdenDeLaMesa.tsx): una sola lista con la etiqueta de cada persona. Escritorio: panel derecho.
+   Celular y tableta vertical (<= 900 px): cajon que sale del costado, abierto por el carrito flotante. */
+.ped4-cerrar, .ped4-carrito, .ped4-fondo { display: none; }
+.ped4-lado-arriba { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.ped4-etiqueta {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: #e3f1ec; color: #1f5e50;
+  font-size: 12px; font-weight: 800;
+}
+.ped4-filtros { display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; padding-bottom: 2px; }
+.ped4-filtro {
+  flex-shrink: 0; min-height: 38px; padding: 0 14px; border: 1px solid #e1e7e5; border-radius: 999px; background: #fff; color: #1b2b28;
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ped4-filtro-activo { background: #e3f1ec; border-color: #2b7a68; color: #1f5e50; font-weight: 700; }
+.ped4-aviso-comanda { margin: 0; text-align: center; font-size: 12px; color: #56655f; }
+.ped3 .ped3-orden-cabecera .ped3-circulo { width: 42px; height: 42px; }
+
+@media (max-width: 900px) {
+  .ped3 { padding-bottom: 96px; }
+  .ped4-carrito {
+    position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 900; height: 60px; box-sizing: border-box;
+    padding: 0 14px 0 12px; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 16px; background: #1f5e50; color: #fff;
+    font: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(15, 39, 36, 0.35);
+  }
+  .ped4-carrito-icono { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ped4-carrito-icono b {
+    position: absolute; top: -2px; right: -4px; min-width: 20px; height: 20px; box-sizing: border-box; padding: 0 5px; border-radius: 999px;
+    background: #fff; color: #1f5e50; font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .ped4-carrito-texto { flex: 1; min-width: 0; line-height: 1.25; display: grid; }
+  .ped4-carrito-texto strong { font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ped4-carrito-texto small { font-size: 12px; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ped4-carrito-total { font-size: 18px; font-weight: 800; }
+  .ped4-fondo { display: block; position: fixed; inset: 0; z-index: 1090; background: rgba(15, 39, 36, 0.5); opacity: 0; pointer-events: none; transition: opacity 180ms ease; }
+  .ped4-fondo-abierto { opacity: 1; pointer-events: auto; }
+  .ped3 .ped2-orden.ped4-orden {
+    position: fixed; top: 0; right: 0; bottom: 0; left: auto; z-index: 1100; width: min(380px, 94vw); height: auto; max-height: none;
+    box-sizing: border-box; border-radius: 0; border: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+    transform: translateX(104%); transition: transform 180ms ease; box-shadow: none; padding: 14px;
+  }
+  .ped3 .ped2-orden.ped4-abierta { transform: none; box-shadow: -8px 0 30px rgba(15, 39, 36, 0.3); }
+  .ped4-cerrar {
+    display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: #eef1f0;
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  }
+  .ped3 .ped4-orden > header, .ped3 .ped4-orden > .ped3-pensionista, .ped3 .ped4-orden > .ped4-filtros { flex-shrink: 0; }
+  .ped3 .ped4-orden > ul.ped3-lineas { flex: 1; min-height: 0; max-height: none; overflow-y: auto; align-content: start; }
+  .ped3 .ped4-orden > footer.ped2-orden-pie { flex-shrink: 0; margin-top: auto; }
+  .ped3 .ped4-orden .ped3-orden-cuenta { display: none; }
+}
+
+/* Sin barras de desplazamiento visibles en el POS: se sigue desplazando con el dedo, la rueda o el trackpad. */
+.pos-raiz *, .pos-raiz { scrollbar-width: none; -ms-overflow-style: none; }
+.pos-raiz *::-webkit-scrollbar, .pos-raiz::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Titulo "Productos" encima del selector Mosaico/Lista: solo celular y tableta vertical, como en el diseño */
+.ped4-productos { display: none; margin: 0; font-size: 15px; font-weight: 800; }
+@media (max-width: 900px) {
+  .ped3 .ped3-barra-catalogo { flex-wrap: wrap; row-gap: 10px; }
+  .ped3 .ped3-barra-catalogo > .ped3-pestanas { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; }
+  .ped4-productos { display: block; flex: 1; }
+}
+
+/* "+ Persona": centrado y con ancho propio (heredaba el ancho minimo de las tarjetas de persona y el texto se salia) */
+.ped3 .ped2-persona.ped2-persona-nueva {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 118px; padding: 0 18px; white-space: nowrap;
+}
+
+/* Cabecera del pedido en celular y tableta vertical: tarjeta con los botones arriba, el titulo grande y los datos como
+   chips (antes eran filas sueltas en dos columnas). Sobreescribe las reglas de ped2/ped3 sin tocar su CSS. */
+@media (max-width: 900px) {
+  .pos-contenido .ped3 > .ped3-barra {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 10px; padding: 12px; background: #fff; border: 1px solid #e6eae9;
+    border-radius: 16px; box-shadow: 0 1px 3px rgba(15, 39, 36, 0.05);
+  }
+  .pos-contenido .ped3-barra > .boton { min-height: 44px; border-radius: 10px; font-weight: 700; }
+  .pos-contenido .ped3-barra > .boton:first-child { order: 1; background: #e3f1ec; color: #1f5e50; border-color: transparent; }
+  .pos-contenido .ped3-barra > .boton:not(:first-child), .pos-contenido .ped3-barra > .ped3-separar { order: 2; }
+  .pos-contenido .ped3-barra > .boton:nth-of-type(2) { margin-left: auto; }
+  .pos-contenido .ped3-barra .ped2-resumen { order: 3; flex: 1 1 100%; display: grid; gap: 8px; min-width: 0; }
+  .pos-contenido .ped3-barra .ped2-titulo { font-size: 24px; font-weight: 800; line-height: 1.15; }
+  .pos-contenido .ped3-barra .ped2-datos { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .pos-contenido .ped3-barra .ped2-datos li { margin: 0; padding: 4px 11px; border-radius: 999px; background: #f1f4f3; color: #56655f; font-size: 12.5px; font-weight: 600; }
+  .pos-contenido .ped3-barra .ped2-datos li::before { display: none; }
+  .pos-contenido .ped3-barra .ped2-datos li:first-child { background: #e3f1ec; color: #1f5e50; font-weight: 700; }
+}
+
+/* Celular: los dialogos de una mesa salen como hoja desde abajo (como en el diseno de mesas), no como caja al centro */
+@media (max-width: 600px) {
+  body:has(.pos-raiz) .modal-fondo { place-items: end center; padding: 0; }
+  body:has(.pos-raiz) .modal-caja { width: 100%; max-height: 88vh; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 30px rgba(15, 39, 36, 0.25); }
+  body:has(.pos-raiz) .modal-caja { background-image: linear-gradient(#d5ddda, #d5ddda); background-size: 44px 5px; background-repeat: no-repeat; background-position: center 8px; }
+}
+
+/* Los dialogos del POS van por encima del carrito flotante y del cajon de la orden (antes el carrito tapaba los botones) */
+body:has(.pos-raiz) .modal-fondo { z-index: 1300; }
+
+/* ---- Pedido en celular (diseno aprobado 2026-10-01, version 2): barra superior con mesa y local, barra "Mesas | Cambiar mesa",
+   tarjeta de datos en dos filas, personas con icono y aviso de menu. Solo <= 600 px; en escritorio los iconos no se ven. ---- */
+.ped4-ico { display: none; }
+.pos-movil-titulo { flex: 1; min-width: 0; line-height: 1.2; display: grid; }
+.pos-movil-titulo strong { font-size: 21px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pos-movil-titulo span { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: #56655f; margin-top: 2px; }
+@media (max-width: 600px) {
+  .pos-movil-barra { height: 68px; border-bottom: 0; padding: 0 12px; gap: 12px; }
+  .pos-hamburguesa { width: 48px; height: 48px; border-radius: 12px; }
+  .ped4-ico { display: inline-block; flex-shrink: 0; vertical-align: -3px; }
+
+  /* Cabecera: sin tarjeta propia; barra de acciones partida y tarjeta de datos aparte */
+  .pos-contenido .ped3 > .ped3-barra {
+    display: flex; flex-wrap: wrap; gap: 12px 0; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none;
+  }
+  .pos-contenido .ped3-barra > .boton:not(.ped3-separar-boton) {
+    flex: 1 1 0; min-height: 48px; border: 0; border-radius: 12px; background: #e3f1ec; color: #1f5e50; font-size: 14px; font-weight: 800;
+    justify-content: center;
+  }
+  .pos-contenido .ped3-barra > .boton:first-child { order: 1; border-radius: 12px 0 0 12px; }
+  .pos-contenido .ped3-barra > .boton:nth-of-type(2) { order: 2; margin-left: 0; border-radius: 0 12px 12px 0; border-left: 1px solid #b9d8ce; }
+  .pos-contenido .ped3-barra > .boton:first-child:nth-last-of-type(1), .pos-contenido .ped3-barra > .boton:first-child:last-of-type { border-radius: 12px; }
+  .pos-contenido .ped3-barra > .ped3-separar { order: 3; flex: 1 1 100%; }
+  .pos-contenido .ped3-barra .ped2-resumen { order: 4; flex: 1 1 100%; display: block; }
+  .pos-contenido .ped3-barra .ped2-titulo { display: none; }
+  .pos-contenido .ped3-barra .ped2-datos {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 14px; margin: 0; padding: 12px 14px; list-style: none; background: #fff;
+    border: 1px solid #e6eae9; border-radius: 14px;
+  }
+  .pos-contenido .ped3-barra .ped2-datos li {
+    display: flex; align-items: center; gap: 6px; margin: 0; padding: 0; border-radius: 0; background: none; color: #1b2b28; font-size: 13px; font-weight: 800;
+    white-space: nowrap;
+  }
+  .pos-contenido .ped3-barra .ped2-datos li .ped4-ico { color: #1f5e50; }
+  .pos-contenido .ped3-barra .ped2-datos li:first-child { background: none; color: #1b2b28; }
+
+  /* Personas: icono delante del nombre */
+  .ped3 .ped2-persona > span { display: flex; align-items: center; gap: 5px; }
+  .ped3 .ped2-persona > span .ped4-ico { color: #56655f; }
+  .ped3 .ped2-persona-activa > span .ped4-ico { color: #1f5e50; }
+
+  /* Aviso de menu del dia: alerta informativa */
+  .ped4-aviso-menu { margin: 0; padding: 12px 14px; border-radius: 12px; background: #e8f0fb; border: 1px solid #c9daf3; color: #1d4ed8; font-size: 13px; }
+}
+@media (max-width: 600px) {
+  .ped3 .ped3-modos { gap: 6px; border: 0; overflow: visible; }
+  .ped3 .ped3-modo { width: 44px; height: 40px; border: 1px solid #e1e7e5; border-radius: 10px; color: #1f5e50; }
+  .ped3 .ped3-modo-activo { background: #1f5e50; border-color: #1f5e50; color: #fff; }
+}
+
+/* Catalogo en lista (celular y tableta vertical): nombre, detalle y precio a la izquierda y un boton "Agregar" compacto a la derecha */
+@media (max-width: 900px) {
+  .ped3 .ped3-fila { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; }
+  .ped3 .ped3-fila .ped3-imagen { grid-row: 1 / 3; grid-column: 1; }
+  .ped3 .ped3-fila .ped3-texto { grid-row: 1; grid-column: 2; }
+  .ped3 .ped3-fila .ped3-pie { display: contents; }
+  .ped3 .ped3-fila .ped3-precio { grid-row: 2; grid-column: 2; font-size: 15px; font-weight: 800; }
+  .ped3 .ped3-fila .ped3-pie .boton {
+    grid-row: 1 / 3; grid-column: 3; width: auto; min-width: 0; min-height: 44px; padding: 0 14px; gap: 6px; font-size: 13px; font-weight: 800;
+  }
+}
+@media (max-width: 900px) {
+  .ped3 .ped3-fila .ped3-pie button.boton { min-height: 44px; height: 44px; padding: 0 10px; gap: 4px; font-size: 12.5px; }
+  .ped3 .ped3-fila .ped3-pie button.boton svg { width: 14px; height: 14px; }
+}
+
+/* Lista del catalogo, version ordenada: imagen, nombre/detalle/precio en una columna y un boton "+" cuadrado (el nombre completo
+   queda en su aria-label). El precio va en verde y mas grande para leerse de un vistazo. */
+@media (max-width: 900px) {
+  .ped3 .ped3-fila { padding: 10px 12px; gap: 3px 14px; border-radius: 14px; }
+  .ped3 .ped3-fila .ped3-imagen { width: 60px; height: 60px; border-radius: 12px; }
+  .ped3 .ped3-fila .ped3-texto strong { font-size: 15.5px; line-height: 1.25; }
+  .ped3 .ped3-fila .ped3-subtitulo { font-size: 12.5px; }
+  .ped3 .ped3-fila .ped3-precio { font-size: 16px; color: #1f5e50; margin-top: 2px; }
+  .ped3 .ped3-fila .ped3-pie button.boton {
+    width: 48px; min-width: 48px; height: 48px; min-height: 48px; padding: 0; border-radius: 12px; font-size: 0; gap: 0; justify-content: center;
+  }
+  .ped3 .ped3-fila .ped3-pie button.boton svg { width: 22px; height: 22px; }
+}
+
+/* Acciones de cada linea de la orden como iconos (nota, pasar a otra persona, quitar/anular), junto a la etiqueta de la persona */
+.ped4-lado-arriba { gap: 2px; flex-wrap: nowrap; }
+.ped4-lado-arriba .ped4-etiqueta { margin-right: 4px; }
+.ped4-accion {
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px;
+  background: transparent; color: #56655f; cursor: pointer;
+}
+.ped4-accion:hover:not(:disabled) { background: #eef1f0; color: #1b2b28; }
+.ped4-accion-peligro:hover:not(:disabled) { background: #fdecea; color: #b42318; }
+.ped4-accion:disabled { opacity: 0.4; cursor: not-allowed; }
+.ped4-accion:focus-visible { outline: 2px solid #2b7a68; outline-offset: 1px; }
+@media (pointer: coarse), (max-width: 900px) { .ped4-accion { width: 40px; height: 40px; } }
+
+/* Fotos de producto: llenan su recuadro (catalogo en mosaico y en lista, miniatura de la orden) */
+.ped3-imagen, .ped3-miniatura { overflow: hidden; }
+.ped3-imagen img, .ped3-miniatura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (min-width: 901px) { .ped3 .ped3-tarjeta .ped3-imagen { height: 118px; } }
+
+/* ---- Pedido en escritorio, version 2 (diseno aprobado 2026-10-05): barra de iconos, cabecera, personas con icono, busqueda y selector en
+   una fila, tarjetas con foto. Solo >= 901 px. ---- */
+.ped3 .ped2-persona > span { display: flex; align-items: center; gap: 5px; }
+.ped3 .ped2-persona > span .ped4-ico { display: inline-block; color: #56655f; flex-shrink: 0; }
+.ped3 .ped2-persona-activa > span .ped4-ico { color: #1f5e50; }
+.ped2-comandar { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+
+@media (min-width: 901px) {
+  /* Cabecera: "← Mesas" verde suave, titulo con punto de estado y "Cambiar mesa" con borde verde */
+  .ped3 > .ped3-barra { align-items: center; gap: 14px; }
+  .ped3 .ped3-barra > .boton:first-child { min-height: 46px; padding: 0 18px; border: 0; border-radius: 12px; background: #e3f1ec; color: #1f5e50; font-weight: 800; }
+  .ped3 .ped3-barra .ped2-titulo { display: inline-flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; }
+  .ped3 .ped3-barra .ped2-titulo::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #2b7a68; flex-shrink: 0; }
+  .ped3 .ped3-barra > .boton:not(:first-child):not(.ped3-separar-boton) { margin-left: auto; min-height: 44px; border: 1.5px solid #1f5e50; border-radius: 10px; background: #fff; color: #1f5e50; font-weight: 700; }
+  .ped3 .ped3-barra > .ped3-separar { margin-left: auto; }
+  .ped3 .ped3-barra > .ped3-separar + * , .ped3 .ped3-barra > .boton + .ped3-separar { margin-left: 0; }
+
+  /* Catalogo: buscador y selector Mosaico/Lista en la misma fila; pestañas debajo; la lista ocupa el resto */
+  .ped3 .ped3-catalogo { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 12px; }
+  .ped3 .ped3-catalogo > label { grid-column: 1; grid-row: 1; }
+  .ped3 .ped3-catalogo > .ped3-barra-catalogo { display: contents; }
+  .ped3 .ped3-barra-catalogo > .ped3-modos { grid-column: 2; grid-row: 1; align-self: center; }
+  .ped3 .ped3-barra-catalogo > .ped3-pestanas { grid-column: 1 / -1; grid-row: 2; }
+  .ped3 .ped3-catalogo > p { grid-column: 1 / -1; grid-row: 3; margin: 0; }
+  .ped3 .ped3-catalogo > ul, .ped3 .ped3-catalogo > div:not(.ped3-barra-catalogo) { grid-column: 1 / -1; grid-row: 4; min-height: 0; }
+}
+
+/* Filas fijas de la pantalla del pedido (>= 901 px): con avisos entre la cabecera y las personas (error, pedido cerrado, taper) las
+   personas ya no se van al fondo. La orden ocupa todas las filas. */
+@media (min-width: 901px) {
+  .pos-contenido > .ped3 { row-gap: 0; grid-template-rows: auto auto auto auto auto minmax(0, 1fr); }
+  .ped3 > .ped2-barra { grid-row: 1; margin-bottom: 10px; }
+  .ped3 > :not(.ped2-barra):not(.ped2-personas):not(.ped2-cuerpo):not(.ped4-fondo):not(.ped4-carrito) { grid-column: 1; margin-bottom: 10px; }
+  .ped3 > .ped2-personas { grid-row: 5; margin-bottom: 10px; }
+  .ped3 > .ped2-cuerpo > .ped2-catalogo { grid-row: 6; }
+  .ped3 > .ped2-cuerpo > .ped2-orden { grid-row: 1 / -1; }
+}

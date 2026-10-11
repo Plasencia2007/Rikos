@@ -10,12 +10,13 @@ import { IconoBorrar } from './iconos'
 interface Props {
   onDigito: (digito: string) => void
   onBorrar: () => void
+  onLimpiar?: () => void
   deshabilitado?: boolean
 }
 
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-export function TecladoNumerico({ onDigito, onBorrar, deshabilitado }: Props) {
+export function TecladoNumerico({ onDigito, onBorrar, onLimpiar, deshabilitado }: Props) {
   return (
     <div className="teclado">
       {TECLAS.map((t) => (
@@ -29,15 +30,20 @@ export function TecladoNumerico({ onDigito, onBorrar, deshabilitado }: Props) {
           {t}
         </button>
       ))}
-      <button
-        type="button"
-        className="tecla tecla-secundaria"
-        disabled={deshabilitado}
-        onClick={onBorrar}
-        aria-label="Borrar"
-      >
-        <IconoBorrar width={22} height={22} />
-      </button>
+      {onLimpiar ? (
+        <button
+          type="button"
+          className="tecla tecla-secundaria"
+          disabled={deshabilitado}
+          onClick={onLimpiar}
+          aria-label="Limpiar todo"
+          title="Limpiar todo"
+        >
+          C
+        </button>
+      ) : (
+        <span className="tecla-vacia" aria-hidden="true" />
+      )}
       <button
         type="button"
         className="tecla"
@@ -46,7 +52,16 @@ export function TecladoNumerico({ onDigito, onBorrar, deshabilitado }: Props) {
       >
         0
       </button>
-      <span />
+      <button
+        type="button"
+        className="tecla tecla-secundaria"
+        disabled={deshabilitado}
+        onClick={onBorrar}
+        aria-label="Borrar último dígito"
+        title="Borrar dígito"
+      >
+        <IconoBorrar width={22} height={22} />
+      </button>
     </div>
   )
 }

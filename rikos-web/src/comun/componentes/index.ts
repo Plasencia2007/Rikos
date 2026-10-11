@@ -5,6 +5,7 @@ export { Campo } from './Campo'
 export { Select } from './Select'
 export { Checkbox } from './Checkbox'
 export { Radio } from './Radio'
+export { Interruptor } from './Interruptor'
 export { Tabla } from './Tabla'
 export type { ColumnaTabla } from './Tabla'
 export { Modal } from './Modal'
@@ -13,6 +14,7 @@ export { ModalDeMotivo } from './ModalDeMotivo'
 export type { OpcionMotivo } from './ModalDeMotivo'
 export { Insignia } from './Insignia'
 export { Aviso } from './Aviso'
+export { ProveedorDeAvisos, useAvisos } from './Avisos'
 export { EstadoVacio } from './EstadoVacio'
 export { EstadoCargando } from './EstadoCargando'
 export { EstadoError } from './EstadoError'
@@ -22,6 +24,14 @@ export { Tabs } from './Tabs'
 export type { Pestana } from './Tabs'
 export {
   IconoBorrar,
+  IconoCerrar,
+  IconoCheck,
+  IconoOjo,
+  IconoCambiar,
+  IconoMasOpciones,
+  IconoInfo,
+  IconoBloquear,
+  IconoReactivar,
   IconoCandado,
   IconoUbicacion,
   IconoGorroChef,
@@ -50,7 +60,11 @@ export {
   IconoMenuHamburguesa,
   IconoFlechaIzquierda,
   IconoFlechaDerecha,
+  IconoArrastrar,
   IconoDatos,
   IconoContacto,
   IconoHorario,
+  IconoSalir,
+  IconoSol,
 } from './iconos'
+

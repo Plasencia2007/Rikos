@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSesion } from '../../comun/sesion/SesionContexto'
-import { Boton, ModalDeConfirmacion, Tabla, type ColumnaTabla } from '../../comun/componentes'
-import { listarProveedores, desactivarProveedor, activarProveedor, type Proveedor } from '../../api/cliente'
+import { Boton, IconoBorrar, ModalDeConfirmacion, Tabla, type ColumnaTabla } from '../../comun/componentes'
+import { listarProveedores, eliminarProveedor, ErrorApi, type Proveedor } from '../../api/cliente'
 
 export function PantallaProveedores() {
   const { sesion } = useSesion()
@@ -12,7 +12,8 @@ export function PantallaProveedores() {
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
-  const [paraCambiarEstado, setParaCambiarEstado] = useState<Proveedor | null>(null)
+  const [paraEliminar, setParaEliminar] = useState<Proveedor | null>(null)
+  const [errorEliminar, setErrorEliminar] = useState('')
 
   function cargar() {
     setCargando(true)
@@ -25,15 +26,20 @@ export function PantallaProveedores() {
 
   useEffect(cargar, [token])
 
-  async function confirmarCambioEstado() {
-    if (!paraCambiarEstado) return
-    if (paraCambiarEstado.activo) {
-      await desactivarProveedor(token, paraCambiarEstado.id)
-    } else {
-      await activarProveedor(token, paraCambiarEstado.id)
+  async function confirmarEliminar() {
+    if (!paraEliminar) return
+    setErrorEliminar('')
+    try {
+      await eliminarProveedor(token, paraEliminar.id)
+      setParaEliminar(null)
+      cargar()
+    } catch (e) {
+      if (e instanceof ErrorApi && e.cuerpo?.error === 'TIENE_HISTORIAL') {
+        setErrorEliminar('No se puede eliminar: este proveedor ya tiene compras registradas y su historial debe conservarse.')
+      } else {
+        setErrorEliminar('No se pudo eliminar el proveedor.')
+      }
     }
-    setParaCambiarEstado(null)
-    cargar()
   }
 
   const columnas: ColumnaTabla<Proveedor>[] = [
@@ -50,8 +56,8 @@ export function PantallaProveedores() {
           <Boton variante="secundario" onClick={() => navigate(`/admin/compras/proveedores/${p.id}/editar`)}>
             Editar
           </Boton>
-          <Boton variante={p.activo ? 'peligro' : 'secundario'} onClick={() => setParaCambiarEstado(p)}>
-            {p.activo ? 'Desactivar' : 'Activar'}
+          <Boton variante="peligro" onClick={() => setParaEliminar(p)}>
+            <IconoBorrar width={14} height={14} aria-hidden="true" /> Eliminar
           </Boton>
         </div>
       ),
@@ -76,17 +82,18 @@ export function PantallaProveedores() {
         vacioAccion={<Boton onClick={() => navigate('/admin/compras/proveedores/nuevo')}>Nuevo proveedor</Boton>}
       />
 
-      {paraCambiarEstado && (
+      {paraEliminar && (
         <ModalDeConfirmacion
           abierto
-          titulo={paraCambiarEstado.activo ? 'Desactivar proveedor' : 'Activar proveedor'}
-          mensaje={
-            paraCambiarEstado.activo
-              ? `"${paraCambiarEstado.razonSocial}" dejará de poder usarse en compras nuevas. Las compras anteriores se conservan.`
-              : `"${paraCambiarEstado.razonSocial}" volverá a estar disponible para compras nuevas.`
-          }
-          onConfirmar={confirmarCambioEstado}
-          onCancelar={() => setParaCambiarEstado(null)}
+          titulo="Eliminar proveedor"
+          mensaje={`"${paraEliminar.razonSocial}" se eliminará permanentemente. Esta acción no se puede deshacer.`}
+          peligro
+          error={errorEliminar}
+          onConfirmar={confirmarEliminar}
+          onCancelar={() => {
+            setParaEliminar(null)
+            setErrorEliminar('')
+          }}
         />
       )}
     </section>

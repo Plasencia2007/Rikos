@@ -1,0 +1,6 @@
+export { PosShell } from './PosShell'
+export type { VistaDelPos } from './PosShell'
+export { PantallaInicio } from './PantallaInicio'
+export { PantallaOrdenes } from './PantallaOrdenes'
+export { PantallaHistorial } from './PantallaHistorial'
+export { PantallaPedidoRapido } from './PantallaPedidoRapido'

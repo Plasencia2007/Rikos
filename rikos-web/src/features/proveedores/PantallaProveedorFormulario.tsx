@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSesion } from '../../comun/sesion/SesionContexto'
-import { Boton, Campo, EstadoCargando, EstadoError } from '../../comun/componentes'
-import { listarProveedores, crearProveedor, actualizarProveedor, type DatosProveedor } from '../../api/cliente'
+import { Aviso, Boton, Campo, EstadoCargando, EstadoError } from '../../comun/componentes'
+import {
+  listarProveedores,
+  crearProveedor,
+  actualizarProveedor,
+  activarProveedor,
+  type DatosProveedor,
+} from '../../api/cliente'
 
 export function PantallaProveedorFormulario() {
   const { id } = useParams<{ id: string }>()
@@ -22,8 +28,10 @@ export function PantallaProveedorFormulario() {
   const [direccion, setDireccion] = useState('')
   const [contacto, setContacto] = useState('')
 
+  const [activo, setActivo] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
+  const [reactivando, setReactivando] = useState(false)
 
   useEffect(() => {
     setCargando(true)
@@ -43,6 +51,7 @@ export function PantallaProveedorFormulario() {
         setCorreo(p.correo ?? '')
         setDireccion(p.direccion ?? '')
         setContacto(p.contacto ?? '')
+        setActivo(p.activo)
       })
       .catch(() => setErrorCarga('No se pudo cargar el proveedor.'))
       .finally(() => setCargando(false))
@@ -74,6 +83,19 @@ export function PantallaProveedorFormulario() {
     }
   }
 
+  async function reactivar() {
+    if (!id) return
+    setReactivando(true)
+    try {
+      await activarProveedor(token, id)
+      setActivo(true)
+    } catch {
+      setError('No se pudo reactivar el proveedor.')
+    } finally {
+      setReactivando(false)
+    }
+  }
+
   if (cargando) return <EstadoCargando />
   if (errorCarga) return <EstadoError mensaje={errorCarga} />
 
@@ -85,6 +107,15 @@ export function PantallaProveedorFormulario() {
           {esNuevo ? 'Crear proveedor' : 'Guardar cambios'}
         </Boton>
       </div>
+
+      {!esNuevo && !activo && (
+        <Aviso>
+          Este proveedor está eliminado: no aparece en compras nuevas.{' '}
+          <Boton variante="secundario" onClick={reactivar} cargando={reactivando}>
+            Reactivar
+          </Boton>
+        </Aviso>
+      )}
 
       <div className="panel-admin-tarjeta">
         <Campo

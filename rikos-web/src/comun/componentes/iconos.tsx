@@ -1,20 +1,24 @@
 import type { SVGProps } from 'react'
+import { ArrowLeftRight, Ban, Check, CircleCheck, EllipsisVertical, Eye, Info, Trash2, X } from 'lucide-react'
 
 /**
  * Iconos de linea, minimos, sin color propio (heredan currentColor: el
  * tono sale siempre de donde se usan, nunca de aqui). No hay libreria de
  * iconos instalada todavia -- se agrega cuando haga falta variedad, no
- * antes -- asi que estos pocos se escriben a mano.
+ * antes -- asi que estos pocos se escriben a mano. Unica excepcion:
+ * IconoBorrar, que es el tacho de basura de lucide-react (pedido a
+ * proposito -- un tacho de verdad, no una version dibujada a mano).
  */
 
-export function IconoBorrar(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M9 6h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-6-6 6-6z" />
-      <path d="M14 10l-4 4M10 10l4 4" />
-    </svg>
-  )
-}
+export const IconoBorrar = Trash2
+export const IconoCerrar = X
+export const IconoCheck = Check
+export const IconoOjo = Eye
+export const IconoCambiar = ArrowLeftRight
+export const IconoMasOpciones = EllipsisVertical
+export const IconoInfo = Info
+export const IconoBloquear = Ban
+export const IconoReactivar = CircleCheck
 
 export function IconoCandado(props: SVGProps<SVGSVGElement>) {
   return (
@@ -261,6 +265,20 @@ export function IconoMenuHamburguesa(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/** Manija de arrastre (reordenar filas): seis puntos, sin color propio. */
+export function IconoArrastrar(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <circle cx="9" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" />
+      <circle cx="15" cy="6" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="15" cy="18" r="1.5" />
+    </svg>
+  )
+}
+
 export function IconoFlechaIzquierda(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -302,3 +320,23 @@ export function IconoHorario(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+export function IconoSalir(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  )
+}
+
+export function IconoSol(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="4.2" />
+      <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M6.49 17.51l-1.56 1.56M19.07 4.93l-1.56 1.56" />
+    </svg>
+  )
+}
+
