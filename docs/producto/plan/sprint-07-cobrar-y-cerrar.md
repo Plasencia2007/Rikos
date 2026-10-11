@@ -4,7 +4,7 @@
 autorización y motivo), US-035 (reabrir dentro del turno), US-036 (cerrar el turno con conciliación). En el backlog v3 son US-18 a US-22. Flujos en
 `flujos/06-ep06-caja-facturacion.md`; modelo en `modelo-de-datos/07-caja-turnos-pagos--ep06.md`.
 
-**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05** (`US-032-cajas-y-turnos.md`) **entrega 2 (cobro)** (`US-033-cobro.md`) y **entrega 3 (descuentos y anulación en caja)** (`US-034-descuentos-y-anulacion-en-caja.md`) y **entregas 4 (cierre de turno) y 5 (reapertura)** (`US-035-US-036-cierre-de-turno-y-reapertura.md`) hechas el 2026-10-11 en backend. **El sprint 7 está completo en backend**; falta la pantalla de caja, que necesita diseño.
+**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05** (`US-032-cajas-y-turnos.md`) **entrega 2 (cobro)** (`US-033-cobro.md`) y **entrega 3 (descuentos y anulación en caja)** (`US-034-descuentos-y-anulacion-en-caja.md`) y **entregas 4 (cierre de turno) y 5 (reapertura)** (`US-035-US-036-cierre-de-turno-y-reapertura.md`) hechas el 2026-10-11 en backend. **El sprint 7 está completo** y tiene una pantalla de caja básica y provisional en el POS (`US-032-036-pantalla-de-caja.md`); el diseño definitivo lo hace la sesión de diseño.
 
 **Cómo se llegó a esto:** brainstorming con el usuario el 2026-10-05, una decisión por vez. Lo que dijo el usuario va marcado como tal; lo que asumí yo, como supuesto.
 

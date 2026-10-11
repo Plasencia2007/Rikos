@@ -3167,3 +3167,67 @@ button.prog-opcion:hover { border-color: var(--color-marca); }
 .prod-foto-marco { aspect-ratio: 4 / 3; border-radius: 12px; background: #eef2ef; border: 1px dashed #c9d2cf; display: grid; place-items: center; overflow: hidden; color: #7b8985; font-size: 13px; }
 .prod-foto-marco img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prod-foto-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Caja del POS (sprint 7): abrir turno, cobrar por lineas, cerrar y reabrir (caja-*) */
+.caja-panel, .caja-cobrar { padding: 0 26px 24px; display: grid; gap: var(--espacio-4); align-content: start; }
+.caja-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-3); flex-wrap: wrap; }
+.caja-cabecera h2, .caja-cobrar-cabecera h2 { margin: 0; font-size: 20px; }
+.caja-cabecera-acciones { display: flex; gap: var(--espacio-2); }
+.caja-resumen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: var(--espacio-3); }
+.caja-resumen li { display: grid; gap: 2px; padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-resumen li span { font-size: 13px; color: var(--color-texto-secundario); }
+.caja-resumen li strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.caja-resumen li small { color: var(--color-texto-secundario); }
+.caja-resumen-grande { background: #eef7f1 !important; border-color: var(--color-marca-oscura, #2d6a4f) !important; }
+.caja-resumen-grande strong { font-size: 28px !important; }
+.caja-subtitulo { margin: var(--espacio-3) 0 var(--espacio-2); font-size: 16px; }
+.caja-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--espacio-2); }
+.caja-fila { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-fila > div { display: grid; min-width: 0; }
+.caja-fila-monto { font-variant-numeric: tabular-nums; font-size: 18px; }
+.caja-fila-reabierta { opacity: .6; }
+.caja-fila-reabierta .caja-fila-monto { text-decoration: line-through; }
+.caja-abrir { display: grid; place-items: center; padding: var(--espacio-6) var(--espacio-4); }
+.caja-abrir-tarjeta { display: grid; gap: var(--espacio-3); width: min(440px, 100%); padding: var(--espacio-5); border: 1px solid var(--color-separador); border-radius: 18px; background: #fff; text-align: center; }
+.caja-abrir-tarjeta h2 { margin: 0; }
+.caja-abrir-tarjeta .campo { text-align: left; }
+.caja-abrir-icono { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; background: #eef7f1; color: var(--color-marca-oscura, #2d6a4f); }
+.caja-cobrar-cabecera { display: flex; align-items: center; gap: var(--espacio-3); flex-wrap: wrap; }
+.caja-cobrar-cabecera > div { flex: 1; display: grid; }
+.caja-cobrar-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--espacio-4); align-items: start; }
+.caja-personas { display: grid; gap: var(--espacio-3); }
+.caja-persona { padding: var(--espacio-3) var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-persona h3 { margin: 0 0 var(--espacio-2); font-size: 16px; display: flex; align-items: center; gap: var(--espacio-2); flex-wrap: wrap; }
+.caja-persona ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--espacio-1); }
+.caja-linea { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--espacio-3); min-height: 52px; cursor: pointer; }
+.caja-linea input { width: 26px; height: 26px; }
+.caja-linea-nombre { display: flex; align-items: center; gap: var(--espacio-2); flex-wrap: wrap; }
+.caja-linea-precio { font-variant-numeric: tabular-nums; font-weight: 700; }
+.caja-linea-precio s { color: var(--color-texto-secundario); font-weight: 400; }
+.caja-linea-cerrada { opacity: .6; }
+.caja-enlace { margin-left: 38px; border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 700; color: var(--color-marca-oscura, #2d6a4f); text-decoration: underline; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.caja-pago { position: sticky; top: var(--espacio-3); display: grid; gap: var(--espacio-3); padding: var(--espacio-4); border: 1px solid var(--color-separador); border-radius: 14px; background: #fff; }
+.caja-totales { display: grid; gap: 4px; margin: 0; }
+.caja-totales div { display: flex; justify-content: space-between; gap: var(--espacio-3); }
+.caja-totales dt { color: var(--color-texto-secundario); }
+.caja-totales dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.caja-total-grande dd { font-size: 26px; font-weight: 800; }
+.caja-medios { display: grid; gap: var(--espacio-2); }
+.caja-diferencia { margin: 0; padding: var(--espacio-2) var(--espacio-3); border-radius: 10px; background: #eef7f1; font-weight: 800; text-align: center; }
+.caja-falta { background: #fdecec; color: #8a1f1f; }
+.caja-cobrar-boton { width: 100%; min-height: 56px; font-size: 17px; }
+.caja-resultado { display: grid; gap: var(--espacio-3); justify-items: center; text-align: center; padding: var(--espacio-6) var(--espacio-4); }
+.caja-resultado h2 { margin: 0; }
+.caja-resultado-total { margin: 0; font-size: 36px; font-weight: 800; }
+.caja-vuelto { margin: 0; font-size: 22px; padding: var(--espacio-3) var(--espacio-5); border-radius: 14px; background: #fff0c2; }
+.caja-resultado-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.caja-cierre-resultado { display: grid; gap: var(--espacio-3); }
+@media (max-width: 900px) {
+  .caja-panel, .caja-cobrar { padding: 0 16px 24px; }
+  .caja-resumen { grid-template-columns: repeat(2, 1fr); }
+  .caja-resumen-grande { grid-column: 1 / -1; }
+  .caja-cobrar-cuerpo { grid-template-columns: 1fr; }
+  .caja-pago { position: static; }
+  .caja-fila { grid-template-columns: 1fr auto; }
+  .caja-fila > button, .caja-fila > span { grid-column: 1 / -1; }
+}

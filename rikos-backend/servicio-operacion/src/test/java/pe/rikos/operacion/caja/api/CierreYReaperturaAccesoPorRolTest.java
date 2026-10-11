@@ -158,6 +158,22 @@ class CierreYReaperturaAccesoPorRolTest extends PedidosBase {
     }
 
     @Test
+    void la_caja_lista_los_cobros_de_su_turno_para_reabrirlos() throws Exception {
+        String cajero = tokenPara("cajero");
+        abrirTurno(cajero);
+        String[] cobrado = pedidoCobrado(cajero);
+
+        mvc.perform(get("/turnos/actual/cobros").header("Authorization", cajero)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].id").value(cobrado[1]))
+                .andExpect(jsonPath("$[0].pedidoId").value(cobrado[0])).andExpect(jsonPath("$[0].total").value(1000))
+                .andExpect(jsonPath("$[0].vuelto").value(0)).andExpect(jsonPath("$[0].revertido").value(false));
+        // Sin turno no hay lista.
+        mvc.perform(get("/turnos/actual/cobros").header("Authorization", tokenPara("cajero")))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("SIN_TURNO_ABIERTO"));
+        mvc.perform(get("/turnos/actual/cobros").header("Authorization", tokenPara("mozo"))).andExpect(status().isForbidden());
+    }
+
+    @Test
     void un_conteo_invalido_es_422() throws Exception {
         String cajero = tokenPara("cajero");
         abrirTurno(cajero);

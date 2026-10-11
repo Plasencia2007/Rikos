@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-export type VistaDelPos = 'inicio' | 'mesas' | 'rapido' | 'ordenes' | 'historial'
+export type VistaDelPos = 'inicio' | 'mesas' | 'rapido' | 'ordenes' | 'historial' | 'caja'
 
 interface ItemDeMenu {
   vista: VistaDelPos
@@ -157,13 +157,18 @@ export function PosShell({
             </button>
           ))}
           <div className="pos-separador" />
-          <button type="button" className="pos-item" disabled title={colapsada ? 'Mi sesión' : undefined}>
+          <button
+            type="button"
+            className={`pos-item ${vista === 'caja' ? 'activo' : ''}`}
+            aria-current={vista === 'caja' ? 'page' : undefined}
+            title={colapsada ? 'Caja y turno' : undefined}
+            onClick={() => ir('caja')}
+          >
             <CreditCard size={21} strokeWidth={1.7} aria-hidden="true" />
             <span className="pos-item-texto">
-              <strong>Mi sesión</strong>
-              <span>Caja y turno</span>
+              <strong>Caja</strong>
+              <span>Turno y cobros</span>
             </span>
-            <span className="pos-pronto">Pronto</span>
           </button>
         </nav>
         <div className="pos-mozo">

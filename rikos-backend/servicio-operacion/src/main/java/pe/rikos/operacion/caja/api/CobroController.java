@@ -65,6 +65,11 @@ public class CobroController {
                                  boolean revertido, List<String> lineaIds) {
     }
 
+    /** Un cobro del turno del cajero, con el pedido que cobro: lo que la caja ve para reabrir. */
+    public record CobroDelTurnoRespuesta(String id, String pedidoId, String pedidoNumero, OffsetDateTime cobradoEn, long total,
+                                         long totalMedios, long totalCuentas, long vuelto, boolean revertido) {
+    }
+
     private final CobrarPedido cobrarPedido;
     private final ReabrirCobro reabrirCobro;
     private final ConsultaCobros consultaCobros;
@@ -73,6 +78,23 @@ public class CobroController {
         this.cobrarPedido = cobrarPedido;
         this.reabrirCobro = reabrirCobro;
         this.consultaCobros = consultaCobros;
+    }
+
+    @Operation(summary = "Los cobros del turno abierto del cajero, el mas reciente primero")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CobroDelTurnoRespuesta[].class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @GetMapping("/turnos/actual/cobros")
+    public ResponseEntity<?> cobrosDelTurno(@AuthenticationPrincipal String actorId) {
+        var resultado = consultaCobros.delTurnoActual(actorId);
+        if (resultado.esFracaso()) {
+            return errorDe(resultado);
+        }
+        return ResponseEntity.ok(resultado.valorOLanza().stream().map(c -> new CobroDelTurnoRespuesta(c.cobro().getId(),
+                c.cobro().getPedidoId(), c.pedidoNumero(), c.cobro().getCobradoEn(), c.cobro().getTotal(),
+                c.cobro().getTotalMedios(), c.cobro().getTotalCuentas(), c.cobro().getVuelto(), c.cobro().estaRevertido()))
+                .toList());
     }
 
     @Operation(summary = "Los cobros de un pedido, con las lineas que cobro cada uno y si ya se reabrio")

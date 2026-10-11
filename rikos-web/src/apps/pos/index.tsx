@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { ClipboardList, History, House, LayoutGrid, ReceiptText, Zap } from 'lucide-react'
+import { ClipboardList, History, House, LayoutGrid, ReceiptText, Wallet, Zap } from 'lucide-react'
 import { PantallaPin } from '../../features/autenticacion'
 import { resumenDePedidos, type SesionIniciada } from '../../api/cliente'
 import { ProveedorDeAvisos } from '../../comun/componentes'
+import { PantallaCaja } from '../../features/caja'
 import { MapaDeMesas, PantallaPedido } from '../../features/venta'
 import {
   PantallaHistorial,
@@ -25,6 +26,7 @@ const ENCABEZADOS: Partial<Record<VistaDelPos, { titulo: string; subtitulo: stri
   rapido: { titulo: 'Pedido rápido', subtitulo: 'Pedidos para llevar, sin mesa', Icono: Zap },
   ordenes: { titulo: 'Órdenes activas', subtitulo: 'Pedidos en curso de este local', Icono: ClipboardList },
   historial: { titulo: 'Historial de órdenes', subtitulo: 'Consulta órdenes pasadas', Icono: History },
+  caja: { titulo: 'Caja', subtitulo: 'Tu turno, lo que hay por cobrar y el cierre', Icono: Wallet },
 }
 
 /**
@@ -132,6 +134,8 @@ export default function POS() {
           />
         ) : vista === 'ordenes' ? (
           <PantallaOrdenes token={mozoActivo.token} onVerPedido={(id, titulo) => setPedidoAbierto({ id, titulo })} />
+        ) : vista === 'caja' ? (
+          <PantallaCaja token={mozoActivo.token} />
         ) : vista === 'historial' ? (
           <PantallaHistorial token={mozoActivo.token} onVerPedido={(id, titulo) => setPedidoAbierto({ id, titulo })} />
         ) : (

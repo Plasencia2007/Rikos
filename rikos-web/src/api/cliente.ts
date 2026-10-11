@@ -1498,11 +1498,14 @@ export interface TurnoDeCaja {
   fondoInicial: number
   abiertoEn: string
   estado: 'abierto' | 'cerrado'
+  /** "Caja de <cajero>": como se rotula la caja mientras el turno esta abierto. */
+  etiqueta: string | null
 }
 
 export interface CajaDelLocal {
   id: string
   nombre: string
+  etiqueta: string
   activo: boolean
   turnoAbierto: TurnoDeCaja | null
 }
@@ -1632,3 +1635,18 @@ export const reabrirCobro = (token: string, cobroId: string, motivoId: string, o
     method: 'POST',
     body: JSON.stringify({ motivoId, observacion: observacion ?? null }),
   })
+
+export interface CobroDelTurno {
+  id: string
+  pedidoId: string
+  pedidoNumero: string
+  cobradoEn: string
+  total: number
+  totalMedios: number
+  totalCuentas: number
+  vuelto: number
+  revertido: boolean
+}
+
+/** Los cobros del turno abierto de quien pregunta, el mas reciente primero (para verlos y reabrir uno). */
+export const cobrosDelTurno = (token: string) => pedirAutenticado<CobroDelTurno[]>('/api/turnos/actual/cobros', token)
