@@ -27,7 +27,7 @@ import java.util.Set;
 public class AbrirPedido {
 
     /** Los estados en que un pedido sigue ocupando su mesa. */
-    static final List<String> ESTADOS_EN_CURSO = List.of("abierto", "comandado", "pendiente_cierre");
+    public static final List<String> ESTADOS_EN_CURSO = List.of("abierto", "comandado", "pendiente_cierre");
     /** Un pedido cerrado (o anulado) no se modifica. */
     static boolean estaCerrado(Pedido pedido) {
         return "cerrado".equals(pedido.getEstado()) || "anulado".equals(pedido.getEstado());

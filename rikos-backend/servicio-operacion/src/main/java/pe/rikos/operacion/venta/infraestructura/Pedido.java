@@ -92,6 +92,13 @@ public class Pedido {
         this.cerradoPor = actorId;
     }
 
+    /** Sprint 7: se reabrio el cobro que lo cerro (dentro del turno): vuelve a "comandado" y ocupa la mesa de nuevo. */
+    public void reabrir() {
+        this.estado = "comandado";
+        this.cerradoEn = null;
+        this.cerradoPor = null;
+    }
+
     public OffsetDateTime getCerradoEn() {
         return cerradoEn;
     }

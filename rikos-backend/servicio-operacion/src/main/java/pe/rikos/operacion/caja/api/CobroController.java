@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +20,9 @@ import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.caja.aplicacion.CargoRegistrado;
 import pe.rikos.operacion.caja.aplicacion.CobrarPedido;
 import pe.rikos.operacion.caja.aplicacion.CobroRegistrado;
+import pe.rikos.operacion.caja.aplicacion.ConsultaCobros;
+import pe.rikos.operacion.caja.aplicacion.ReabrirCobro;
+import pe.rikos.operacion.caja.infraestructura.Cobro;
 import pe.rikos.operacion.caja.aplicacion.DescuentoSolicitado;
 import pe.rikos.operacion.caja.aplicacion.ErrorCobro;
 import pe.rikos.operacion.caja.aplicacion.PagoSolicitado;
@@ -54,10 +58,58 @@ public class CobroController {
                                  List<CargoRegistrado> cargos, boolean pedidoCerrado) {
     }
 
-    private final CobrarPedido cobrarPedido;
+    public record ReaperturaRequest(String motivoId, String observacion) {
+    }
 
-    public CobroController(CobrarPedido cobrarPedido) {
+    public record CobroDelPedido(String id, OffsetDateTime cobradoEn, long total, long totalMedios, long totalCuentas,
+                                 boolean revertido, List<String> lineaIds) {
+    }
+
+    private final CobrarPedido cobrarPedido;
+    private final ReabrirCobro reabrirCobro;
+    private final ConsultaCobros consultaCobros;
+
+    public CobroController(CobrarPedido cobrarPedido, ReabrirCobro reabrirCobro, ConsultaCobros consultaCobros) {
         this.cobrarPedido = cobrarPedido;
+        this.reabrirCobro = reabrirCobro;
+        this.consultaCobros = consultaCobros;
+    }
+
+    @Operation(summary = "Los cobros de un pedido, con las lineas que cobro cada uno y si ya se reabrio")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CobroDelPedido[].class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @GetMapping("/pedidos/{id}/cobros")
+    public ResponseEntity<?> cobrosDelPedido(@PathVariable String id) {
+        var resultado = consultaCobros.deLaPedido(id);
+        if (resultado.esFracaso()) {
+            return errorDe(resultado);
+        }
+        return ResponseEntity.ok(resultado.valorOLanza().stream().map(c -> new CobroDelPedido(c.cobro().getId(),
+                c.cobro().getCobradoEn(), c.cobro().getTotal(), c.cobro().getTotalMedios(), c.cobro().getTotalCuentas(),
+                c.cobro().estaRevertido(), c.lineas().stream().map(l -> l.getDetallePedidoId()).toList())).toList());
+    }
+
+    @Operation(summary = "Reabrir un cobro mientras su turno de origen siga abierto (permiso caja.reabrir, con motivo)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = CobroDelPedido.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @PostMapping("/cobros/{id}/reapertura")
+    public ResponseEntity<?> reabrir(@PathVariable String id, @RequestBody ReaperturaRequest cuerpo,
+                                     @AuthenticationPrincipal String actorId) {
+        return protegido(() -> {
+            Resultado<Cobro, ErrorCobro> resultado = reabrirCobro.ejecutar(id, cuerpo.motivoId(), cuerpo.observacion(), actorId);
+            if (resultado.esFracaso()) {
+                return errorDe(resultado);
+            }
+            Cobro c = resultado.valorOLanza();
+            return ResponseEntity.ok(new CobroDelPedido(c.getId(), c.getCobradoEn(), c.getTotal(), c.getTotalMedios(),
+                    c.getTotalCuentas(), c.estaRevertido(), List.of()));
+        });
     }
 
     @Operation(summary = "Cobrar lineas de un pedido: pagos en medios (efectivo con vuelto) y cargo a la cuenta de los pensionistas")
@@ -114,9 +166,9 @@ public class CobroController {
     private static ResponseEntity<?> errorDe(Resultado<?, ErrorCobro> resultado) {
         ErrorCobro e = ((Resultado.Fracaso<?, ErrorCobro>) resultado).error();
         HttpStatus estado = switch (e) {
-            case PEDIDO_NO_ENCONTRADO, LINEA_NO_ENCONTRADA -> HttpStatus.NOT_FOUND;
+            case PEDIDO_NO_ENCONTRADO, LINEA_NO_ENCONTRADA, COBRO_NO_ENCONTRADO -> HttpStatus.NOT_FOUND;
             case PEDIDO_CERRADO, LINEA_YA_COBRADA, LINEA_ANULADA, LINEA_SIN_COMANDAR, SIN_TURNO_ABIERTO,
-                 PENSIONISTA_INACTIVO -> HttpStatus.CONFLICT;
+                 PENSIONISTA_INACTIVO, COBRO_YA_REVERTIDO, TURNO_CERRADO, MESA_OCUPADA -> HttpStatus.CONFLICT;
             default -> HttpStatus.UNPROCESSABLE_ENTITY;
         };
         return error(estado, e.name());

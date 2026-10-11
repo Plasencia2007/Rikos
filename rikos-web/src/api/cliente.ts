@@ -1570,3 +1570,65 @@ export const cobrarPedido = (
     method: 'POST',
     body: JSON.stringify({ lineaIds, pagos, descuentos }),
   })
+
+// ---- Cierre de turno y reapertura (sprint 7, entregas 4 y 5) ----
+
+/** Lo que ve el cajero ANTES de contar. Centimos. efectivoEsperado = fondo + efectivo cobrado (sin vuelto ni cobros reabiertos). */
+export interface ResumenDeTurno {
+  turno: TurnoDeCaja
+  fondoInicial: number
+  efectivoCobrado: number
+  efectivoEsperado: number
+  totalYape: number
+  totalPlin: number
+  totalTarjeta: number
+  cobros: number
+}
+
+export interface CierreDeCaja {
+  id: string
+  turnoId: string
+  efectivoEsperado: number
+  efectivoContado: number
+  /** contado - esperado: negativa si falta dinero. */
+  diferencia: number
+  totalYape: number
+  totalPlin: number
+  totalTarjeta: number
+  observacion: string | null
+  cerradoEn: string
+  /** Hay cualquier diferencia (desde S/ 0,01, a favor o en contra): avisa, nunca bloquea el cierre. */
+  alerta: boolean
+}
+
+export const resumenDelTurno = (token: string) => pedirAutenticado<ResumenDeTurno>('/api/turnos/actual/resumen', token)
+
+export const cerrarTurnoDeCaja = (token: string, efectivoContado: number, observacion?: string | null) =>
+  pedirAutenticado<CierreDeCaja>('/api/turnos/actual/cierre', token, {
+    method: 'POST',
+    body: JSON.stringify({ efectivoContado, observacion: observacion ?? null }),
+  })
+
+export const cierreDelTurno = (token: string, turnoId: string) =>
+  pedirAutenticado<CierreDeCaja>(`/api/turnos/${turnoId}/cierre`, token)
+
+export interface CobroDelPedido {
+  id: string
+  cobradoEn: string
+  total: number
+  totalMedios: number
+  totalCuentas: number
+  /** El cobro se reabrio: sus lineas volvieron a "comandado". */
+  revertido: boolean
+  lineaIds: string[]
+}
+
+export const cobrosDelPedido = (token: string, pedidoId: string) =>
+  pedirAutenticado<CobroDelPedido[]>(`/api/pedidos/${pedidoId}/cobros`, token)
+
+/** Solo mientras el turno de origen siga abierto; exige un motivo de tipo reapertura y el permiso caja.reabrir. */
+export const reabrirCobro = (token: string, cobroId: string, motivoId: string, observacion?: string | null) =>
+  pedirAutenticado<CobroDelPedido>(`/api/cobros/${cobroId}/reapertura`, token, {
+    method: 'POST',
+    body: JSON.stringify({ motivoId, observacion: observacion ?? null }),
+  })

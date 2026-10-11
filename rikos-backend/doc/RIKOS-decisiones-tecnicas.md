@@ -1225,3 +1225,13 @@ El descuento se aplica **por línea** al cobrar (monto en céntimos o porcentaje
 **Estado:** Implementado (2026-10-11, auditoría CAJ-03)
 
 `PedidoRepositorio.bloquearPorIdYLocal` (`PESSIMISTIC_WRITE`): dos cajeros cobrando partes del mismo pedido se turnan y el segundo ve lo que el primero cobró; sin eso, dos cobros disjuntos dejaban todo cobrado sin cerrar el pedido (la decisión de cerrar se toma sobre lo que cada transacción alcanzaba a ver). "Caja 1" se crea con `INSERT ... ON CONFLICT DO NOTHING` (CAJ-05). Un pago por medio (CAJ-01) y tope por pago de S/ 1'000,000 (CAJ-06).
+
+### DT-067 — El cierre de caja es inalterable en la base de datos, no solo en la aplicación
+**Estado:** Implementado (V43, 2026-10-11)
+
+`cierre_caja` tiene un trigger `BEFORE UPDATE OR DELETE` que lanza una excepción: ningún cambio posterior toca un cierre, ni siquiera desde SQL (RN-006). El efectivo esperado es el fondo inicial más el efectivo que entró en el turno (`movimiento_caja`, que ya excluye el vuelto); los cobros reabiertos no cuentan. Una diferencia desde S/ 0,01 en cualquier sentido da `alerta`, nunca bloquea el cierre (RN-070). El cajero cierra solo su turno.
+
+### DT-068 — Reabrir revierte un cobro sin borrarlo
+**Estado:** Implementado (V44, 2026-10-11)
+
+Un cobro se reabre mientras su turno de origen siga abierto (RN-073): queda con `revertido_en/por` y el motivo, sus líneas vuelven a `comandado` y sus `cobro_linea` dejan de ser `vigente` (el único por línea es un índice parcial), el pedido vuelve a `comandado` si el cobro lo había cerrado, y el cargo al pensionista se devuelve con un **ajuste a favor** (el libro es de solo agregado). Nada se borra. Con el turno cerrado no se reabre: la corrección es una operación compensatoria (sprint 11, con el comprobante electrónico, RF-014).

@@ -36,5 +36,12 @@ public enum ErrorCobro {
     /** El motivo elegido exige una observacion. */
     OBSERVACION_OBLIGATORIA,
     /** Con los descuentos, lo que se cobra queda en cero: eso no es un cobro. */
-    TOTAL_EN_CERO
+    TOTAL_EN_CERO,
+    COBRO_NO_ENCONTRADO,
+    /** US-035: el cobro ya se reabrio. */
+    COBRO_YA_REVERTIDO,
+    /** RN-073: el turno de origen ya cerro; la correccion es una operacion compensatoria (sprint 11). */
+    TURNO_CERRADO,
+    /** Otro pedido ocupa la mesa del que se quiere reabrir. */
+    MESA_OCUPADA
 }

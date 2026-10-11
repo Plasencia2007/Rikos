@@ -99,8 +99,13 @@ public class ConfiguracionSeguridad {
                     .hasAuthority("PERM_caja.ver")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas")
                     .hasAuthority("PERM_caja.administrar")
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos", "/turnos/actual/cierre")
                     .hasAuthority("PERM_caja.crear")
+                // US-035 (entrega 5): reabrir un cobro es caja.reabrir; ver los cobros de un pedido, caja.ver.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cobros/*/reapertura")
+                    .hasAuthority("PERM_caja.reabrir")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/pedidos/*/cobros")
+                    .hasAuthority("PERM_caja.ver")
                 // US-033 (entrega 2): cobrar lineas de un pedido es caja.crear (el mozo no cobra). Antes de /pedidos/**.
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/pedidos/*/cobros")
                     .hasAuthority("PERM_caja.crear")

@@ -149,6 +149,11 @@ public class DetallePedido {
         this.estado = "cobrado";
     }
 
+    /** Sprint 7: se reabrio el cobro de esta linea: vuelve a "comandado" (ya salio a cocina), lista para cobrarse de nuevo. */
+    public void reabrirCobro() {
+        this.estado = "comandado";
+    }
+
     /** Se anula con permiso y motivo. Si ya estaba comandada, la receta ya se gasto (RN-065). */
     public void anular(String motivoId, String observacion, String actorId) {
         this.anuladoPostComanda = "comandado".equals(this.estado);

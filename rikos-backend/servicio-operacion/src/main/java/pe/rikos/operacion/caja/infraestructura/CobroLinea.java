@@ -80,6 +80,9 @@ public class CobroLinea {
     @Column(name = "observacion_descuento", length = 250)
     private String observacionDescuento;
 
+    @Column(nullable = false)
+    private boolean vigente = true;
+
     protected CobroLinea() {
     }
 
@@ -168,6 +171,15 @@ public class CobroLinea {
 
     public BigDecimal getUtilidad() {
         return utilidad;
+    }
+
+    /** El cobro se reabrio: esta fila queda como historia y la linea se puede cobrar de nuevo. */
+    public void dejarDeSerVigente() {
+        this.vigente = false;
+    }
+
+    public boolean isVigente() {
+        return vigente;
     }
 
     public String getComposicion() {

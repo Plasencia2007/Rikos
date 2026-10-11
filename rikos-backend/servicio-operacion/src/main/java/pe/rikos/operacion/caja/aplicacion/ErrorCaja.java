@@ -9,5 +9,10 @@ public enum ErrorCaja {
     CAJERO_CON_TURNO_ABIERTO,
     FONDO_INVALIDO,
     NOMBRE_INVALIDO,
-    NOMBRE_REPETIDO
+    NOMBRE_REPETIDO,
+    /** El cajero no tiene un turno abierto en este local. */
+    SIN_TURNO_ABIERTO,
+    /** El efectivo contado falta o es negativo. */
+    CONTADO_INVALIDO,
+    OBSERVACION_LARGA
 }

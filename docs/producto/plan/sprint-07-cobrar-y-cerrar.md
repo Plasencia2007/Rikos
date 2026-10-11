@@ -4,7 +4,7 @@
 autorización y motivo), US-035 (reabrir dentro del turno), US-036 (cerrar el turno con conciliación). En el backlog v3 son US-18 a US-22. Flujos en
 `flujos/06-ep06-caja-facturacion.md`; modelo en `modelo-de-datos/07-caja-turnos-pagos--ep06.md`.
 
-**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05** (`US-032-cajas-y-turnos.md`) **entrega 2 (cobro)** (`US-033-cobro.md`) y **entrega 3 (descuentos y anulación en caja)** (`US-034-descuentos-y-anulacion-en-caja.md`) hechas el 2026-10-11 en backend; falta la pantalla de caja, que necesita diseño.
+**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05** (`US-032-cajas-y-turnos.md`) **entrega 2 (cobro)** (`US-033-cobro.md`) y **entrega 3 (descuentos y anulación en caja)** (`US-034-descuentos-y-anulacion-en-caja.md`) y **entregas 4 (cierre de turno) y 5 (reapertura)** (`US-035-US-036-cierre-de-turno-y-reapertura.md`) hechas el 2026-10-11 en backend. **El sprint 7 está completo en backend**; falta la pantalla de caja, que necesita diseño.
 
 **Cómo se llegó a esto:** brainstorming con el usuario el 2026-10-05, una decisión por vez. Lo que dijo el usuario va marcado como tal; lo que asumí yo, como supuesto.
 
@@ -100,8 +100,8 @@ Cada entrega termina verificable y con su historia en `rikos-backend/doc/histori
 | 1 | **Cajas y turnos** | Abrir un turno con fondo en una caja; no se puede abrir un segundo en la misma caja; dos cajas del mismo local tienen turnos independientes. | US-032 |
 | 2 | **Cobro** (backend hecho el 2026-10-11; falta la pantalla) | La mesa mixta del "éxito": marcar líneas, pago dividido con vuelto, cargo al pensionista, cierre parcial sin liberar la mesa, snapshot por línea, "Terminar pedido" acotado. | US-033, decisión 5 |
 | 3 | **Descuentos y anulación en caja** (backend hecho el 2026-10-11; el permiso de descontar es `caja.descontar` y anular usa `venta.anular`, ver `US-034-descuentos-y-anulacion-en-caja.md`) | Descuento por línea con permiso y motivo; anular lo último que queda por cobrar cierra el pedido; todo en la bitácora. | US-034 |
-| 4 | **Cierre de turno** | Efectivo esperado visible antes de contar, conciliación, alerta desde S/ 0,01, cierre inalterable y auditado. | US-036 |
-| 5 | **Reapertura dentro del turno** | Reabrir una venta con `caja.reabrir`, solo con el turno de origen abierto; revierte el cargo al pensionista y el snapshot. | US-035 (sin compensación) |
+| 4 | **Cierre de turno** (backend hecho el 2026-10-11) | Efectivo esperado visible antes de contar, conciliación, alerta desde S/ 0,01, cierre inalterable y auditado. | US-036 |
+| 5 | **Reapertura dentro del turno** (backend hecho el 2026-10-11) | Reabrir una venta con `caja.reabrir`, solo con el turno de origen abierto; revierte el cargo al pensionista y el snapshot. | US-035 (sin compensación) |
 
 **Orden:** 1 → 2 → 3 → 4 → 5. La entrega 4 va antes que la 5 porque define cuándo un turno "ya cerró", que es lo que la reapertura necesita.
 

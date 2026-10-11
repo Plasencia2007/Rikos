@@ -6,5 +6,7 @@ import java.util.List;
 
 public interface CobroCargoRepositorio extends JpaRepository<CobroCargo, String> {
 
+    List<CobroCargo> findByCobroId(String cobroId);
+
     List<CobroCargo> findByCobroIdIn(java.util.Collection<String> cobrosIds);
 }

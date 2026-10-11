@@ -50,6 +50,10 @@ public class TurnoCaja {
     @Column(nullable = false, length = 10)
     private String estado;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "cerrado_por", length = 26)
+    private String cerradoPor;
+
     @Version
     @Column(nullable = false)
     private int version;
@@ -65,6 +69,17 @@ public class TurnoCaja {
         this.fondoInicial = fondoInicial;
         this.abiertoEn = OffsetDateTime.now();
         this.estado = ABIERTO;
+    }
+
+    /** El cajero cierra su turno: queda "cerrado" con quien y cuando (el cierre en si vive en cierre_caja). */
+    public void cerrar(String cajeroId, OffsetDateTime cuando) {
+        this.estado = CERRADO;
+        this.cerradoEn = cuando;
+        this.cerradoPor = cajeroId;
+    }
+
+    public String getCerradoPor() {
+        return cerradoPor;
     }
 
     public String getId() {

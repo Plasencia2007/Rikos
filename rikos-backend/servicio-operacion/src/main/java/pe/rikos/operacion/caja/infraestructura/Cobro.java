@@ -50,6 +50,20 @@ public class Cobro {
     @Column(nullable = false)
     private long vuelto;
 
+    @Column(name = "revertido_en")
+    private OffsetDateTime revertidoEn;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "revertido_por", length = 26)
+    private String revertidoPor;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "motivo_reapertura_id", length = 26)
+    private String motivoReaperturaId;
+
+    @Column(name = "observacion_reapertura", length = 250)
+    private String observacionReapertura;
+
     protected Cobro() {
     }
 
@@ -64,6 +78,30 @@ public class Cobro {
         this.totalMedios = totalMedios;
         this.totalCuentas = totalCuentas;
         this.vuelto = vuelto;
+    }
+
+    /** US-035: el cobro se reabre (dentro del turno de origen): no se borra, queda revertido con su motivo. */
+    public void revertir(String actorId, String motivoId, String observacion, OffsetDateTime cuando) {
+        this.revertidoEn = cuando;
+        this.revertidoPor = actorId;
+        this.motivoReaperturaId = motivoId;
+        this.observacionReapertura = observacion;
+    }
+
+    public boolean estaRevertido() {
+        return revertidoEn != null;
+    }
+
+    public OffsetDateTime getRevertidoEn() {
+        return revertidoEn;
+    }
+
+    public String getRevertidoPor() {
+        return revertidoPor;
+    }
+
+    public String getMotivoReaperturaId() {
+        return motivoReaperturaId;
     }
 
     public String getId() {
