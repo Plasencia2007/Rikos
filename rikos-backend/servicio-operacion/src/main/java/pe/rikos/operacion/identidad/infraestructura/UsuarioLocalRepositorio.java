@@ -12,5 +12,7 @@ public interface UsuarioLocalRepositorio extends JpaRepository<UsuarioLocal, Usu
 
     boolean existsByLocalId(String localId);
 
+    boolean existsByUsuarioIdAndLocalId(String usuarioId, String localId);
+
     void deleteByUsuarioId(String usuarioId);
 }

@@ -58,7 +58,8 @@ public class Sesion {
         this.localId = localId;
         this.tipo = tipo;
         this.resultado = resultado;
-        this.dispositivo = dispositivo;
+        // El User-Agent puede pasar de 255 caracteres; se recorta para que el registro de la sesion no falle.
+        this.dispositivo = dispositivo != null && dispositivo.length() > 255 ? dispositivo.substring(0, 255) : dispositivo;
         this.direccionIp = direccionIp;
         this.iniciadaEn = OffsetDateTime.now();
     }

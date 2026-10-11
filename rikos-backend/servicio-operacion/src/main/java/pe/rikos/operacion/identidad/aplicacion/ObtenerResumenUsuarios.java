@@ -21,7 +21,7 @@ import java.util.Optional;
 @Service
 public class ObtenerResumenUsuarios {
 
-    public record RolResumen(String id, String nombre, String color) {
+    public record RolResumen(String id, String nombre, String color, String descripcion) {
     }
 
     public record LocalPrincipalResumen(String id, String nombre) {
@@ -30,7 +30,8 @@ public class ObtenerResumenUsuarios {
     public record UltimoAcceso(OffsetDateTime ocurridoEn, String direccionIp) {
     }
 
-    public record Resumen(List<RolResumen> roles, LocalPrincipalResumen localPrincipal, UltimoAcceso ultimoAcceso) {
+    public record Resumen(List<RolResumen> roles, LocalPrincipalResumen localPrincipal,
+                           List<LocalPrincipalResumen> locales, UltimoAcceso ultimoAcceso) {
     }
 
     private final UsuarioRolRepositorio usuarioRoles;
@@ -48,10 +49,11 @@ public class ObtenerResumenUsuarios {
     public Resumen resolver(String usuarioId) {
         List<RolResumen> roles = usuarioRoles.findByUsuarioId(usuarioId).stream()
                 .map(UsuarioRol::getRol)
-                .map(rol -> new RolResumen(rol.getId(), rol.getNombre(), rol.getColor()))
+                .map(rol -> new RolResumen(rol.getId(), rol.getNombre(), rol.getColor(), rol.getDescripcion()))
                 .toList();
 
-        LocalPrincipalResumen localPrincipal = usuarioLocales.findByUsuarioId(usuarioId).stream()
+        List<UsuarioLocal> asignaciones = usuarioLocales.findByUsuarioId(usuarioId);
+        LocalPrincipalResumen localPrincipal = asignaciones.stream()
                 .filter(UsuarioLocal::isEsPrincipal)
                 .map(ul -> new LocalPrincipalResumen(ul.getLocal().getId(), ul.getLocal().getNombre()))
                 .findFirst()
@@ -63,6 +65,11 @@ public class ObtenerResumenUsuarios {
         UltimoAcceso ultimoAcceso = ultima.map(s -> new UltimoAcceso(s.getIniciadaEn(), s.getDireccionIp()))
                 .orElse(null);
 
-        return new Resumen(roles, localPrincipal, ultimoAcceso);
+        List<LocalPrincipalResumen> locales = asignaciones.stream()
+                .map(ul -> new LocalPrincipalResumen(ul.getLocal().getId(), ul.getLocal().getNombre()))
+                .sorted(java.util.Comparator.comparing(LocalPrincipalResumen::nombre))
+                .toList();
+
+        return new Resumen(roles, localPrincipal, locales, ultimoAcceso);
     }
 }

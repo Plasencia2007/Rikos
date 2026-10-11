@@ -58,6 +58,10 @@ public class CrearProducto {
         if (categorias.existsByCategoriaPadreIdAndActivoTrue(categoriaId)) {
             return Resultado.fracaso(ErrorCatalogo.CATEGORIA_NO_ES_HOJA);
         }
+        // US-014: la categoria del menu es solo para el normal y el extra (V21).
+        if ("menu".equals(categoria.getNaturaleza())) {
+            return Resultado.fracaso(ErrorCatalogo.CATEGORIA_RESERVADA);
+        }
 
         UnidadMedida unidad = unidades.findById(unidadBaseId).orElse(null);
         if (unidad == null) {

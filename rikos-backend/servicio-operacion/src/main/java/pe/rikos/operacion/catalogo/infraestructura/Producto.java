@@ -76,6 +76,14 @@ public class Producto {
     @Column(nullable = false)
     private boolean activo = true;
 
+    /** Foto como data URL (JPEG reducido en el navegador); nula si el producto no tiene. */
+    @Column(columnDefinition = "TEXT")
+    private String imagen;
+
+    /** US-014: 'normal' o 'extra' en los dos productos del menu (los siembra V21); nulo en el resto. */
+    @Column(name = "tipo_menu", length = 10)
+    private String tipoMenu;
+
     @Version
     @Column(nullable = false)
     private int version;
@@ -138,6 +146,12 @@ public class Producto {
         this.actualizadoPor = actualizadoPor;
     }
 
+    public void activar(String actualizadoPor) {
+        this.activo = true;
+        this.actualizadoEn = OffsetDateTime.now();
+        this.actualizadoPor = actualizadoPor;
+    }
+
     /** Costo a mano, mientras no exista una compra real (RN-047, sprint 9). */
     public void registrarCostoManual(BigDecimal costo, String actualizadoPor) {
         this.costoUltimaCompra = costo;
@@ -153,6 +167,13 @@ public class Producto {
         this.costoUltimaCompra = costo;
         this.origenCosto = "compra";
         this.fechaUltimaCompra = fecha;
+        this.actualizadoEn = OffsetDateTime.now();
+        this.actualizadoPor = actualizadoPor;
+    }
+
+    /** Nuevo precio del menu (CambiarPrecioMenu). La ficha de producto no puede cambiarlo. */
+    public void cambiarPrecio(Long precioVenta, String actualizadoPor) {
+        this.precioVenta = precioVenta;
         this.actualizadoEn = OffsetDateTime.now();
         this.actualizadoPor = actualizadoPor;
     }
@@ -213,11 +234,35 @@ public class Producto {
         return controlaStock;
     }
 
+    public String getTipoMenu() {
+        return tipoMenu;
+    }
+
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
+    }
+
+    public boolean esDeMenu() {
+        return tipoMenu != null;
+    }
+
     public boolean isActivo() {
         return activo;
     }
 
     public int getVersion() {
         return version;
+    }
+
+    public OffsetDateTime getCreadoEn() {
+        return creadoEn;
+    }
+
+    public OffsetDateTime getActualizadoEn() {
+        return actualizadoEn;
     }
 }

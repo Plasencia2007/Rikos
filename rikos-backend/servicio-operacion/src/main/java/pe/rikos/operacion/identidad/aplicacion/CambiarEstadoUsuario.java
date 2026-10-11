@@ -3,6 +3,7 @@ package pe.rikos.operacion.identidad.aplicacion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.rikos.contratos.Resultado;
+import pe.rikos.operacion.comun.auditoria.RegistradorAuditoria;
 import pe.rikos.operacion.identidad.infraestructura.Usuario;
 import pe.rikos.operacion.identidad.infraestructura.UsuarioRepositorio;
 
@@ -15,9 +16,11 @@ import pe.rikos.operacion.identidad.infraestructura.UsuarioRepositorio;
 public class CambiarEstadoUsuario {
 
     private final UsuarioRepositorio usuarios;
+    private final RegistradorAuditoria auditoria;
 
-    public CambiarEstadoUsuario(UsuarioRepositorio usuarios) {
+    public CambiarEstadoUsuario(UsuarioRepositorio usuarios, RegistradorAuditoria auditoria) {
         this.usuarios = usuarios;
+        this.auditoria = auditoria;
     }
 
     @Transactional
@@ -29,6 +32,9 @@ public class CambiarEstadoUsuario {
                     } else {
                         usuario.desactivar(actorId);
                     }
+                    auditoria.registrar("cambio_estado", "usuario", id,
+                            RegistradorAuditoria.campos("activo", !activo, "nombre", usuario.getNombreUsuario()),
+                            RegistradorAuditoria.campos("activo", activo, "nombre", usuario.getNombreUsuario()));
                     return Resultado.<Usuario, ErrorUsuario>exito(usuario);
                 })
                 .orElseGet(() -> Resultado.fracaso(ErrorUsuario.NO_ENCONTRADO));

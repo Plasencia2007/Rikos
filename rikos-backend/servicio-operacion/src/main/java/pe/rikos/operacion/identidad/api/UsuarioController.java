@@ -1,5 +1,10 @@
 package pe.rikos.operacion.identidad.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -8,6 +13,7 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,14 +28,17 @@ import pe.rikos.operacion.identidad.aplicacion.AsignarPin;
 import pe.rikos.operacion.identidad.aplicacion.AsignarRolesYLocales;
 import pe.rikos.operacion.identidad.aplicacion.CambiarEstadoUsuario;
 import pe.rikos.operacion.identidad.aplicacion.CrearUsuario;
+import pe.rikos.operacion.identidad.aplicacion.EliminarUsuario;
 import pe.rikos.operacion.identidad.aplicacion.ErrorUsuario;
 import pe.rikos.operacion.identidad.aplicacion.ListarUsuarios;
+import pe.rikos.operacion.identidad.aplicacion.ObtenerActividadUsuario;
 import pe.rikos.operacion.identidad.aplicacion.ObtenerPermisosUsuario;
 import pe.rikos.operacion.identidad.aplicacion.ObtenerResumenUsuarios;
 import pe.rikos.operacion.identidad.infraestructura.Usuario;
 import pe.rikos.operacion.identidad.infraestructura.UsuarioLocalRepositorio;
 import pe.rikos.operacion.identidad.infraestructura.UsuarioRepositorio;
 import pe.rikos.operacion.identidad.infraestructura.UsuarioRolRepositorio;
+import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.util.List;
 import java.util.Map;
@@ -44,32 +53,38 @@ public class UsuarioController {
     private final CrearUsuario crearUsuario;
     private final ActualizarUsuario actualizarUsuario;
     private final CambiarEstadoUsuario cambiarEstadoUsuario;
+    private final EliminarUsuario eliminarUsuario;
     private final AsignarRolesYLocales asignarRolesYLocales;
     private final AsignarPin asignarPin;
     private final ListarUsuarios listarUsuarios;
     private final ObtenerPermisosUsuario obtenerPermisosUsuario;
     private final AsignarExcepcionesPermiso asignarExcepcionesPermiso;
     private final ObtenerResumenUsuarios obtenerResumenUsuarios;
+    private final ObtenerActividadUsuario obtenerActividadUsuario;
     private final UsuarioRepositorio usuarios;
     private final UsuarioRolRepositorio usuarioRoles;
     private final UsuarioLocalRepositorio usuarioLocales;
 
     public UsuarioController(CrearUsuario crearUsuario, ActualizarUsuario actualizarUsuario,
-                              CambiarEstadoUsuario cambiarEstadoUsuario, AsignarRolesYLocales asignarRolesYLocales,
+                              CambiarEstadoUsuario cambiarEstadoUsuario, EliminarUsuario eliminarUsuario,
+                              AsignarRolesYLocales asignarRolesYLocales,
                               AsignarPin asignarPin, ListarUsuarios listarUsuarios,
                               ObtenerPermisosUsuario obtenerPermisosUsuario,
                               AsignarExcepcionesPermiso asignarExcepcionesPermiso,
-                              ObtenerResumenUsuarios obtenerResumenUsuarios, UsuarioRepositorio usuarios,
+                              ObtenerResumenUsuarios obtenerResumenUsuarios,
+                              ObtenerActividadUsuario obtenerActividadUsuario, UsuarioRepositorio usuarios,
                               UsuarioRolRepositorio usuarioRoles, UsuarioLocalRepositorio usuarioLocales) {
         this.crearUsuario = crearUsuario;
         this.actualizarUsuario = actualizarUsuario;
         this.cambiarEstadoUsuario = cambiarEstadoUsuario;
+        this.eliminarUsuario = eliminarUsuario;
         this.asignarRolesYLocales = asignarRolesYLocales;
         this.asignarPin = asignarPin;
         this.listarUsuarios = listarUsuarios;
         this.obtenerPermisosUsuario = obtenerPermisosUsuario;
         this.asignarExcepcionesPermiso = asignarExcepcionesPermiso;
         this.obtenerResumenUsuarios = obtenerResumenUsuarios;
+        this.obtenerActividadUsuario = obtenerActividadUsuario;
         this.usuarios = usuarios;
         this.usuarioRoles = usuarioRoles;
         this.usuarioLocales = usuarioLocales;
@@ -96,6 +111,7 @@ public class UsuarioController {
                                     String correo, String telefono, boolean activo,
                                     List<ObtenerResumenUsuarios.RolResumen> roles,
                                     ObtenerResumenUsuarios.LocalPrincipalResumen localPrincipal,
+                                    List<ObtenerResumenUsuarios.LocalPrincipalResumen> locales,
                                     ObtenerResumenUsuarios.UltimoAcceso ultimoAcceso) {
         static UsuarioRespuesta de(Usuario usuario) {
             return de(usuario, null);
@@ -105,7 +121,9 @@ public class UsuarioController {
             return new UsuarioRespuesta(usuario.getId(), usuario.getNombreUsuario(), usuario.getNombres(),
                     usuario.getApellidos(), usuario.getDni(), usuario.getCorreo(), usuario.getTelefono(),
                     usuario.isActivo(), resumen == null ? List.of() : resumen.roles(),
-                    resumen == null ? null : resumen.localPrincipal(), resumen == null ? null : resumen.ultimoAcceso());
+                    resumen == null ? null : resumen.localPrincipal(),
+                    resumen == null ? List.of() : resumen.locales(),
+                    resumen == null ? null : resumen.ultimoAcceso());
         }
     }
 
@@ -116,12 +134,23 @@ public class UsuarioController {
                 .toList();
     }
 
+    @Operation(summary = "Actividad reciente de un usuario")
+    @GetMapping("/{id}/actividad")
+    public List<ObtenerActividadUsuario.Actividad> actividad(@PathVariable String id) {
+        return obtenerActividadUsuario.ejecutar(id);
+    }
+
     public record UsuarioDetalleRespuesta(String id, String nombreUsuario, String nombres, String apellidos,
                                            String dni, String correo, String telefono, boolean activo,
                                            List<String> rolesIds, List<String> localesIds, String localPrincipalId) {
     }
 
     /** Para precargar el formulario de edicion: a diferencia de listar(), trae TODOS los locales asignados, no solo el principal. */
+    @Operation(summary = "Obtener detalle de usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UsuarioDetalleRespuesta.class))),
+            @ApiResponse(responseCode = "404")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable String id) {
         return usuarios.findById(id)
@@ -142,6 +171,13 @@ public class UsuarioController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Crear usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = UsuarioRespuesta.class))),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping
     public ResponseEntity<?> crear(@Valid @RequestBody CrearUsuarioRequest cuerpo,
                                     @AuthenticationPrincipal String actorId) {
@@ -154,6 +190,13 @@ public class UsuarioController {
                 : errorDe(resultado);
     }
 
+    @Operation(summary = "Actualizar usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UsuarioRespuesta.class))),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable String id, @Valid @RequestBody ActualizarUsuarioRequest cuerpo,
                                          @AuthenticationPrincipal String actorId) {
@@ -164,6 +207,13 @@ public class UsuarioController {
                 : errorDe(resultado);
     }
 
+    @Operation(summary = "Asignar roles y locales a usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/{id}/roles-locales")
     public ResponseEntity<?> asignarRolesYLocales(@PathVariable String id,
                                                    @Valid @RequestBody AsignarRolesYLocalesRequest cuerpo,
@@ -177,6 +227,13 @@ public class UsuarioController {
         return ResponseEntity.status(estadoDe(error)).body(Map.of("error", error.name()));
     }
 
+    @Operation(summary = "Asignar PIN a usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/{id}/pin")
     public ResponseEntity<?> asignarPin(@PathVariable String id, @Valid @RequestBody AsignarPinRequest cuerpo,
                                          @AuthenticationPrincipal String actorId) {
@@ -197,6 +254,13 @@ public class UsuarioController {
     }
 
     /** Requiere identidad.administrar_permisos -- ver ConfiguracionSeguridad. */
+    @Operation(summary = "Asignar excepciones de permisos a usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/{id}/permisos")
     public ResponseEntity<?> asignarExcepciones(@PathVariable String id,
                                                  @Valid @RequestBody AsignarExcepcionesRequest cuerpo,
@@ -212,14 +276,45 @@ public class UsuarioController {
         return ResponseEntity.status(estadoDe(error)).body(Map.of("error", error.name()));
     }
 
+    @Operation(summary = "Desactivar usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UsuarioRespuesta.class))),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/{id}/desactivar")
     public ResponseEntity<?> desactivar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
         return cambiarEstado(id, false, actorId);
     }
 
+    @Operation(summary = "Activar usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = UsuarioRespuesta.class))),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/{id}/activar")
     public ResponseEntity<?> activar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
         return cambiarEstado(id, true, actorId);
+    }
+
+    @Operation(summary = "Eliminar usuario")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "400", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable String id) {
+        Resultado<Void, ErrorUsuario> resultado = eliminarUsuario.ejecutar(id);
+        if (resultado.esExito()) {
+            return ResponseEntity.noContent().build();
+        }
+        ErrorUsuario error = ((Resultado.Fracaso<Void, ErrorUsuario>) resultado).error();
+        return ResponseEntity.status(estadoDe(error)).body(Map.of("error", error.name()));
     }
 
     private ResponseEntity<?> cambiarEstado(String id, boolean activo, String actorId) {
@@ -237,7 +332,7 @@ public class UsuarioController {
     private HttpStatus estadoDe(ErrorUsuario error) {
         return switch (error) {
             case NO_ENCONTRADO -> HttpStatus.NOT_FOUND;
-            case NOMBRE_USUARIO_DUPLICADO -> HttpStatus.CONFLICT;
+            case NOMBRE_USUARIO_DUPLICADO, TIENE_HISTORIAL -> HttpStatus.CONFLICT;
             case ROL_INVALIDO, LOCAL_INVALIDO, PERMISO_INVALIDO -> HttpStatus.BAD_REQUEST;
         };
     }

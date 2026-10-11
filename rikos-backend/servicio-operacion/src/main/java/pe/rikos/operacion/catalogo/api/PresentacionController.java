@@ -1,5 +1,10 @@
 package pe.rikos.operacion.catalogo.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,6 +15,7 @@ import pe.rikos.operacion.catalogo.aplicacion.CrearPresentacion;
 import pe.rikos.operacion.catalogo.aplicacion.ErrorCatalogo;
 import pe.rikos.operacion.catalogo.infraestructura.PresentacionCompra;
 import pe.rikos.operacion.catalogo.infraestructura.PresentacionCompraRepositorio;
+import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -47,6 +53,13 @@ public class PresentacionController {
         return presentaciones.findByProductoId(productoId).stream().map(PresentacionRespuesta::de).toList();
     }
 
+    @Operation(summary = "Crear presentacion de compra")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = PresentacionRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/presentaciones")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody PresentacionRequest cuerpo,

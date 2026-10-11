@@ -69,6 +69,12 @@ public class Local {
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
 
+    @Column(name = "color_principal", length = 7)
+    private String colorPrincipal;
+
+    @Column(name = "portada_url", length = 500)
+    private String portadaUrl;
+
     @Column(name = "delivery_habilitado", nullable = false)
     private boolean deliveryHabilitado = true;
 
@@ -121,6 +127,7 @@ public class Local {
             String nombre, String direccion, String telefono, String correo,
             BigDecimal latitud, BigDecimal longitud,
             String facebookUrl, String instagramUrl, String tiktokUrl, String logoUrl,
+            String colorPrincipal, String portadaUrl,
             boolean deliveryHabilitado, boolean recojoHabilitado,
             Integer tiempoMinEntregaMin, Integer tiempoMaxEntregaMin) {
     }
@@ -136,6 +143,8 @@ public class Local {
         this.instagramUrl = datos.instagramUrl();
         this.tiktokUrl = datos.tiktokUrl();
         this.logoUrl = datos.logoUrl();
+        this.colorPrincipal = datos.colorPrincipal();
+        this.portadaUrl = datos.portadaUrl();
         this.deliveryHabilitado = datos.deliveryHabilitado();
         this.recojoHabilitado = datos.recojoHabilitado();
         this.tiempoMinEntregaMin = datos.tiempoMinEntregaMin();
@@ -202,6 +211,14 @@ public class Local {
 
     public String getTiktokUrl() {
         return tiktokUrl;
+    }
+
+    public String getColorPrincipal() {
+        return colorPrincipal;
+    }
+
+    public String getPortadaUrl() {
+        return portadaUrl;
     }
 
     public String getLogoUrl() {

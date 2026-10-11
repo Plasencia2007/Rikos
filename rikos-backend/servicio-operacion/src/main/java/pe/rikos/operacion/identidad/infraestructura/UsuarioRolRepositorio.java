@@ -9,4 +9,8 @@ public interface UsuarioRolRepositorio extends JpaRepository<UsuarioRol, Usuario
     List<UsuarioRol> findByUsuarioId(String usuarioId);
 
     void deleteByUsuarioId(String usuarioId);
+
+    boolean existsByRolId(String rolId);
+
+    long countByRolId(String rolId);
 }

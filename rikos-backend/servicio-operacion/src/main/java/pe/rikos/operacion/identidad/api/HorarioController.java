@@ -1,5 +1,11 @@
 package pe.rikos.operacion.identidad.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
@@ -23,6 +29,7 @@ import pe.rikos.operacion.identidad.infraestructura.HorarioDiaEspecial;
 import pe.rikos.operacion.identidad.infraestructura.HorarioDiaEspecialRepositorio;
 import pe.rikos.operacion.identidad.infraestructura.HorarioServicio;
 import pe.rikos.operacion.identidad.infraestructura.HorarioServicioRepositorio;
+import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -106,6 +113,12 @@ public class HorarioController {
         return new HorariosRespuesta(turnos, diasRespuesta);
     }
 
+    @Operation(summary = "Guardar horario semanal")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TurnoRespuesta.class)))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/horarios")
     public ResponseEntity<?> guardar(@PathVariable String localId, @RequestBody List<TurnoRequest> cuerpo) {
         List<GuardarHorarioSemanal.Turno> turnos = cuerpo.stream()
@@ -117,6 +130,12 @@ public class HorarioController {
                 : errorDe(resultado);
     }
 
+    @Operation(summary = "Crear dia especial")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = DiaEspecialRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/dias-especiales")
     public ResponseEntity<?> crearDiaEspecial(@PathVariable String localId, @RequestBody DiaEspecialRequest cuerpo) {
         List<CrearDiaEspecial.Franja> franjas = (cuerpo.franjas() == null ? List.<FranjaRequest>of() : cuerpo.franjas())
@@ -133,6 +152,12 @@ public class HorarioController {
                 creado.getFecha(), creado.isCerrado(), creado.getDescripcion(), franjasRespuesta));
     }
 
+    @Operation(summary = "Eliminar dia especial")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @DeleteMapping("/dias-especiales/{id}")
     public ResponseEntity<?> eliminarDiaEspecial(@PathVariable String localId, @PathVariable String id) {
         Resultado<Void, ErrorHorario> resultado = eliminarDiaEspecial.ejecutar(id);

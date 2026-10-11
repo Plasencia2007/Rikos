@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: rikos
       POSTGRES_DB: postgres
     ports:
-      - "5433:5432"
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - postgres-datos:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

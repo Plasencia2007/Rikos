@@ -98,6 +98,12 @@ public class Proveedor {
         this.actualizadoPor = actualizadoPor;
     }
 
+    public void activar(String actualizadoPor) {
+        this.activo = true;
+        this.actualizadoEn = OffsetDateTime.now();
+        this.actualizadoPor = actualizadoPor;
+    }
+
     public String getId() {
         return id;
     }

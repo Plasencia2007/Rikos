@@ -1,7 +1,14 @@
 package pe.rikos.operacion.identidad.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +30,7 @@ import pe.rikos.operacion.identidad.aplicacion.ListarLocales;
 import pe.rikos.operacion.identidad.aplicacion.ObtenerGerentesLocal;
 import pe.rikos.operacion.identidad.infraestructura.Local;
 import pe.rikos.operacion.identidad.infraestructura.LocalRepositorio;
+import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -66,6 +74,11 @@ public class LocalController {
      * cualquiera haya iniciado sesion. No expone nada sensible: solo
      * codigo y nombre, lo mismo que ya se ve en la propia pantalla.
      */
+    @Operation(summary = "Obtener local publico por codigo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = LocalPublicoRespuesta.class))),
+            @ApiResponse(responseCode = "404")
+    })
     @GetMapping("/publico/{codigo}")
     public ResponseEntity<?> obtenerPublico(@PathVariable String codigo) {
         Optional<Local> local = locales.findByCodigo(codigo);
@@ -77,21 +90,25 @@ public class LocalController {
     public record CrearLocalRequest(@NotBlank String codigo, @NotBlank String nombre, @NotBlank String direccion) {
     }
 
-    public record ActualizarLocalRequest(@NotBlank String nombre, @NotBlank String direccion, String telefono,
-                                          String correo, BigDecimal latitud, BigDecimal longitud,
+    public record ActualizarLocalRequest(@NotBlank String nombre, @NotBlank String direccion,
+                                          @NotBlank String telefono, @NotBlank @Email String correo,
+                                          BigDecimal latitud, BigDecimal longitud,
                                           String facebookUrl, String instagramUrl, String tiktokUrl, String logoUrl,
+                                          @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String colorPrincipal,
+                                          String portadaUrl,
                                           boolean deliveryHabilitado, boolean recojoHabilitado,
                                           Integer tiempoMinEntregaMin, Integer tiempoMaxEntregaMin) {
         Local.DatosActualizacion aDatos() {
             return new Local.DatosActualizacion(nombre, direccion, telefono, correo, latitud, longitud,
-                    facebookUrl, instagramUrl, tiktokUrl, logoUrl, deliveryHabilitado, recojoHabilitado,
-                    tiempoMinEntregaMin, tiempoMaxEntregaMin);
+                    facebookUrl, instagramUrl, tiktokUrl, logoUrl, colorPrincipal, portadaUrl,
+                    deliveryHabilitado, recojoHabilitado, tiempoMinEntregaMin, tiempoMaxEntregaMin);
         }
     }
 
     public record LocalRespuesta(String id, String codigo, String nombre, String direccion, String telefono,
                                   String correo, BigDecimal latitud, BigDecimal longitud,
                                   String facebookUrl, String instagramUrl, String tiktokUrl, String logoUrl,
+                                  String colorPrincipal, String portadaUrl,
                                   boolean deliveryHabilitado, boolean recojoHabilitado,
                                   Integer tiempoMinEntregaMin, Integer tiempoMaxEntregaMin,
                                   boolean activo, String gerente) {
@@ -99,6 +116,7 @@ public class LocalController {
             return new LocalRespuesta(local.getId(), local.getCodigo(), local.getNombre(), local.getDireccion(),
                     local.getTelefono(), local.getCorreo(), local.getLatitud(), local.getLongitud(),
                     local.getFacebookUrl(), local.getInstagramUrl(), local.getTiktokUrl(), local.getLogoUrl(),
+                    local.getColorPrincipal(), local.getPortadaUrl(),
                     local.isDeliveryHabilitado(), local.isRecojoHabilitado(),
                     local.getTiempoMinEntregaMin(), local.getTiempoMaxEntregaMin(),
                     local.isActivo(), gerente);
@@ -112,6 +130,13 @@ public class LocalController {
         return todos.stream().map(l -> LocalRespuesta.de(l, gerentes.get(l.getId()))).toList();
     }
 
+    @Operation(summary = "Crear local")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = LocalRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping
     public ResponseEntity<?> crear(@Valid @RequestBody CrearLocalRequest cuerpo,
                                     @AuthenticationPrincipal String actorId) {
@@ -122,6 +147,13 @@ public class LocalController {
                 : errorDe(resultado);
     }
 
+    @Operation(summary = "Actualizar local")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = LocalRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable String id, @Valid @RequestBody ActualizarLocalRequest cuerpo,
                                          @AuthenticationPrincipal String actorId) {
@@ -132,11 +164,25 @@ public class LocalController {
                 : errorDe(resultado);
     }
 
+    @Operation(summary = "Desactivar local")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = LocalRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/{id}/desactivar")
     public ResponseEntity<?> desactivar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
         return cambiarEstado(id, false, actorId);
     }
 
+    @Operation(summary = "Activar local")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = LocalRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/{id}/activar")
     public ResponseEntity<?> activar(@PathVariable String id, @AuthenticationPrincipal String actorId) {
         return cambiarEstado(id, true, actorId);
@@ -155,6 +201,13 @@ public class LocalController {
      * llego a usarse (sin usuarios asignados, sin sesiones). Con historial
      * responde 409 con TIENE_HISTORIAL en vez de tocar la base de datos.
      */
+    @Operation(summary = "Eliminar local")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204"),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable String id) {
         Resultado<Void, ErrorLocal> resultado = eliminarLocal.ejecutar(id);

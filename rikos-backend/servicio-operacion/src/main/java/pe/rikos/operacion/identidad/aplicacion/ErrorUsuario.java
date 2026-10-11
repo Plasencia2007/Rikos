@@ -5,5 +5,6 @@ public enum ErrorUsuario {
     NO_ENCONTRADO,
     ROL_INVALIDO,
     LOCAL_INVALIDO,
-    PERMISO_INVALIDO
+    PERMISO_INVALIDO,
+    TIENE_HISTORIAL
 }

@@ -8,4 +8,6 @@ public interface PresentacionCompraRepositorio extends JpaRepository<Presentacio
     List<PresentacionCompra> findByProductoId(String productoId);
 
     boolean existsByProductoIdAndEsPredeterminadaTrueAndActivoTrue(String productoId);
+
+    boolean existsByProductoId(String productoId);
 }

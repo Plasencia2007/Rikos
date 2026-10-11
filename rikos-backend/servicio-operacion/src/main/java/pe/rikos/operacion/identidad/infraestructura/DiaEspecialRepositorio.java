@@ -13,4 +13,6 @@ public interface DiaEspecialRepositorio extends JpaRepository<DiaEspecial, Strin
     Optional<DiaEspecial> findByLocalIdAndFecha(String localId, LocalDate fecha);
 
     boolean existsByLocalIdAndFecha(String localId, LocalDate fecha);
+
+    void deleteByLocalId(String localId);
 }

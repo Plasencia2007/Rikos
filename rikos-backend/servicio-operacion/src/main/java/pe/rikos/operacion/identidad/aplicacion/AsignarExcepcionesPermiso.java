@@ -3,6 +3,7 @@ package pe.rikos.operacion.identidad.aplicacion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.rikos.contratos.Resultado;
+import pe.rikos.operacion.comun.auditoria.RegistradorAuditoria;
 import pe.rikos.operacion.identidad.infraestructura.Permiso;
 import pe.rikos.operacion.identidad.infraestructura.PermisoRepositorio;
 import pe.rikos.operacion.identidad.infraestructura.Usuario;

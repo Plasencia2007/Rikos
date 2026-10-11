@@ -65,6 +65,11 @@ public class FiltroAutenticacionJwt extends OncePerRequestFilter {
         }
 
         var autenticacion = new UsernamePasswordAuthenticationToken(usuarioId, null, autoridades);
+        // US-006: RegistradorAuditoria resuelve el local activo desde aca --
+        // "details" es el unico lugar libre del token de autenticacion, no
+        // pensado originalmente para esto pero es el mismo mecanismo que ya
+        // usa Spring Security para IP/sesion en otros proyectos.
+        autenticacion.setDetails(claims.get("localActivo", String.class));
         SecurityContextHolder.getContext().setAuthentication(autenticacion);
     }
 }

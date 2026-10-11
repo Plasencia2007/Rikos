@@ -1,5 +1,10 @@
 package pe.rikos.operacion.catalogo.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -10,6 +15,7 @@ import pe.rikos.operacion.catalogo.aplicacion.CrearConversion;
 import pe.rikos.operacion.catalogo.aplicacion.ErrorCatalogo;
 import pe.rikos.operacion.catalogo.infraestructura.ConversionUnidad;
 import pe.rikos.operacion.catalogo.infraestructura.ConversionUnidadRepositorio;
+import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,6 +52,13 @@ public class ConversionController {
         return conversiones.findByProductoId(productoId).stream().map(ConversionRespuesta::de).toList();
     }
 
+    @Operation(summary = "Crear conversion de unidad")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = ConversionRespuesta.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
     @PostMapping("/conversiones")
     @Transactional
     public ResponseEntity<?> crear(@RequestBody ConversionRequest cuerpo,

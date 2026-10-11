@@ -9,14 +9,19 @@ import pe.rikos.operacion.catalogo.infraestructura.ProductoRepositorio;
 import java.math.BigDecimal;
 
 /** El costo inicial a mano (sprint 2). Deja de ser posible en cuanto el
- * producto ya tiene origen_costo='compra' (RegistrarCostoDeCompra, sprint 9). */
+ * producto ya tiene origen_costo='compra' (RegistrarCostoDeCompra, sprint 9).
+ *
+ * US-010 CA4: el costo nuevo se propaga en cascada a las recetas que usan
+ * el producto. La compra del sprint 9 tendra que hacer lo mismo. */
 @Service
 public class RegistrarCostoManual {
 
     private final ProductoRepositorio productos;
+    private final CalculadoraCostoReceta calculadora;
 
-    public RegistrarCostoManual(ProductoRepositorio productos) {
+    public RegistrarCostoManual(ProductoRepositorio productos, CalculadoraCostoReceta calculadora) {
         this.productos = productos;
+        this.calculadora = calculadora;
     }
 
     @Transactional
@@ -29,6 +34,8 @@ public class RegistrarCostoManual {
             return Resultado.fracaso(ErrorCatalogo.COSTO_YA_CONFIRMADO_POR_COMPRA);
         }
         producto.registrarCostoManual(costo, actorId);
-        return Resultado.exito(productos.save(producto));
+        Producto guardado = productos.save(producto);
+        calculadora.recalcularEnCascada(productoId);
+        return Resultado.exito(guardado);
     }
 }

@@ -53,11 +53,20 @@ public class AutenticarConPin {
         if (localEncontrado.isEmpty()) {
             return Resultado.fracaso(FalloAutenticacion.de(ErrorAutenticacion.CREDENCIALES_INVALIDAS));
         }
-        String localId = localEncontrado.get().getId();
+        Local local = localEncontrado.get();
+        String localId = local.getId();
 
-        if (limitador.estaBloqueado(localId)) {
+        // US-001 CA3: activo = falso impide nuevas operaciones. El PIN es la
+        // puerta de entrada de las operaciones de ese local, asi que se
+        // corta aca -- sin esto, un local desactivado seguia dejando entrar.
+        if (!local.isActivo()) {
+            registradorSesion.registrar(null, localId, "pin", "fallido", dispositivo, direccionIp);
+            return Resultado.fracaso(FalloAutenticacion.de(ErrorAutenticacion.LOCAL_INACTIVO));
+        }
+
+        if (limitador.estaBloqueado(localId, dispositivo)) {
             registradorSesion.registrar(null, localId, "pin", "bloqueado", dispositivo, direccionIp);
-            long restantes = limitador.segundosRestantes(localId).orElse(0L);
+            long restantes = limitador.segundosRestantes(localId, dispositivo).orElse(0L);
             return Resultado.fracaso(FalloAutenticacion.bloqueado(restantes));
         }
 
@@ -72,12 +81,12 @@ public class AutenticarConPin {
         }
 
         if (encontrado == null) {
-            limitador.registrarFallo(localId);
+            limitador.registrarFallo(localId, dispositivo);
             registradorSesion.registrar(null, localId, "pin", "fallido", dispositivo, direccionIp);
             return Resultado.fracaso(FalloAutenticacion.de(ErrorAutenticacion.CREDENCIALES_INVALIDAS));
         }
 
-        limitador.registrarExito(localId);
+        limitador.registrarExito(localId, dispositivo);
         SesionIniciada sesion = resolutorSesion.construir(encontrado, localId);
         registradorSesion.registrar(encontrado.getId(), localId, "pin", "exitoso", dispositivo, direccionIp);
 
