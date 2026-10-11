@@ -4,7 +4,7 @@
 autorización y motivo), US-035 (reabrir dentro del turno), US-036 (cerrar el turno con conciliación). En el backlog v3 son US-18 a US-22. Flujos en
 `flujos/06-ep06-caja-facturacion.md`; modelo en `modelo-de-datos/07-caja-turnos-pagos--ep06.md`.
 
-**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05**, ver `US-032-cajas-y-turnos.md`.
+**Estado:** especificado y aprobado el 2026-10-05; **entrega 1 (cajas y turnos) hecha el 2026-10-05** (`US-032-cajas-y-turnos.md`) y **entrega 2 (cobro) hecha el 2026-10-11** en backend (`US-033-cobro.md`); falta la pantalla de caja, que necesita diseño.
 
 **Cómo se llegó a esto:** brainstorming con el usuario el 2026-10-05, una decisión por vez. Lo que dijo el usuario va marcado como tal; lo que asumí yo, como supuesto.
 
@@ -56,6 +56,14 @@ El modelo enlaza `pago` a `cuenta_persona` (cobro por persona). Como el cobro es
 **Por qué:** una línea cobrada es el hecho que el snapshot y los reportes necesitan; el pago es solo cómo se pagó. Esto es una **desviación del modelo de datos**, que se corrige en el mismo sprint
 (`modelo-de-datos/07`) y se registra como DT.
 
+### 4.2 bis Lo que cambió al construir la entrega 2 (2026-10-11)
+
+- **No hay tabla `medio_pago`:** el medio es un texto con `CHECK` (efectivo, yape, plin, tarjeta); "cuenta del pensionista" es un cargo (`cobro_cargo`), no un medio de caja.
+- **Solo se cobra lo comandado** (una línea pendiente da `LINEA_SIN_COMANDAR`).
+- **Costo y utilidad del snapshot en soles**, precios e importes en céntimos.
+- **"Terminar pedido"** cierra también un pedido con líneas aún sin comandar (no hay nada que cobrar de ellas); con líneas comandadas da `PEDIDO_CON_LINEAS_POR_COBRAR`.
+- `venta.aplicacion` y `venta.infraestructura` se exponen con `@NamedInterface`; el cierre del pedido lo comparten `TerminarPedido` y el cobro (`CerrarPedido`).
+
 ### 4.3 Estado de las líneas: se agrega `cobrado`
 `detalle_pedido.estado` hoy es pendiente, comandado o anulado. Se agrega `cobrado`. Una línea cobrada es inmodificable salvo por la reapertura dentro del turno.
 
@@ -90,7 +98,7 @@ Cada entrega termina verificable y con su historia en `rikos-backend/doc/histori
 | # | Entrega | Qué se puede demostrar | Historias |
 |---|---|---|---|
 | 1 | **Cajas y turnos** | Abrir un turno con fondo en una caja; no se puede abrir un segundo en la misma caja; dos cajas del mismo local tienen turnos independientes. | US-032 |
-| 2 | **Cobro** | La mesa mixta del "éxito": marcar líneas, pago dividido con vuelto, cargo al pensionista, cierre parcial sin liberar la mesa, snapshot por línea, "Terminar pedido" acotado. | US-033, decisión 5 |
+| 2 | **Cobro** (backend hecho el 2026-10-11; falta la pantalla) | La mesa mixta del "éxito": marcar líneas, pago dividido con vuelto, cargo al pensionista, cierre parcial sin liberar la mesa, snapshot por línea, "Terminar pedido" acotado. | US-033, decisión 5 |
 | 3 | **Descuentos y anulación en caja** | Descuento por línea con permiso y motivo; anulación de una línea comandada desde caja con `caja.anular`; todo en la bitácora. | US-034 |
 | 4 | **Cierre de turno** | Efectivo esperado visible antes de contar, conciliación, alerta desde S/ 0,01, cierre inalterable y auditado. | US-036 |
 | 5 | **Reapertura dentro del turno** | Reabrir una venta con `caja.reabrir`, solo con el turno de origen abierto; revierte el cargo al pensionista y el snapshot. | US-035 (sin compensación) |

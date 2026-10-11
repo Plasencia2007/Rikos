@@ -4,6 +4,12 @@ Sistema multilocal para el Restaurante Riko's: restaurante criollo peruano que a
 público general y una proporción importante de estudiantes pensionistas con cuenta
 corriente.
 
+**Revisión del producto al 11/10/2026:** [auditoría por módulo hasta sprint 7 parcial](docs/auditorias/2026-10-11/README.md),
+[soluciones y pendientes](docs/pendientes/02-auditoria-integral-sprints-0-7-2026-10-11.md)
+y [guía de las carpetas de documentación](docs/LEER-DOCUMENTACION.md).
+El sprint 6/6b tiene cierre histórico con pendientes diferidos; el cobro del sprint 7
+continúa en desarrollo. La auditoría distingue código presente, aceptación y funciones futuras.
+
 Proyecto del curso de Ingeniería de Software — Universidad Peruana Unión, Facultad de
 Ingeniería, E.P. Ingeniería de Sistemas. **Cliente real.**
 

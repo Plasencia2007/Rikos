@@ -2,6 +2,14 @@
 
 # 19. Frontera entre microservicios
 
+> **Estado del documento al 11/10/2026:** las tablas, módulos y mecanismos de
+> los apartados 19–21 representan el diseño objetivo completo. La implementación
+> real se concilia en [la auditoría de modelo y arquitectura](../../auditorias/2026-10-11/05-modelo-datos-arquitectura.md):
+> V1–V41 de operación incluyen 52 tablas (V41 en trabajo local), y el servicio
+> fiscal conserva su esqueleto V1/V2. Sincronización, respaldo y emisión completa
+> todavía son entregas futuras. Los diagramas Mermaid siguientes sustituyen
+> referencias a imágenes que no estaban en el repositorio.
+
 El backend son dos servicios desplegables por separado (DT-011), cada uno con **su propia base de datos**. Ninguno lee las tablas del otro.
 
 | | `servicio-operacion` | `servicio-facturacion` |
@@ -135,9 +143,30 @@ Las 69 tablas agrupadas por módulo, con las dependencias entre módulos.
 
 **Una advertencia sobre por qué no es un diagrama plano de 47 cajas.** Se dibujó primero así, con las 66 tablas y el centenar de relaciones sueltas: el resultado era una maraña de cinco metros de ancho en la que no se distinguía nada. Un diagrama que no se puede leer no documenta, decora. La representación **tabla por tabla con todas sus conexiones** está en la sección 22, que es donde un administrador de base de datos va a mirar; este diagrama responde la otra pregunta, la de arquitectura: qué módulo depende de cuál.
 
-![](dg/d6.png)
+```mermaid
+flowchart TD
+    delivery["Delivery / recojo - diseño"] --> venta["Venta / POS"]
+    caja["Caja / pagos"] --> venta
+    caja --> pensionistas["Pensionistas / cuenta"]
+    venta --> pensionistas
+    venta --> menu["Menú - bloque lógico"]
+    menu --> catalogo["Catálogo / recetas"]
+    venta --> catalogo
+    inventario["Inventario / producción - diseño"] --> catalogo
+    pensionistas --> identidad["Identidad / organización"]
+    catalogo --> identidad
+    venta --> identidad
+    caja --> identidad
+    venta --> comun["Auditoría / infraestructura común"]
+    caja --> comun
+    identidad --> comun
+```
 
-**Cómo se lee.** La flecha va de quien depende hacia aquello de lo que depende. Lo importante es que **no hay ciclos entre módulos**: `venta` depende de `catalogo`, `catalogo` no depende de `venta`. Es la condición que Spring Modulith verifica en el build, y la que permite que un módulo se pueda extraer como servicio independiente si algún día hiciera falta.
+**Cómo se lee.** La flecha va de quien depende hacia aquello de lo que depende.
+El diseño exige ausencia de ciclos: `venta` depende de `catalogo`, `catalogo` no
+depende de `venta`. El diagrama expresa ese objetivo, no un resultado verde del
+build actual. Spring Modulith verifica las dependencias reales; ver ARC-01 y las
+validaciones de la auditoría. El bloque lógico `menu` vive hoy dentro de `catalogo`.
 
 Las relaciones **dentro** de cada módulo están en los cuatro diagramas de la parte I (3.12, 6.5, 7.12, 10.2).
 
@@ -236,7 +265,19 @@ El servicio de facturación tiene **su propio** `outbox`, con la misma estructur
 
 ## 21.7 Diagrama de `servicio-facturacion`
 
-![](dg/d7.png)
+```mermaid
+erDiagram
+    SERIE_COMPROBANTE o|--o{ COMPROBANTE_ELECTRONICO : serializa
+    EMISOR_LOCAL ||--o{ COMPROBANTE_ELECTRONICO : identifica_emisor
+    COMPROBANTE_ELECTRONICO ||--o{ INTENTO_EMISION : registra
+    COMPROBANTE_ELECTRONICO ||--o{ ENVIO_CORREO : entrega
+```
+
+Este ER representa el diseño fiscal futuro, con relaciones principales.
+`reconciliacion`, `outbox` y `event_publication` completan su soporte; no se dibuja
+una FK hacia pedido porque está en otra base de datos. Las tablas reales del
+esqueleto son `comprobante` y `event_publication`; no hay emisión implementada
+por disponer de este diagrama.
 
 ## 21.8 Qué **no** está en este servicio
 

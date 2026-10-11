@@ -4,6 +4,8 @@
 
 Corresponde a EP-06 y a las historias US-032 a US-036.
 
+> **Cambios del sprint 7 (2026-10-05 y 2026-10-11):** `caja` y `turno_caja` se crearon en V40 (un turno abierto por caja **y por cajero**, con índices únicos parciales; "Caja 1" se crea sola la primera vez). V41 agrega `cobro`, `cobro_linea` (snapshot por línea), `pago` (con `monto_recibido` para el vuelto), `movimiento_caja` y `cobro_cargo`, y **no** crea `medio_pago`: el medio es un texto con `CHECK`. `pago` cuelga de `cobro`, no de `cuenta_persona`, porque el cobro es por líneas. Ver `plan/sprint-07-cobrar-y-cerrar.md` §4.2 y §4.2 bis.
+
 ## 9.1 `caja`
 
 | Atributo | Tipo | Nulo | Descripción |

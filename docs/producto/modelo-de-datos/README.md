@@ -1,5 +1,10 @@
 # Modelo de datos
 
+> **Lectura vigente al 11/10/2026:** este conjunto contiene diseño lógico completo,
+> incluyendo tablas futuras. La [conciliación físico/lógico de la auditoría](../../auditorias/2026-10-11/05-modelo-datos-arquitectura.md)
+> identifica lo construido V1–V41, las diferencias y el trabajo local en curso de caja.
+> No usar el número total de tablas propuestas como porcentaje de implementación.
+
 Tablas, relaciones, tipos, índices y restricciones -- un archivo por
 bloque, etiquetado con su fase (`EP-NN`), per `docs/METODO-spec-driven.md`
 §5. Movido acá el 2026-09-29 desde `rikos-backend/doc/RIKOS-modelo-de-datos.md`

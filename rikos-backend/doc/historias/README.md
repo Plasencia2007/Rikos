@@ -36,6 +36,7 @@ construyo. El chat se pierde o se resume; esto queda.
 | `sprint5-motor-de-precios.md` | Sprint 5, entrega 2: motor de precios (cliente normal, pensionista con ticket, extra, segundo almuerzo, agregados, táper), tarjeta "Probar un precio" | Hecho, verificado |
 | `US-017-planes-tarifarios-y-parametros-de-cobro.md` | Sprint 5, entrega 1: planes con versiones y vigencia, parámetros de cobro (táper, segundo consumo), módulo `pensionistas`, permiso `pensionistas.administrar` | Hecho, verificado |
 | `sprint-06b-lista-de-pedidos.md` | Sprint 6b: `GET /pedidos` (en curso con líneas o cerrados, filtros y paginación), `GET /pedidos/resumen` y `mozoNombre`/`abiertoEn` en el pedido, para el rediseño del POS; 17 pruebas |
+| `US-033-cobro.md` | Sprint 7, entrega 2: cobro por líneas (V41), pago dividido con vuelto, cargo al pensionista, snapshot por línea, "Terminar pedido" acotado; 30 pruebas |
 | `US-032-cajas-y-turnos.md` | Sprint 7, entrega 1: cajas y turnos (V40, módulo `caja`), un turno abierto por caja y por cajero; 16 pruebas |
 | `sprint-06-cierre.md` | Cierre del sprint 6: qué se decidió distinto del backlog v3, cómo se verificó y qué queda abierto (HT-10, tipo de entrega, 56 px) |
 | `US-029-reorganizar-cuentas.md` | Sprint 6, entrega 4: pasar productos entre personas y dividir la cuenta con el precio recalculado, mover el pedido de mesa, unir y separar mesas; comanda intacta (V36); 41 pruebas nuevas |

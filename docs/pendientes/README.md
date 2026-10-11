@@ -1,5 +1,11 @@
 # Pendientes
 
+> **Corte actualizado del 11/10/2026:** consultar primero
+> [el registro de auditoría integral](02-auditoria-integral-sprints-0-7-2026-10-11.md).
+> Las listas fechadas de esta portada conservan historial y contienen asuntos ya
+> corregidos; el registro identifica cuáles. Las soluciones propuestas no se
+> implementaron en esta sesión.
+
 Cosas identificadas pero no resueltas todavía, con su razón. Distinto del
 backlog: el backlog es trabajo planeado; un pendiente es algo que se notó
 y se decidió no tocar todavía, o una pregunta que nadie respondió.
@@ -7,6 +13,7 @@ y se decidió no tocar todavía, o una pregunta que nadie respondió.
 | Archivo | Qué contiene |
 |---|---|
 | `01-preguntas-de-refinamiento.md` | Los vacíos y preguntas del Product Backlog v2.0 (sección 10): clasificación de impacto, tabla de refinamiento (RF-NNN), contradicciones y duplicidades detectadas, preguntas que bloquean pantallas concretas |
+| [02-auditoria-integral-sprints-0-7-2026-10-11.md](02-auditoria-integral-sprints-0-7-2026-10-11.md) | Registro por ID de hallazgos, riesgos y validaciones: prioridad, solución, aceptación y dependencia; incluye conciliación de pendientes antiguos |
 
 Los pendientes técnicos del código (P-NN) siguen en
 `rikos-backend/doc/RIKOS-decisiones-tecnicas.md`, sección de pendientes.

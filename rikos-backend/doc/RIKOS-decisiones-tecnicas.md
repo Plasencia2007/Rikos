@@ -1197,3 +1197,21 @@ Deja el pedido `cerrado` y la mesa libre, sin cobro, sin motivo y con solo `vent
 **Estado:** Implementado (2026-10-05)
 
 El User-Agent de un navegador real supera las columnas: `bloqueo_pin.dispositivo` mide 120 y `sesion.dispositivo` 255. `LimitadorIntentosPin` recorta la huella a 120 y `Sesion` a 255. Antes, un PIN incorrecto desde un navegador real daba 500 y el fallo no se contaba, o sea que el bloqueo por intentos no funcionaba (US-54 CA3).
+
+
+## 14. Convenciones establecidas en el Sprint 7
+
+### DT-062 — El cobro es por líneas, y el snapshot vive en `cobro_linea`
+**Estado:** Implementado (V41, 2026-10-11)
+
+Un cobro (`cobro`) es un acto de cobrar líneas de un pedido en el turno de un cajero. Cada línea cobrada guarda su snapshot económico en `cobro_linea` (nombre, cantidad, precio, taper, descuento, importe, costo unitario de la receta, utilidad y composición), único por línea (`cobro_linea_una_vez`), y pasa a estado `cobrado`. El pedido se cierra solo cuando no le queda ninguna línea pendiente ni comandada; la mesa queda libre porque su estado se deriva de los pedidos (DT-055). El modelo original enlazaba `pago` a `cuenta_persona` (cobro por persona): al cobrar por líneas, `pago` cuelga de `cobro` y no existe la tabla `medio_pago` (el medio es un texto con CHECK). Costo y utilidad se guardan **en soles** y los precios e importes en **céntimos**; si falta el costo de una receta, el costo queda **nulo**, nunca cero.
+
+### DT-063 — Un turno abierto por caja y por cajero, garantizado por la base de datos
+**Estado:** Implementado (V40)
+
+Dos índices únicos parciales (`WHERE estado = 'abierto'`) sostienen RN-073 y que el dinero de cajas distintas no se cruce; un choque de dos aperturas simultáneas se traduce a 409, no a 500. "Caja 1" se crea sola la primera vez que un local pide sus cajas.
+
+### DT-064 — Las lineas de un pensionista se cargan a su cuenta dentro de la misma transacción del cobro
+**Estado:** Implementado (V41)
+
+`CobrarPedido` llama a `RegistrarConsumo` (pensionistas) en la transacción del cobro: si algo falla, se deshace todo. El cargo aplica primero el saldo a favor porque el saldo es la suma del libro. Superar el tope solo marca `cobro_cargo.supera_tope`, nunca bloquea (RN-017). Un pensionista desactivado no consume y no se cobra ninguna línea del cobro.
