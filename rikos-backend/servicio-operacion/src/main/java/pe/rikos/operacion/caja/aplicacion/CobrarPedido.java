@@ -18,6 +18,8 @@ import pe.rikos.operacion.caja.infraestructura.Pago;
 import pe.rikos.operacion.caja.infraestructura.PagoRepositorio;
 import pe.rikos.operacion.caja.infraestructura.TurnoCaja;
 import pe.rikos.operacion.caja.infraestructura.TurnoCajaRepositorio;
+import pe.rikos.operacion.catalogo.infraestructura.Motivo;
+import pe.rikos.operacion.catalogo.infraestructura.MotivoRepositorio;
 import pe.rikos.operacion.catalogo.infraestructura.Producto;
 import pe.rikos.operacion.catalogo.infraestructura.ProductoRepositorio;
 import pe.rikos.operacion.catalogo.infraestructura.Receta;
@@ -65,6 +67,8 @@ public class CobrarPedido {
 
     private static final Set<String> MEDIOS = Set.of("efectivo", "yape", "plin", "tarjeta");
     private static final ObjectMapper JSON = new ObjectMapper();
+    /** S/ 1'000,000.00 en centimos: un tope contra montos descomunales que desbordarian las sumas. */
+    private static final long MONTO_MAXIMO = 100_000_000L;
 
     private final PedidoRepositorio pedidos;
     private final CuentaPersonaRepositorio personas;
@@ -78,6 +82,7 @@ public class CobrarPedido {
     private final CobroCargoRepositorio cargos;
     private final ProductoRepositorio productos;
     private final RecetaRepositorio recetas;
+    private final MotivoRepositorio motivos;
     private final PensionistaRepositorio pensionistas;
     private final RegistrarConsumo registrarConsumo;
     private final ConsultaCuenta consultaCuenta;
@@ -88,7 +93,8 @@ public class CobrarPedido {
                         DetallePedidoComponenteRepositorio componentes, TurnoCajaRepositorio turnos,
                         CobroRepositorio cobros, CobroLineaRepositorio cobroLineas, PagoRepositorio pagos,
                         MovimientoCajaRepositorio movimientos, CobroCargoRepositorio cargos,
-                        ProductoRepositorio productos, RecetaRepositorio recetas, PensionistaRepositorio pensionistas,
+                        ProductoRepositorio productos, RecetaRepositorio recetas, MotivoRepositorio motivos,
+                        PensionistaRepositorio pensionistas,
                         RegistrarConsumo registrarConsumo, ConsultaCuenta consultaCuenta, CerrarPedido cerrarPedido,
                         RegistradorAuditoria auditoria) {
         this.pedidos = pedidos;
@@ -103,6 +109,7 @@ public class CobrarPedido {
         this.cargos = cargos;
         this.productos = productos;
         this.recetas = recetas;
+        this.motivos = motivos;
         this.pensionistas = pensionistas;
         this.registrarConsumo = registrarConsumo;
         this.consultaCuenta = consultaCuenta;
@@ -110,14 +117,22 @@ public class CobrarPedido {
         this.auditoria = auditoria;
     }
 
-    @Transactional
+    /** Cobra sin descuentos. */
     public Resultado<CobroRegistrado, ErrorCobro> ejecutar(String pedidoId, List<String> lineaIds,
                                                            List<PagoSolicitado> pagosPedidos, String cajeroId) {
+        return ejecutar(pedidoId, lineaIds, pagosPedidos, List.of(), cajeroId);
+    }
+
+    @Transactional
+    public Resultado<CobroRegistrado, ErrorCobro> ejecutar(String pedidoId, List<String> lineaIds,
+                                                           List<PagoSolicitado> pagosPedidos,
+                                                           List<DescuentoSolicitado> descuentosPedidos, String cajeroId) {
         String localId = LocalDeSesion.actual().orElse(null);
         if (localId == null) {
             return Resultado.fracaso(ErrorCobro.SIN_LOCAL_ACTIVO);
         }
-        Pedido pedido = pedidoId == null ? null : pedidos.findByIdAndLocalId(pedidoId, localId).orElse(null);
+        // Con bloqueo de escritura: dos cajeros cobrando partes del mismo pedido se turnan (auditoria CAJ-03).
+        Pedido pedido = pedidoId == null ? null : pedidos.bloquearPorIdYLocal(pedidoId, localId).orElse(null);
         if (pedido == null) {
             return Resultado.fracaso(ErrorCobro.PEDIDO_NO_ENCONTRADO);
         }
@@ -161,11 +176,18 @@ public class CobrarPedido {
             }
         }
 
+        // ---- los descuentos (US-034): por linea, con motivo; se validan antes de calcular nada ----
+        Resultado<Map<String, DescuentoAplicado>, ErrorCobro> descuentos = validarDescuentos(descuentosPedidos, aCobrar);
+        if (descuentos.esFracaso()) {
+            return Resultado.fracaso(((Resultado.Fracaso<Map<String, DescuentoAplicado>, ErrorCobro>) descuentos).error());
+        }
+        Map<String, DescuentoAplicado> descuentoPorLinea = descuentos.valorOLanza();
+
         long totalMedios = 0;
         long totalCuentas = 0;
         Map<String, Long> porPensionista = new LinkedHashMap<>();
         for (DetallePedido l : aCobrar) {
-            long importe = importeDe(l);
+            long importe = importeDe(l) - descuentoPorLinea.getOrDefault(l.getId(), DescuentoAplicado.NINGUNO).monto();
             CuentaPersona persona = personaPorId.get(l.getCuentaPersonaId());
             if (persona.getPensionistaId() != null) {
                 totalCuentas += importe;
@@ -173,6 +195,10 @@ public class CobrarPedido {
             } else {
                 totalMedios += importe;
             }
+        }
+
+        if (totalMedios + totalCuentas <= 0) {
+            return Resultado.fracaso(ErrorCobro.TOTAL_EN_CERO);
         }
 
         // ---- los pagos (se validan antes de escribir nada) ----
@@ -200,7 +226,17 @@ public class CobrarPedido {
         Map<String, String> nombres = nombresDeProductos(aCobrar);
         for (DetallePedido l : aCobrar) {
             CuentaPersona persona = personaPorId.get(l.getCuentaPersonaId());
-            cobroLineas.save(snapshotDe(cobro, l, persona, nombres));
+            DescuentoAplicado descuento = descuentoPorLinea.getOrDefault(l.getId(), DescuentoAplicado.NINGUNO);
+            cobroLineas.save(snapshotDe(cobro, l, persona, nombres, descuento));
+            if (descuento.monto() > 0) {
+                auditoria.registrar("descuento", "detalle_pedido", l.getId(),
+                        RegistradorAuditoria.campos("importe", importeDe(l)),
+                        RegistradorAuditoria.campos("nombre", "Pedido " + pedido.getNumero(), "producto",
+                                nombres.getOrDefault(l.getProductoId(), String.valueOf(l.getDescripcion())), "tipo",
+                                descuento.tipo(), "valor", descuento.valor(), "descuento", descuento.monto(), "importe",
+                                importeDe(l) - descuento.monto(), "motivo", descuento.motivoDescripcion()),
+                        descuento.motivoId(), descuento.observacion());
+            }
             l.cobrar();
             lineas.save(l);
         }
@@ -256,11 +292,16 @@ public class CobrarPedido {
 
     /** Devuelve el vuelto, o el error del primer pago que no cuadra. */
     private static Resultado<Long, ErrorCobro> validarPagos(List<PagoSolicitado> dados, long totalMedios) {
+        Set<String> vistos = new HashSet<>();
         for (PagoSolicitado p : dados) {
-            if (p.medio() == null || !MEDIOS.contains(p.medio())) {
+            if (p == null || p.medio() == null || !MEDIOS.contains(p.medio())) {
                 return Resultado.fracaso(ErrorCobro.MEDIO_INVALIDO);
             }
-            if (p.monto() <= 0) {
+            // Un pago por medio: dos en efectivo harian ambiguo cual fue lo recibido (auditoria CAJ-01).
+            if (!vistos.add(p.medio())) {
+                return Resultado.fracaso(ErrorCobro.MEDIO_REPETIDO);
+            }
+            if (p.monto() <= 0 || p.monto() > MONTO_MAXIMO) {
                 return Resultado.fracaso(ErrorCobro.MONTO_INVALIDO);
             }
             if (p.referencia() != null && p.referencia().strip().length() > 50) {
@@ -282,7 +323,58 @@ public class CobrarPedido {
         return Resultado.exito(digital + efectivo - totalMedios);
     }
 
-    /** Lo que vale la linea: precio y taper por cantidad (sin descuento todavia, entrega 3). */
+    /** Un descuento ya validado y calculado, en centimos. */
+    private record DescuentoAplicado(long monto, String tipo, long valor, String motivoId, String motivoDescripcion,
+                                     String observacion) {
+        static final DescuentoAplicado NINGUNO = new DescuentoAplicado(0, null, 0, null, null, null);
+    }
+
+    /** Valida los descuentos pedidos y devuelve, por linea, lo que se descuenta. */
+    private Resultado<Map<String, DescuentoAplicado>, ErrorCobro> validarDescuentos(List<DescuentoSolicitado> pedidos,
+                                                                                    List<DetallePedido> aCobrar) {
+        Map<String, DescuentoAplicado> resultado = new LinkedHashMap<>();
+        if (pedidos == null) {
+            return Resultado.exito(resultado);
+        }
+        Map<String, DetallePedido> cobrables = aCobrar.stream()
+                .collect(Collectors.toMap(DetallePedido::getId, Function.identity()));
+        for (DescuentoSolicitado d : pedidos) {
+            if (d == null || d.lineaId() == null || !cobrables.containsKey(d.lineaId()) || resultado.containsKey(d.lineaId())) {
+                return Resultado.fracaso(ErrorCobro.DESCUENTO_INVALIDO);
+            }
+            boolean monto = "monto".equals(d.tipo());
+            if (!monto && !"porcentaje".equals(d.tipo())) {
+                return Resultado.fracaso(ErrorCobro.DESCUENTO_INVALIDO);
+            }
+            long bruto = importeDe(cobrables.get(d.lineaId()));
+            if (d.valor() <= 0 || (!monto && d.valor() > 100)) {
+                return Resultado.fracaso(ErrorCobro.DESCUENTO_INVALIDO);
+            }
+            long descuento = monto ? d.valor() : (bruto * d.valor() + 50) / 100;
+            if (descuento <= 0 || descuento > bruto) {
+                return Resultado.fracaso(ErrorCobro.DESCUENTO_INVALIDO);
+            }
+            Motivo motivo = d.motivoId() == null ? null : motivos.findById(d.motivoId()).orElse(null);
+            if (motivo == null) {
+                return Resultado.fracaso(ErrorCobro.MOTIVO_NO_ENCONTRADO);
+            }
+            if (!motivo.isActivo() || !"descuento".equals(motivo.getTipo())) {
+                return Resultado.fracaso(ErrorCobro.MOTIVO_INVALIDO);
+            }
+            String nota = d.observacion() == null || d.observacion().isBlank() ? null : d.observacion().strip();
+            if (motivo.isRequiereObservacion() && nota == null) {
+                return Resultado.fracaso(ErrorCobro.OBSERVACION_OBLIGATORIA);
+            }
+            if (nota != null && nota.length() > 250) {
+                return Resultado.fracaso(ErrorCobro.OBSERVACION_OBLIGATORIA);
+            }
+            resultado.put(d.lineaId(), new DescuentoAplicado(descuento, d.tipo(), d.valor(), motivo.getId(),
+                    motivo.getDescripcion(), nota));
+        }
+        return Resultado.exito(resultado);
+    }
+
+    /** Lo que vale la linea ANTES del descuento: precio y taper por cantidad. */
     private static long importeDe(DetallePedido l) {
         return (l.getPrecioUnitario() + l.getTaperUnitario()) * l.getCantidad();
     }
@@ -299,8 +391,9 @@ public class CobrarPedido {
         return productos.findAllById(ids).stream().collect(Collectors.toMap(Producto::getId, Producto::getNombre));
     }
 
-    private CobroLinea snapshotDe(Cobro cobro, DetallePedido l, CuentaPersona persona, Map<String, String> nombres) {
-        long importe = importeDe(l);
+    private CobroLinea snapshotDe(Cobro cobro, DetallePedido l, CuentaPersona persona, Map<String, String> nombres,
+                                  DescuentoAplicado descuento) {
+        long importe = importeDe(l) - descuento.monto();
         List<DetallePedidoComponente> partes = componentes.findByDetallePedidoIdIn(List.of(l.getId()));
         BigDecimal costoUnitario = null;
         String composicion = null;
@@ -350,8 +443,9 @@ public class CobrarPedido {
         };
         return new CobroLinea(Identificador.nuevo().valor(), cobro.getId(), l.getId(), l.getCuentaPersonaId(),
                 persona.getPensionistaId(), persona.getPensionistaId() == null ? "medios" : "cuenta", l.getProductoId(),
-                l.getTipoLinea(), nombre, l.getCantidad(), l.getPrecioUnitario(), l.getTaperUnitario(), 0L, importe,
-                costoUnitario, utilidad, composicion);
+                l.getTipoLinea(), nombre, l.getCantidad(), l.getPrecioUnitario(), l.getTaperUnitario(), descuento.monto(), importe,
+                costoUnitario, utilidad, composicion, descuento.monto() > 0 ? descuento.motivoId() : null,
+                descuento.monto() > 0 ? descuento.observacion() : null);
     }
 
     private static String comoJson(Object valor) {

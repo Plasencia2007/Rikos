@@ -24,6 +24,8 @@ class CajaPorDefecto {
         if (!existentes.isEmpty()) {
             return existentes;
         }
-        return List.of(cajas.save(new Caja(Identificador.nuevo().valor(), localId, NOMBRE, actorId)));
+        // Inserccion que tolera la carrera de dos primeras consultas (auditoria CAJ-05): si la otra gano, esta no hace nada.
+        cajas.insertarSiNoExiste(Identificador.nuevo().valor(), localId, NOMBRE, actorId);
+        return cajas.findByLocalIdOrderByNombre(localId);
     }
 }

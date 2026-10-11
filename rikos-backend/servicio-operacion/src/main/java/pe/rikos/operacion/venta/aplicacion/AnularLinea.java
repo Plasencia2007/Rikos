@@ -15,6 +15,7 @@ import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
 import pe.rikos.operacion.venta.infraestructura.Pedido;
 import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
 
+
 /**
  * US-031: anula una linea con motivo (tipo "anulacion", RN-072). El permiso venta.anular lo exige el controlador.
  * Antes de comandar no toca inventario; despues de comandar queda marcada anulado_post_comanda porque la receta ya
@@ -31,9 +32,12 @@ public class AnularLinea {
     private final MotivoRepositorio motivos;
     private final ProductoRepositorio productos;
     private final RegistradorAuditoria auditoria;
+    private final CerrarPedido cerrarPedido;
 
     public AnularLinea(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas, DetallePedidoRepositorio lineas,
-                       MotivoRepositorio motivos, ProductoRepositorio productos, RegistradorAuditoria auditoria) {
+                       MotivoRepositorio motivos, ProductoRepositorio productos, RegistradorAuditoria auditoria,
+                       CerrarPedido cerrarPedido) {
+        this.cerrarPedido = cerrarPedido;
         this.pedidos = pedidos;
         this.personas = personas;
         this.lineas = lineas;
@@ -91,6 +95,13 @@ public class AnularLinea {
                         "cantidad", linea.getCantidad(), "despuesDeComandar", linea.isAnuladoPostComanda(),
                         "motivo", motivo.getDescripcion()),
                 motivo.getId(), nota);
+        // Sprint 7: si el pedido ya se cobro en parte y esta era lo ultimo que quedaba por cobrar, el pedido se cierra solo
+        // (la mesa queda libre). Sin nada cobrado no hay venta: el pedido se termina a mano con "Terminar pedido".
+        var todas = lineas.findByCuentaPersonaIdInOrderByCreadoEn(
+                personas.findByPedidoIdOrderByOrden(pedidoId).stream().map(CuentaPersona::getId).toList());
+        if (todas.stream().anyMatch(l -> "cobrado".equals(l.getEstado())) && CerrarPedido.sinNadaPorCobrar(todas)) {
+            cerrarPedido.cerrar(pedido, actorId);
+        }
         return Resultado.exito(null);
     }
 

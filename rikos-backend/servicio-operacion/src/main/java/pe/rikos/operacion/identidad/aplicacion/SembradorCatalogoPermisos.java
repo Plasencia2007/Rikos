@@ -67,6 +67,7 @@ public class SembradorCatalogoPermisos implements ApplicationRunner {
         new DefPermiso("venta", "crear", "Registrar pedidos"),
         new DefPermiso("caja", "crear", "Abrir turno de caja"),
         new DefPermiso("caja", "administrar", "Crear y editar las cajas de un local"),
+        new DefPermiso("caja", "descontar", "Aplicar descuentos al cobrar"),
         new DefPermiso("compras", "crear", "Registrar compras"),
         new DefPermiso("delivery", "crear", "Registrar pedidos de delivery"),
         new DefPermiso("facturacion", "crear", "Emitir comprobantes electrónicos"),
@@ -148,7 +149,7 @@ public class SembradorCatalogoPermisos implements ApplicationRunner {
             "recetas.ver_costos", "inventario.ver_costos", "reportes.ver_costos",
             "reportes.exportar", "facturacion.exportar", "inventario.exportar",
             "menu.marcar_agotado",
-            "venta.bloquear_mesa", "venta.administrar", "caja.administrar"
+            "venta.bloquear_mesa", "venta.administrar", "caja.administrar", "caja.descontar"
         ));
 
         PERMISOS_POR_ROL.put("cajero", Set.of(

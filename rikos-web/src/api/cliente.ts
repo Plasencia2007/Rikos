@@ -1550,8 +1550,23 @@ export interface CobroRegistrado {
   pedidoCerrado: boolean
 }
 
-export const cobrarPedido = (token: string, pedidoId: string, lineaIds: string[], pagos: PagoACobrar[]) =>
+/** Un descuento para UNA linea: 'monto' en centimos o 'porcentaje' de 1 a 100. Exige el permiso caja.descontar y un motivo de tipo descuento. */
+export interface DescuentoACobrar {
+  lineaId: string
+  tipo: 'monto' | 'porcentaje'
+  valor: number
+  motivoId: string
+  observacion?: string | null
+}
+
+export const cobrarPedido = (
+  token: string,
+  pedidoId: string,
+  lineaIds: string[],
+  pagos: PagoACobrar[],
+  descuentos: DescuentoACobrar[] = [],
+) =>
   pedirAutenticado<CobroRegistrado>(`/api/pedidos/${pedidoId}/cobros`, token, {
     method: 'POST',
-    body: JSON.stringify({ lineaIds, pagos }),
+    body: JSON.stringify({ lineaIds, pagos, descuentos }),
   })

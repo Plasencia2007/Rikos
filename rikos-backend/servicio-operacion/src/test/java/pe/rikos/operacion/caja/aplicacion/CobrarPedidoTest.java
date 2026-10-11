@@ -442,6 +442,37 @@ class CobrarPedidoTest extends ComandasBase {
         assertThat(lineas.findById(suya.getId()).orElseThrow().getEstado()).isEqualTo("comandado");
     }
 
+    // ---- endurecimiento (auditoria CAJ-01 y CAJ-06) ----
+
+    @Test
+    void dos_pagos_en_el_mismo_medio_se_rechazan_en_vez_de_romper_con_un_500() {
+        var plato = comandada(persona, "Lomo", 2);
+        comandar();
+
+        assertThat(error(cobrarLineas(List.of(plato.getId()), new PagoSolicitado("efectivo", 500L, null),
+                new PagoSolicitado("efectivo", 500L, null)))).isEqualTo(ErrorCobro.MEDIO_REPETIDO);
+        assertThat(lineas.findById(plato.getId()).orElseThrow().getEstado()).isEqualTo("comandado");
+    }
+
+    @Test
+    void un_pago_nulo_o_un_monto_descomunal_se_rechazan_sin_escribir_nada() {
+        var plato = comandada(persona, "Lomo", 1);
+        comandar();
+        var conNulo = new java.util.ArrayList<PagoSolicitado>();
+        conNulo.add(null);
+
+        assertThat(error(cobrar.ejecutar(pedido.getId(), List.of(plato.getId()), conNulo, ADMIN_SEMBRADO_ID)))
+                .isEqualTo(ErrorCobro.MEDIO_INVALIDO);
+        assertThat(error(cobrarLineas(List.of(plato.getId()), new PagoSolicitado("efectivo", Long.MAX_VALUE, null))))
+                .isEqualTo(ErrorCobro.MONTO_INVALIDO);
+        assertThat(error(cobrarLineas(List.of(plato.getId()), new PagoSolicitado("yape", 400L, null),
+                new PagoSolicitado("plin", 100L, null), new PagoSolicitado("tarjeta", 100L, null),
+                new PagoSolicitado("efectivo", 1000L, null), new PagoSolicitado("yape", 1L, null))))
+                .isEqualTo(ErrorCobro.MEDIO_REPETIDO);
+        assertThat(movimientos.findByTurnoCajaId(turno.getId())).isEmpty();
+        assertThat(lineas.findById(plato.getId()).orElseThrow().getEstado()).isEqualTo("comandado");
+    }
+
     @Autowired
     pe.rikos.operacion.pensionistas.infraestructura.PensionistaRepositorio pensionistasRepo;
     @Autowired

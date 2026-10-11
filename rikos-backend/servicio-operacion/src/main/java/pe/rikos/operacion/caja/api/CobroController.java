@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,7 @@ import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.caja.aplicacion.CargoRegistrado;
 import pe.rikos.operacion.caja.aplicacion.CobrarPedido;
 import pe.rikos.operacion.caja.aplicacion.CobroRegistrado;
+import pe.rikos.operacion.caja.aplicacion.DescuentoSolicitado;
 import pe.rikos.operacion.caja.aplicacion.ErrorCobro;
 import pe.rikos.operacion.caja.aplicacion.PagoSolicitado;
 import pe.rikos.operacion.comun.web.ErrorRespuesta;
@@ -37,7 +39,11 @@ public class CobroController {
     public record PagoRequest(String medio, Long monto, String referencia) {
     }
 
-    public record CobroRequest(List<String> lineaIds, List<PagoRequest> pagos) {
+    /** Un descuento para UNA linea: tipo "monto" (centimos) o "porcentaje" (1 a 100), con motivo de tipo descuento. */
+    public record DescuentoRequest(String lineaId, String tipo, Long valor, String motivoId, String observacion) {
+    }
+
+    public record CobroRequest(List<String> lineaIds, List<PagoRequest> pagos, List<DescuentoRequest> descuentos) {
     }
 
     public record PagoRespuesta(String medio, long importe, Long montoRecibido, String referencia) {
@@ -63,11 +69,22 @@ public class CobroController {
     })
     @PostMapping("/pedidos/{id}/cobros")
     public ResponseEntity<?> cobrar(@PathVariable String id, @RequestBody CobroRequest cuerpo,
-                                    @AuthenticationPrincipal String actorId) {
+                                    @AuthenticationPrincipal String actorId, Authentication autenticacion) {
+        boolean pideDescuento = cuerpo.descuentos() != null && !cuerpo.descuentos().isEmpty();
+        // US-034: un descuento exige su propio permiso (caja.descontar), ademas de caja.crear para cobrar.
+        if (pideDescuento && autenticacion.getAuthorities().stream().noneMatch(a -> "PERM_caja.descontar".equals(a.getAuthority()))) {
+            return error(HttpStatus.FORBIDDEN, "SIN_PERMISO_PARA_DESCONTAR");
+        }
         return protegido(() -> {
+            // Un elemento nulo llega al caso de uso como un pago sin medio: lo rechaza el, no un NullPointerException.
             List<PagoSolicitado> pagos = cuerpo.pagos() == null ? List.of() : cuerpo.pagos().stream()
-                    .map(p -> new PagoSolicitado(p.medio(), p.monto() == null ? 0L : p.monto(), p.referencia())).toList();
-            Resultado<CobroRegistrado, ErrorCobro> resultado = cobrarPedido.ejecutar(id, cuerpo.lineaIds(), pagos, actorId);
+                    .map(p -> p == null ? null : new PagoSolicitado(p.medio(), p.monto() == null ? 0L : p.monto(), p.referencia()))
+                    .collect(java.util.stream.Collectors.toList());
+            List<DescuentoSolicitado> descuentos = !pideDescuento ? List.of() : cuerpo.descuentos().stream()
+                    .map(d -> d == null ? null : new DescuentoSolicitado(d.lineaId(), d.tipo(), d.valor() == null ? 0L : d.valor(),
+                            d.motivoId(), d.observacion()))
+                    .collect(java.util.stream.Collectors.toList());
+            Resultado<CobroRegistrado, ErrorCobro> resultado = cobrarPedido.ejecutar(id, cuerpo.lineaIds(), pagos, descuentos, actorId);
             if (resultado.esFracaso()) {
                 return errorDe(resultado);
             }

@@ -25,5 +25,16 @@ public enum ErrorCobro {
     /** Todo lo que se cobra va a la cuenta de un pensionista: no hay nada que pagar en medios. */
     PAGO_SIN_NADA_QUE_PAGAR,
     /** RN-034: un pensionista desactivado no consume. */
-    PENSIONISTA_INACTIVO
+    PENSIONISTA_INACTIVO,
+    /** Dos pagos en el mismo medio: se suman en uno solo (el vuelto se calcula sobre el efectivo recibido). */
+    MEDIO_REPETIDO,
+    /** US-034: el descuento no existe, no es monto ni porcentaje, no cabe en la linea o la linea no se esta cobrando. */
+    DESCUENTO_INVALIDO,
+    MOTIVO_NO_ENCONTRADO,
+    /** Inactivo o de otro tipo que "descuento". */
+    MOTIVO_INVALIDO,
+    /** El motivo elegido exige una observacion. */
+    OBSERVACION_OBLIGATORIA,
+    /** Con los descuentos, lo que se cobra queda en cero: eso no es un cobro. */
+    TOTAL_EN_CERO
 }

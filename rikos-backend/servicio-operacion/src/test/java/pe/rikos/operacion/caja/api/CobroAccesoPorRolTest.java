@@ -214,6 +214,53 @@ class CobroAccesoPorRolTest extends PedidosBase {
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("PEDIDO_CON_LINEAS_POR_COBRAR"));
     }
 
+    @Autowired
+    pe.rikos.operacion.catalogo.infraestructura.MotivoRepositorio motivos;
+
+    String motivoDeDescuento() {
+        return motivos.save(new pe.rikos.operacion.catalogo.infraestructura.Motivo(Identificador.nuevo().valor(), "descuento",
+                "Cortesia " + Identificador.nuevo().valor().substring(18), false)).getId();
+    }
+
+    String cuerpoConDescuento(String lineaId, long recibido, String motivoId) {
+        return "{\"lineaIds\":[\"" + lineaId + "\"],\"pagos\":[{\"medio\":\"efectivo\",\"monto\":" + recibido
+                + "}],\"descuentos\":[{\"lineaId\":\"" + lineaId + "\",\"tipo\":\"monto\",\"valor\":200,\"motivoId\":\""
+                + motivoId + "\"}]}";
+    }
+
+    @Test
+    void descontar_exige_su_propio_permiso_y_los_administradores_lo_tienen() throws Exception {
+        String motivo = motivoDeDescuento();
+        String cajero = tokenPara("cajero");
+        String[] delCajero = pedidoComandado(cajero, mesaNueva("1"));
+        abrirTurno(cajero);
+
+        // El cajero cobra (caja.crear) pero no descuenta (caja.descontar es de los administradores).
+        mvc.perform(post("/pedidos/" + delCajero[0] + "/cobros").header("Authorization", cajero)
+                        .contentType(MediaType.APPLICATION_JSON).content(cuerpoConDescuento(delCajero[1], 1000, motivo)))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.error").value("SIN_PERMISO_PARA_DESCONTAR"));
+
+        String admin = tokenPara("administrador de local");
+        String[] delAdmin = pedidoComandado(admin, mesaNueva("2"));
+        abrirTurno(admin);
+        mvc.perform(post("/pedidos/" + delAdmin[0] + "/cobros").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(cuerpoConDescuento(delAdmin[1], 1000, motivo)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.total").value(800))
+                .andExpect(jsonPath("$.vuelto").value(200));
+    }
+
+    @Test
+    void un_pago_nulo_es_422_y_no_un_500() throws Exception {
+        String cajero = tokenPara("cajero");
+        String[] pedido = pedidoComandado(cajero, mesaNueva("1"));
+        abrirTurno(cajero);
+
+        mvc.perform(post("/pedidos/" + pedido[0] + "/cobros").header("Authorization", cajero)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"lineaIds\":[\"" + pedido[1] + "\"],\"pagos\":[null]}"))
+                .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.error").value("MEDIO_INVALIDO"));
+    }
+
     @Test
     void sin_sesion_no_cobra() throws Exception {
         mvc.perform(post("/pedidos/x/cobros").contentType(MediaType.APPLICATION_JSON).content("{}"))

@@ -1215,3 +1215,13 @@ Dos índices únicos parciales (`WHERE estado = 'abierto'`) sostienen RN-073 y q
 **Estado:** Implementado (V41)
 
 `CobrarPedido` llama a `RegistrarConsumo` (pensionistas) en la transacción del cobro: si algo falla, se deshace todo. El cargo aplica primero el saldo a favor porque el saldo es la suma del libro. Superar el tope solo marca `cobro_cargo.supera_tope`, nunca bloquea (RN-017). Un pensionista desactivado no consume y no se cobra ninguna línea del cobro.
+
+### DT-065 — Un descuento es de una línea, lleva motivo en la base y exige su propio permiso
+**Estado:** Implementado (V42, 2026-10-11)
+
+El descuento se aplica **por línea** al cobrar (monto en céntimos o porcentaje de 1 a 100 sobre el importe bruto de la línea, táper incluido), un solo descuento por línea. `cobro_linea` guarda el precio original, el descuento, el importe cobrado y el motivo, y un `CHECK` impide un descuento sin motivo. El permiso es `caja.descontar` (administradores por defecto; el cajero no, el dueño decide), distinto de `caja.crear` que solo permite cobrar. Cada descuento deja un evento `descuento` en la bitácora con el importe anterior y el nuevo.
+
+### DT-066 — El pedido se toma con bloqueo de escritura al cobrar
+**Estado:** Implementado (2026-10-11, auditoría CAJ-03)
+
+`PedidoRepositorio.bloquearPorIdYLocal` (`PESSIMISTIC_WRITE`): dos cajeros cobrando partes del mismo pedido se turnan y el segundo ve lo que el primero cobró; sin eso, dos cobros disjuntos dejaban todo cobrado sin cerrar el pedido (la decisión de cerrar se toma sobre lo que cada transacción alcanzaba a ver). "Caja 1" se crea con `INSERT ... ON CONFLICT DO NOTHING` (CAJ-05). Un pago por medio (CAJ-01) y tope por pago de S/ 1'000,000 (CAJ-06).

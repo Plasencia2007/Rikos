@@ -3,6 +3,8 @@ package pe.rikos.operacion.venta.infraestructura;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
@@ -14,6 +16,14 @@ public interface PedidoRepositorio extends JpaRepository<Pedido, String> {
 
     /** Un pedido de otro local no se encuentra: nunca se filtra que existe. */
     Optional<Pedido> findByIdAndLocalId(String id, String localId);
+
+    /**
+     * El mismo pedido tomado con bloqueo de escritura: dos cajeros cobrando partes del mismo pedido a la vez se turnan, y el
+     * segundo ve las lineas que el primero ya cobro (si no, ninguno veria "nada por cobrar" y el pedido no se cerraria).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Pedido p where p.id = :id and p.localId = :localId")
+    Optional<Pedido> bloquearPorIdYLocal(String id, String localId);
 
     Optional<Pedido> findByMesaIdAndEstadoIn(String mesaId, Collection<String> estados);
 

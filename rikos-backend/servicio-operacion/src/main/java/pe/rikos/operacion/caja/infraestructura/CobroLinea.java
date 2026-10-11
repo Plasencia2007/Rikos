@@ -73,10 +73,18 @@ public class CobroLinea {
     @Column()
     private String composicion;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "motivo_descuento_id", length = 26)
+    private String motivoDescuentoId;
+
+    @Column(name = "observacion_descuento", length = 250)
+    private String observacionDescuento;
+
     protected CobroLinea() {
     }
 
-    public CobroLinea(String id, String cobroId, String detallePedidoId, String cuentaPersonaId, String pensionistaId, String destino, String productoId, String tipoLinea, String nombre, int cantidad, long precioUnitario, long taperUnitario, long descuento, long importe, BigDecimal costoUnitario, BigDecimal utilidad, String composicion) {
+    public CobroLinea(String id, String cobroId, String detallePedidoId, String cuentaPersonaId, String pensionistaId, String destino, String productoId, String tipoLinea, String nombre, int cantidad, long precioUnitario, long taperUnitario, long descuento, long importe, BigDecimal costoUnitario, BigDecimal utilidad, String composicion,
+                      String motivoDescuentoId, String observacionDescuento) {
         this.id = id;
         this.cobroId = cobroId;
         this.detallePedidoId = detallePedidoId;
@@ -94,6 +102,8 @@ public class CobroLinea {
         this.costoUnitario = costoUnitario;
         this.utilidad = utilidad;
         this.composicion = composicion;
+        this.motivoDescuentoId = motivoDescuentoId;
+        this.observacionDescuento = observacionDescuento;
     }
 
     public String getId() {
@@ -162,5 +172,13 @@ public class CobroLinea {
 
     public String getComposicion() {
         return composicion;
+    }
+
+    public String getMotivoDescuentoId() {
+        return motivoDescuentoId;
+    }
+
+    public String getObservacionDescuento() {
+        return observacionDescuento;
     }
 }
