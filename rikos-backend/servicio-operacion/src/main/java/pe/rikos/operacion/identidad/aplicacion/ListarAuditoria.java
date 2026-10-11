@@ -147,6 +147,9 @@ public class ListarAuditoria {
                     + formatearSoles(RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "precio")) + " (pedido \"" + nombreDePedido(fila) + "\")";
             case "turno_abierto" -> actor + " abrió el turno de la \"" + RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "caja")
                     + "\" con un fondo de " + formatearSoles(RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "fondoInicial"));
+            case "cobro_registrado" -> actor + " cobró el pedido \"" + nombreDePedido(fila) + "\" por "
+                    + formatearSoles(RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "total"))
+                    + ("true".equals(RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "pedidoCerrado")) ? " (pedido cerrado)" : "");
             case "caja_creada" -> actor + " creó la caja \"" + RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "nombre") + "\"";
             case "pedido_terminado" -> actor + " terminó el pedido \"" + nombreDePedido(fila) + "\" sin cobrar"
                     + (RegistradorAuditoria.extraerCampo(fila.getValorNuevo(), "mesa") == null

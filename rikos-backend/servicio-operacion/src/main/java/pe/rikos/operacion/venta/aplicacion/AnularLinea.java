@@ -64,6 +64,9 @@ public class AnularLinea {
         if ("anulado".equals(linea.getEstado())) {
             return Resultado.fracaso(ErrorPedido.LINEA_ANULADA);
         }
+        if ("cobrado".equals(linea.getEstado())) {
+            return Resultado.fracaso(ErrorPedido.LINEA_COBRADA);
+        }
         Motivo motivo = motivoId == null ? null : motivos.findById(motivoId).orElse(null);
         if (motivo == null) {
             return Resultado.fracaso(ErrorPedido.MOTIVO_NO_ENCONTRADO);

@@ -1071,7 +1071,7 @@ export interface LineaDelPedido {
   descripcion: string | null
   cantidad: number
   observacion: string | null
-  estado: 'pendiente' | 'comandado' | 'anulado'
+  estado: 'pendiente' | 'comandado' | 'anulado' | 'cobrado'
   precioUnitario: number
   taperUnitario: number
   tarifaOrigen: 'publico' | 'plan' | 'extra' | 'manual'
@@ -1486,3 +1486,72 @@ export const listarAuditoria = (token: string, filtro: FiltroAuditoria = {}) => 
   parametros.set('tamano', String(filtro.tamano ?? 30))
   return pedirAutenticado<PaginaAuditoria>(`/api/auditoria?${parametros.toString()}`, token)
 }
+
+// ---- Caja (sprint 7) ----
+
+export interface TurnoDeCaja {
+  id: string
+  cajaId: string
+  cajeroId: string
+  cajeroNombre: string | null
+  /** En centimos. */
+  fondoInicial: number
+  abiertoEn: string
+  estado: 'abierto' | 'cerrado'
+}
+
+export interface CajaDelLocal {
+  id: string
+  nombre: string
+  activo: boolean
+  turnoAbierto: TurnoDeCaja | null
+}
+
+export const listarCajas = (token: string) => pedirAutenticado<CajaDelLocal[]>('/api/cajas', token)
+
+export const abrirTurnoDeCaja = (token: string, cajaId: string, fondoInicial: number) =>
+  pedirAutenticado<TurnoDeCaja>(`/api/cajas/${cajaId}/turnos`, token, {
+    method: 'POST',
+    body: JSON.stringify({ fondoInicial }),
+  })
+
+/** El turno abierto de quien pregunta; null si no tiene (el servidor responde 204). */
+export const turnoActualDeCaja = (token: string) => pedirAutenticado<TurnoDeCaja | null>('/api/turnos/actual', token)
+
+export type MedioDePago = 'efectivo' | 'yape' | 'plin' | 'tarjeta'
+
+/** En efectivo, `monto` es lo RECIBIDO: el servidor calcula el vuelto. Montos en centimos. */
+export interface PagoACobrar {
+  medio: MedioDePago
+  monto: number
+  referencia?: string | null
+}
+
+export interface CargoACuenta {
+  pensionistaId: string
+  nombre: string
+  importe: number
+  /** Despues del cargo su deuda paso del tope: solo avisa, nunca bloquea. */
+  superaTope: boolean
+}
+
+export interface CobroRegistrado {
+  id: string
+  pedidoId: string
+  turnoId: string
+  cobradoEn: string
+  total: number
+  totalMedios: number
+  totalCuentas: number
+  vuelto: number
+  pagos: { medio: MedioDePago; importe: number; montoRecibido: number | null; referencia: string | null }[]
+  cargos: CargoACuenta[]
+  /** Ya no queda nada por cobrar: el pedido se cerro y la mesa quedo libre. */
+  pedidoCerrado: boolean
+}
+
+export const cobrarPedido = (token: string, pedidoId: string, lineaIds: string[], pagos: PagoACobrar[]) =>
+  pedirAutenticado<CobroRegistrado>(`/api/pedidos/${pedidoId}/cobros`, token, {
+    method: 'POST',
+    body: JSON.stringify({ lineaIds, pagos }),
+  })

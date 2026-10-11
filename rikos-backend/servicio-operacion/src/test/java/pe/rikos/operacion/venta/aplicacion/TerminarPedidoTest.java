@@ -52,9 +52,13 @@ class TerminarPedidoTest extends ComandasBase {
 
     @Test
     void termina_el_pedido_con_quien_y_cuando_y_la_mesa_queda_libre() {
-        linea("Chicha", 1);
+        var chicha = linea("Chicha", 1);
         comandar.ejecutar(pedido.getId(), null, ADMIN_SEMBRADO_ID).valorOLanza();
         assertThat(estadoDe(pedido.getMesaId())).isEqualTo(EstadoDeMesa.OCUPADA);
+        // Con productos comandados no se termina sin cobrar (sprint 7): se anulan con motivo y permiso, o se cobran.
+        assertThat(error(terminar.ejecutar(pedido.getId(), ADMIN_SEMBRADO_ID))).isEqualTo(ErrorPedido.PEDIDO_CON_LINEAS_POR_COBRAR);
+        anularLinea.ejecutar(pedido.getId(), chicha.getId(), motivoDeAnulacion("Cliente se fue", false).getId(), null,
+                ADMIN_SEMBRADO_ID).valorOLanza();
 
         var terminado = terminar.ejecutar(pedido.getId(), ADMIN_SEMBRADO_ID).valorOLanza();
 
@@ -138,6 +142,7 @@ class TerminarPedidoTest extends ComandasBase {
         var chicha = linea("Chicha", 1);
         var comanda = comandar.ejecutar(pedido.getId(), null, ADMIN_SEMBRADO_ID).valorOLanza();
         var motivo = motivoDeAnulacion("Error", false);
+        anularLinea.ejecutar(pedido.getId(), chicha.getId(), motivo.getId(), null, ADMIN_SEMBRADO_ID).valorOLanza();
         terminar.ejecutar(pedido.getId(), ADMIN_SEMBRADO_ID).valorOLanza();
         em.flush();
         em.clear();

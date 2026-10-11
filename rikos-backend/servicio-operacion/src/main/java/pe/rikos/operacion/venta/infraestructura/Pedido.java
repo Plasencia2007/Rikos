@@ -85,7 +85,7 @@ public class Pedido {
         this.abiertoEn = OffsetDateTime.now();
     }
 
-    /** "Terminar pedido": cierre SIN cobro (provisional hasta el sprint 7, que lo completa con el cobro). */
+    /** El pedido queda cerrado: sin cobro ("Terminar pedido", de un pedido vacio) o porque se cobro su ultima linea. */
     public void terminar(String actorId) {
         this.estado = "cerrado";
         this.cerradoEn = OffsetDateTime.now();

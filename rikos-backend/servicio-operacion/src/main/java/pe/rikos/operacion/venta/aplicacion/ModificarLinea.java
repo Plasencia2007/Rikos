@@ -51,6 +51,9 @@ public class ModificarLinea {
         if (linea == null) {
             return Resultado.fracaso(ErrorPedido.LINEA_NO_ENCONTRADA);
         }
+        if ("cobrado".equals(linea.getEstado())) {
+            return Resultado.fracaso(ErrorPedido.LINEA_COBRADA);
+        }
         if (!"pendiente".equals(linea.getEstado())) {
             return Resultado.fracaso(ErrorPedido.LINEA_YA_COMANDADA);
         }

@@ -144,6 +144,11 @@ public class DetallePedido {
         this.estado = "comandado";
     }
 
+    /** Sprint 7: la caja la cobro. De aqui en adelante no se modifica, ni se quita, ni se anula, ni se traslada. */
+    public void cobrar() {
+        this.estado = "cobrado";
+    }
+
     /** Se anula con permiso y motivo. Si ya estaba comandada, la receta ya se gasto (RN-065). */
     public void anular(String motivoId, String observacion, String actorId) {
         this.anuladoPostComanda = "comandado".equals(this.estado);

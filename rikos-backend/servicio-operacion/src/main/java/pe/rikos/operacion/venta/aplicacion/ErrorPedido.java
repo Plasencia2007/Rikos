@@ -73,5 +73,9 @@ public enum ErrorPedido {
     /** Terminar un pedido que ya no esta en curso (ya cerrado). */
     PEDIDO_NO_TERMINABLE,
     /** Un pedido cerrado no se modifica: ni lineas, ni personas, ni anulaciones. */
-    PEDIDO_CERRADO
+    PEDIDO_CERRADO,
+    /** Sprint 7: una linea ya cobrada no se modifica, ni se anula, ni se traslada (la reapertura es de caja). */
+    LINEA_COBRADA,
+    /** Sprint 7: "Terminar pedido" solo cierra un pedido sin nada que cobrar; con lineas comandadas se cobran o se anulan. */
+    PEDIDO_CON_LINEAS_POR_COBRAR
 }

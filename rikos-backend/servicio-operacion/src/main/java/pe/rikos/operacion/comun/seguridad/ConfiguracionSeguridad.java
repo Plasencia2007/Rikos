@@ -101,6 +101,9 @@ public class ConfiguracionSeguridad {
                     .hasAuthority("PERM_caja.administrar")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos")
                     .hasAuthority("PERM_caja.crear")
+                // US-033 (entrega 2): cobrar lineas de un pedido es caja.crear (el mozo no cobra). Antes de /pedidos/**.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/pedidos/*/cobros")
+                    .hasAuthority("PERM_caja.crear")
                 // US-028: pedidos. Ver, venta.ver; tomar y corregir un pedido, venta.crear.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/pedidos", "/pedidos/**")
                     .hasAuthority("PERM_venta.ver")

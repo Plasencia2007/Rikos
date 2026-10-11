@@ -4,29 +4,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.comun.auditoria.RegistradorAuditoria;
+import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
+import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
+import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
 import pe.rikos.operacion.venta.infraestructura.Mesa;
 import pe.rikos.operacion.venta.infraestructura.MesaRepositorio;
 import pe.rikos.operacion.venta.infraestructura.Pedido;
 import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
 
-import java.util.List;
 
 /**
- * "Terminar pedido": un cierre SIN COBRO, provisional hasta el sprint 7. Deja el pedido en estado "cerrado" (con quien y
- * cuando), la mesa queda libre (su estado se deriva de los pedidos) y las mesas unidas a ella se separan solas. No toca
- * la cuenta de ningun pensionista ni genera comprobante: el sprint 7 completa este mismo cierre con el cobro. Un pedido
- * cerrado ya no se modifica, pero su comanda se sigue consultando (el Historial la reimprime).
+ * "Terminar pedido": un cierre SIN cobro, solo para un pedido sin nada que cobrar (sprint 7, decision del dueño): vacio,
+ * o con todas sus lineas anuladas o aun sin comandar (no hay nada que cobrar de ellas). Con productos comandados hay que
+ * cobrarlos o anularlos con motivo y permiso. Deja el pedido "cerrado" con quien y cuando; la mesa queda libre y las mesas
+ * unidas a ella se separan solas. No toca la cuenta de ningun pensionista ni genera comprobante. Un pedido cerrado ya no se
+ * modifica, pero su comanda se sigue consultando (el Historial la reimprime).
  */
 @Service
 public class TerminarPedido {
 
     private final PedidoRepositorio pedidos;
     private final MesaRepositorio mesas;
+    private final CuentaPersonaRepositorio personas;
+    private final DetallePedidoRepositorio lineas;
+    private final CerrarPedido cerrarPedido;
     private final RegistradorAuditoria auditoria;
 
-    public TerminarPedido(PedidoRepositorio pedidos, MesaRepositorio mesas, RegistradorAuditoria auditoria) {
+    public TerminarPedido(PedidoRepositorio pedidos, MesaRepositorio mesas, CuentaPersonaRepositorio personas,
+                          DetallePedidoRepositorio lineas, CerrarPedido cerrarPedido, RegistradorAuditoria auditoria) {
         this.pedidos = pedidos;
         this.mesas = mesas;
+        this.personas = personas;
+        this.lineas = lineas;
+        this.cerrarPedido = cerrarPedido;
         this.auditoria = auditoria;
     }
 
@@ -43,22 +53,17 @@ public class TerminarPedido {
         if (!AbrirPedido.ESTADOS_EN_CURSO.contains(pedido.getEstado())) {
             return Resultado.fracaso(ErrorPedido.PEDIDO_NO_TERMINABLE);
         }
+        var delPedido = personas.findByPedidoIdOrderByOrden(pedidoId).stream().map(CuentaPersona::getId).toList();
+        if (lineas.findByCuentaPersonaIdInOrderByCreadoEn(delPedido).stream().anyMatch(l -> "comandado".equals(l.getEstado()))) {
+            return Resultado.fracaso(ErrorPedido.PEDIDO_CON_LINEAS_POR_COBRAR);
+        }
 
         String numeroDeMesa = "";
-        int separadas = 0;
         if (pedido.getMesaId() != null) {
             Mesa mesa = mesas.findById(pedido.getMesaId()).orElse(null);
             numeroDeMesa = mesa == null ? "" : mesa.getNumero();
-            // Una mesa unida a la de este pedido queda libre e independiente: si no, se quedaria "unida" a una mesa libre.
-            List<Mesa> unidas = mesas.findByMesaPrincipalId(pedido.getMesaId());
-            for (Mesa unida : unidas) {
-                unida.separar(actorId);
-                mesas.save(unida);
-            }
-            separadas = unidas.size();
         }
-        pedido.terminar(actorId);
-        pedidos.save(pedido);
+        int separadas = cerrarPedido.cerrar(pedido, actorId);
         auditoria.registrar("pedido_terminado", "pedido", pedido.getId(), null,
                 RegistradorAuditoria.campos("nombre", "Pedido " + pedido.getNumero(), "mesa", numeroDeMesa,
                         "mesasSeparadas", separadas));

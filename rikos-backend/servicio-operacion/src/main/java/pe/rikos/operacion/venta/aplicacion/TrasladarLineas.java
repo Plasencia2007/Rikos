@@ -85,6 +85,9 @@ public class TrasladarLineas {
         if (aMover.stream().anyMatch(l -> "anulado".equals(l.getEstado()))) {
             return Resultado.fracaso(ErrorPedido.LINEA_ANULADA);
         }
+        if (aMover.stream().anyMatch(l -> "cobrado".equals(l.getEstado()))) {
+            return Resultado.fracaso(ErrorPedido.LINEA_COBRADA);
+        }
 
         CuentaPersona destino;
         boolean destinoNuevo = personaDestinoId == null;
