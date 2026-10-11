@@ -155,6 +155,7 @@ public class SembradorCatalogoPermisos implements ApplicationRunner {
         PERMISOS_POR_ROL.put("cajero", Set.of(
             "catalogo.ver", "menu.ver", "venta.ver", "caja.ver", "pensionistas.ver", "facturacion.ver",
             "venta.crear", "caja.crear", "facturacion.crear",
+            "caja.descontar",
             "venta.modificar",
             "venta.anular", "caja.anular",
             "venta.reabrir", "caja.reabrir",

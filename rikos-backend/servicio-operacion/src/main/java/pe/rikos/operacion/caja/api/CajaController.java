@@ -42,10 +42,11 @@ import java.util.Map;
 public class CajaController {
 
     public record TurnoRespuesta(String id, String cajaId, String cajeroId, String cajeroNombre, long fondoInicial,
-                                 OffsetDateTime abiertoEn, String estado) {
+                                 OffsetDateTime abiertoEn, String estado, String etiqueta) {
     }
 
-    public record CajaRespuesta(String id, String nombre, boolean activo, TurnoRespuesta turnoAbierto) {
+    /** etiqueta: como se rotula la caja: "Caja de <cajero>" mientras tiene un turno abierto, y su nombre cuando no. */
+    public record CajaRespuesta(String id, String nombre, String etiqueta, boolean activo, TurnoRespuesta turnoAbierto) {
     }
 
     public record CajaRequest(String nombre) {
@@ -85,12 +86,14 @@ public class CajaController {
 
     private static TurnoRespuesta turno(TurnoCaja t, String cajeroNombre) {
         return new TurnoRespuesta(t.getId(), t.getCajaId(), t.getCajeroId(), cajeroNombre, t.getFondoInicial(),
-                t.getAbiertoEn(), t.getEstado());
+                t.getAbiertoEn(), t.getEstado(), cajeroNombre == null ? null : "Caja de " + cajeroNombre);
     }
 
     private static CajaRespuesta caja(FilaDeCaja f) {
-        return new CajaRespuesta(f.caja().getId(), f.caja().getNombre(), f.caja().isActivo(),
-                f.turnoAbierto() == null ? null : turno(f.turnoAbierto(), f.cajeroNombre()));
+        TurnoRespuesta abierto = f.turnoAbierto() == null ? null : turno(f.turnoAbierto(), f.cajeroNombre());
+        return new CajaRespuesta(f.caja().getId(), f.caja().getNombre(),
+                abierto != null && abierto.etiqueta() != null ? abierto.etiqueta() : f.caja().getNombre(), f.caja().isActivo(),
+                abierto);
     }
 
     @Operation(summary = "Las cajas del local activo, cada una con su turno abierto (Caja 1 se crea sola la primera vez)")
@@ -119,7 +122,7 @@ public class CajaController {
             return resultado.esExito()
                     ? ResponseEntity.status(HttpStatus.CREATED)
                             .body(new CajaRespuesta(resultado.valorOLanza().getId(), resultado.valorOLanza().getNombre(),
-                                    resultado.valorOLanza().isActivo(), null))
+                                    resultado.valorOLanza().getNombre(), resultado.valorOLanza().isActivo(), null))
                     : errorDe(resultado);
         });
     }
@@ -137,7 +140,7 @@ public class CajaController {
         return protegido(() -> {
             Resultado<TurnoCaja, ErrorCaja> resultado = abrirTurno.ejecutar(id, cuerpo.fondoInicial(), actorId);
             return resultado.esExito()
-                    ? ResponseEntity.status(HttpStatus.CREATED).body(turno(resultado.valorOLanza(), null))
+                    ? ResponseEntity.status(HttpStatus.CREATED).body(turno(resultado.valorOLanza(), consulta.nombreDelCajero(actorId)))
                     : errorDe(resultado);
         });
     }
@@ -155,7 +158,7 @@ public class CajaController {
         if (resultado.esFracaso()) {
             return errorDe(resultado);
         }
-        return resultado.valorOLanza().map(t -> ResponseEntity.ok((Object) turno(t, null)))
+        return resultado.valorOLanza().map(t -> ResponseEntity.ok((Object) turno(t, consulta.nombreDelCajero(actorId))))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
@@ -177,7 +180,7 @@ public class CajaController {
             return errorDe(resultado);
         }
         ResumenDeTurno r = resultado.valorOLanza();
-        return ResponseEntity.ok(new ResumenRespuesta(turno(r.turno(), null), r.fondoInicial(), r.efectivoCobrado(),
+        return ResponseEntity.ok(new ResumenRespuesta(turno(r.turno(), consulta.nombreDelCajero(actorId)), r.fondoInicial(), r.efectivoCobrado(),
                 r.efectivoEsperado(), r.totalYape(), r.totalPlin(), r.totalTarjeta(), r.cobros()));
     }
 

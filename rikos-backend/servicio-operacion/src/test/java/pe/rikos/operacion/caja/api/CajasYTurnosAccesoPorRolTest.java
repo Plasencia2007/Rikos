@@ -92,6 +92,7 @@ class CajasYTurnosAccesoPorRolTest extends PedidosBase {
             mvc.perform(post("/cajas/" + nueva + "/turnos").header("Authorization", token)
                             .contentType(MediaType.APPLICATION_JSON).content("{\"fondoInicial\":15000}"))
                     .andExpect(status().isCreated()).andExpect(jsonPath("$.fondoInicial").value(15000))
+                    .andExpect(jsonPath("$.etiqueta").value("Caja de Test"))
                     .andExpect(jsonPath("$.estado").value("abierto")).andExpect(jsonPath("$.cajaId").value(nueva));
             mvc.perform(get("/turnos/actual").header("Authorization", token))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.cajaId").value(nueva));

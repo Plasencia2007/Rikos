@@ -42,11 +42,22 @@ public class ConsultaCajas {
                 .collect(Collectors.toMap(TurnoCaja::getCajaId, Function.identity()));
         Map<String, String> nombres = usuarios
                 .findAllById(abiertos.values().stream().map(TurnoCaja::getCajeroId).toList()).stream()
-                .collect(Collectors.toMap(Usuario::getId, Usuario::getNombreUsuario));
+                .collect(Collectors.toMap(Usuario::getId, u -> nombreDe(u)));
         return Resultado.exito(cajas.stream().map(c -> {
             TurnoCaja turno = abiertos.get(c.getId());
             return new FilaDeCaja(c, turno, turno == null ? null : nombres.get(turno.getCajeroId()));
         }).toList());
+    }
+
+    /** El nombre con que se muestra al cajero en "Caja de ...": sus nombres, o su usuario si no tiene. */
+    static String nombreDe(Usuario u) {
+        return u.getNombres() == null || u.getNombres().isBlank() ? u.getNombreUsuario() : u.getNombres().strip();
+    }
+
+    /** El nombre de un cajero (para rotular su caja); nulo si no existe. */
+    @Transactional(readOnly = true)
+    public String nombreDelCajero(String cajeroId) {
+        return usuarios.findById(cajeroId).map(ConsultaCajas::nombreDe).orElse(null);
     }
 
     /** El turno abierto de este cajero en el local activo, si tiene uno. */

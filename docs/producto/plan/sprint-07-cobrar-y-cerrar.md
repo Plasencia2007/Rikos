@@ -31,6 +31,12 @@ coincide con lo cobrado en efectivo más el fondo, y una diferencia de S/ 0,01 a
 | 8 | **Reapertura** | Solo **dentro del turno abierto de origen**. La **compensación** después del cierre se **posterga al sprint 11** (RF-014, con el contador y las notas de crédito). |
 | 9 | **Cierre del turno** | Un **solo total contado** más observación opcional. |
 
+### 2 bis. Decisiones del dueño al cerrar el backend (2026-10-11)
+
+- **El fondo inicial siempre lo ingresa el cajero al abrir el turno** (no hay un fondo por defecto; ya es obligatorio, puede ser cero).
+- **La caja se rotula "Caja de <nombre del cajero>"** mientras tiene un turno abierto (campo `etiqueta` de la API; el nombre de la caja sigue siendo el de la lista, "Caja 1" por defecto).
+- **El cajero puede descontar siempre y cuando haya un descuento habilitado** (un motivo de tipo descuento activo): `caja.descontar` es también del cajero (V45).
+
 ## 3. Qué queda fuera, y por qué
 
 - **Descuento de inventario al vender** (US-033 CA5): depende del inventario (sprint 9). El snapshot de la venta **sí** guarda la receta aplicada, para que el sprint 9 la use.

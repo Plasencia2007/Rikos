@@ -10,8 +10,9 @@ auditoría con usuario, fecha, local, valores anterior y nuevo y el motivo (US-0
 - **Descuento por línea al cobrar** (decisión 7 del dueño): el cobro (`POST /pedidos/{id}/cobros`) acepta `descuentos:[{lineaId, tipo:'monto'|'porcentaje', valor, motivoId, observacion}]`.
   `monto` va en céntimos; `porcentaje` de 1 a 100 sobre el importe de esa línea (precio y táper por cantidad), redondeado al céntimo. El snapshot de la línea guarda precio original,
   descuento, importe cobrado y el motivo (V42: `motivo_descuento_id`, `observacion_descuento`, y un `CHECK` que impide un descuento sin motivo).
-- **Permiso `caja.descontar`** (nuevo, en el catálogo): lo tienen el administrador de local y el central. El cajero **no** lo tiene por defecto; el dueño puede dárselo desde Roles.
-  Sin él, un cobro con descuentos responde 403 `SIN_PERMISO_PARA_DESCONTAR` (y sin descuentos el cajero cobra normal).
+- **Permiso `caja.descontar`** (nuevo, en el catálogo): lo tienen el administrador de local, el central y **el cajero** (decisión del dueño del 2026-10-11: el cajero puede descontar
+  siempre y cuando haya un descuento habilitado, o sea un motivo de tipo "descuento" activo; V45 se lo otorga a una base ya sembrada). Sin el permiso, un cobro con descuentos responde 403
+  `SIN_PERMISO_PARA_DESCONTAR` (y sin descuentos se cobra normal); el dueño puede quitárselo a un rol desde Roles.
 - **Motivo obligatorio:** debe existir, estar activo y ser de tipo `descuento` (`MOTIVO_NO_ENCONTRADO`, `MOTIVO_INVALIDO`); si el motivo exige observación, también
   (`OBSERVACION_OBLIGATORIA`).
 - **Reglas del descuento:** un solo descuento por línea; solo de líneas que se están cobrando ahora; mayor que cero y sin pasar del importe de la línea (`DESCUENTO_INVALIDO`);
@@ -32,7 +33,7 @@ Siguen abiertos de esa auditoría sobre el cobro: **CAJ-02** (el snapshot no gua
 y **CAJ-07** (el total no distingue lo cobrado de lo pendiente), más **POS-07** ("Terminar pedido" y las líneas aún sin comandar).
 
 ## Decisiones tomadas al ejecutar
-- **El permiso de descontar no es del cajero por defecto.** US-034 dice "cajero autorizado / administrador": se dejó que el dueño decida a qué cajeros se lo da (pregunta abierta sobre topes por rol).
+- **El cajero puede descontar** (decisión del dueño, 2026-10-11), pero solo con un descuento habilitado: sin motivos de descuento activos no hay descuento posible. Siguen abiertos el tope por rol y la lista inicial de descuentos.
 - **`caja.anular` no se usa para anular líneas**: se mantiene `venta.anular` (ya existía, con motivo y bitácora). `caja.anular` queda reservado para anular un cobro o movimiento de caja (entrega 5).
 - **Un solo descuento por línea y no se acumulan**: simple y auditable; un descuento global es "aplicar a todas las líneas marcadas" en la pantalla.
 - **El porcentaje se calcula sobre el importe bruto de la línea, táper incluido.**

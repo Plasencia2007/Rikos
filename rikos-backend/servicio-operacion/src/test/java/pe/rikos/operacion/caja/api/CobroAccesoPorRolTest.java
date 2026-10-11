@@ -229,16 +229,16 @@ class CobroAccesoPorRolTest extends PedidosBase {
     }
 
     @Test
-    void descontar_exige_su_propio_permiso_y_los_administradores_lo_tienen() throws Exception {
+    void descontar_exige_su_propio_permiso_y_cajero_y_administradores_lo_tienen() throws Exception {
         String motivo = motivoDeDescuento();
         String cajero = tokenPara("cajero");
         String[] delCajero = pedidoComandado(cajero, mesaNueva("1"));
         abrirTurno(cajero);
 
-        // El cajero cobra (caja.crear) pero no descuenta (caja.descontar es de los administradores).
+        // El cajero descuenta (caja.descontar) siempre que haya un descuento habilitado (un motivo de descuento activo).
         mvc.perform(post("/pedidos/" + delCajero[0] + "/cobros").header("Authorization", cajero)
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpoConDescuento(delCajero[1], 1000, motivo)))
-                .andExpect(status().isForbidden()).andExpect(jsonPath("$.error").value("SIN_PERMISO_PARA_DESCONTAR"));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.total").value(800));
 
         String admin = tokenPara("administrador de local");
         String[] delAdmin = pedidoComandado(admin, mesaNueva("2"));
@@ -248,6 +248,26 @@ class CobroAccesoPorRolTest extends PedidosBase {
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.total").value(800))
                 .andExpect(jsonPath("$.vuelto").value(200));
     }
+
+    @Test
+    void sin_el_permiso_de_descontar_el_cobro_con_descuento_es_403() throws Exception {
+        String motivo = motivoDeDescuento();
+        String cajero = tokenPara("cajero");
+        String[] pedido = pedidoComandado(cajero, mesaNueva("1"));
+        abrirTurno(cajero);
+        // Se le quita el permiso al rol de cajero (los roles se editan): cobrar sigue, descontar no.
+        var rol = roles.findAll().stream().filter(r -> r.getNombre().equals("cajero")).findFirst().orElseThrow();
+        rolPermisos.findByRolId(rol.getId()).stream().filter(rp -> rp.getPermiso().getCodigo().equals("caja.descontar"))
+                .forEach(rolPermisos::delete);
+        String sinPermiso = tokenPara("cajero");
+
+        mvc.perform(post("/pedidos/" + pedido[0] + "/cobros").header("Authorization", sinPermiso)
+                        .contentType(MediaType.APPLICATION_JSON).content(cuerpoConDescuento(pedido[1], 1000, motivo)))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.error").value("SIN_PERMISO_PARA_DESCONTAR"));
+    }
+
+    @Autowired
+    pe.rikos.operacion.identidad.infraestructura.RolPermisoRepositorio rolPermisos;
 
     @Test
     void un_pago_nulo_es_422_y_no_un_500() throws Exception {

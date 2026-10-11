@@ -47,12 +47,12 @@ class PermisosPredeterminadosTest {
     }
 
     @Test
-    void elCajeroVieneConSusQuincePermisosDeFabrica() {
+    void elCajeroVieneConSusDieciseisPermisosDeFabrica() {
         Resultado<List<String>, ErrorRol> resultado = obtenerPredeterminados.ejecutar(rol("cajero").getId());
 
         Set<String> codigos = codigos(resultado.valorOLanza());
-        // 15: los 14 originales + venta.bloquear_mesa (sprint 6, US-027: el cajero tambien bloquea mesas).
-        assertThat(codigos).hasSize(15).contains("caja.anular", "caja.reabrir", "venta.crear", "facturacion.crear",
+        // 16: los 14 originales + venta.bloquear_mesa (sprint 6, US-027) + caja.descontar (sprint 7: el cajero puede descontar).
+        assertThat(codigos).hasSize(16).contains("caja.anular", "caja.reabrir", "caja.descontar", "venta.crear", "facturacion.crear",
                 "venta.bloquear_mesa");
     }
 
