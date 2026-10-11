@@ -74,6 +74,9 @@ export function OrdenDeLaMesa({
   const totalVigentes = pedido.personas.reduce((n, p) => n + p.lineas.filter((l) => l.estado !== 'anulado').length, 0)
   const nombreDelPensionista = filtrada?.pensionistaId ? (nombresDePensionista[filtrada.pensionistaId] ?? null) : null
 
+  // Hay productos pedidos si alguna linea no esta anulada.
+  const hayProductos = pedido.personas.some((p) => p.lineas.some((l) => l.estado !== 'anulado'))
+
   return (
     <aside
       className={`ped2-orden ped3-orden ped4-orden ${abierta ? 'ped4-abierta' : ''}`}
@@ -285,8 +288,11 @@ export function OrdenDeLaMesa({
             <dd aria-label="Total del pedido">{enSoles(pedido.total)}</dd>
           </div>
         </dl>
-        {!cerrado && <p className="ped4-aviso-comanda">Se enviarán los productos nuevos de todas las personas</p>}
-        {!cerrado && puedeReorganizar && (
+        {!cerrado && itemsNuevos > 0 && (
+          <p className="ped4-aviso-comanda">Se enviarán los productos nuevos de todas las personas</p>
+        )}
+        {/* "Terminar pedido" solo mientras no se pidio nada (o todo se anulo): con productos hay que comandarlos y cobrarlos. */}
+        {!cerrado && puedeReorganizar && !hayProductos && (
           <button type="button" className="ped3-enlace ped3-terminar" onClick={onTerminar}>
             Terminar pedido
           </button>
@@ -297,18 +303,11 @@ export function OrdenDeLaMesa({
             Cobrar
           </Boton>
         )}
-        {!cerrado && (
-          <Boton
-            className="ped2-comandar"
-            cargando={trabajando}
-            disabled={itemsNuevos === 0}
-            title={itemsNuevos === 0 ? 'No hay nada nuevo para mandar a cocina' : undefined}
-            onClick={onComandar}
-          >
+        {/* "Comandar" aparece solo cuando hay productos nuevos sin enviar a cocina. */}
+        {!cerrado && itemsNuevos > 0 && (
+          <Boton className="ped2-comandar" cargando={trabajando} onClick={onComandar}>
             <Send size={18} aria-hidden="true" />
-            {itemsNuevos === 0
-              ? 'Comandar'
-              : `Comandar ${itemsNuevos} ${itemsNuevos === 1 ? 'ítem nuevo' : 'ítems nuevos'}`}
+            {`Comandar ${itemsNuevos} ${itemsNuevos === 1 ? 'ítem nuevo' : 'ítems nuevos'}`}
           </Boton>
         )}
       </footer>

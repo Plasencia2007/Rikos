@@ -174,3 +174,6 @@ en `pos.css`). Detalle en `pos-rediseno-entrega-4-*.md`.
   ("Pasar a otra persona…"). El backend (`POST /pedidos/{id}/lineas/trasladar`) sigue aceptando varias; si se quiere de vuelta en pantalla hay que
   rediseñarlo en el canvas.
 - Lo descrito arriba sobre el panel de la orden por persona (bloque del pensionista, ⋮, notas, totales) quedó como estaba salvo lo que cambia esta adenda.
+
+### Adenda (2026-10-11): Comandar, Terminar pedido y Cobrar solo cuando corresponden
+En "Orden de la mesa": **Comandar** aparece solo cuando hay productos nuevos sin enviar a cocina (con el aviso "Se enviarán los productos nuevos..."); **Terminar pedido** aparece solo mientras no se pidió nada (o todo se anuló), porque con productos hay que comandarlos y cobrarlos (el servidor ya lo exigía: `PEDIDO_CON_LINEAS_POR_COBRAR`); y **Cobrar** aparece cuando hay productos comandados y el usuario tiene `caja.crear`. Pedido de la usuaria/o: el botón Comandar deshabilitado y el Terminar pedido siempre visible confundían. Verificado en el navegador con un pedido de prueba: vacío → solo Terminar; con un producto nuevo → Comandar; comandado → Cobrar.
