@@ -14,6 +14,7 @@ y se decidió no tocar todavía, o una pregunta que nadie respondió.
 |---|---|
 | `01-preguntas-de-refinamiento.md` | Los vacíos y preguntas del Product Backlog v2.0 (sección 10): clasificación de impacto, tabla de refinamiento (RF-NNN), contradicciones y duplicidades detectadas, preguntas que bloquean pantallas concretas |
 | [02-auditoria-integral-sprints-0-7-2026-10-11.md](02-auditoria-integral-sprints-0-7-2026-10-11.md) | Registro por ID de hallazgos, riesgos y validaciones: prioridad, solución, aceptación y dependencia; incluye conciliación de pendientes antiguos |
+| [03-traspaso-sprint-8.md](03-traspaso-sprint-8.md) | Nota de traspaso al sprint 8 (circuito del pensionista): por dónde empezar, qué se reutiliza, trampas conocidas y pendientes heredados |
 
 Los pendientes técnicos del código (P-NN) siguen en
 `rikos-backend/doc/RIKOS-decisiones-tecnicas.md`, sección de pendientes.
