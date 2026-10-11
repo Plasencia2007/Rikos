@@ -42,6 +42,8 @@ export default function POS() {
   const [mozoActivo, setMozoActivo] = useState<SesionIniciada | null>(null)
   const [vista, setVista] = useState<VistaDelPos>('inicio')
   const [pedidoAbierto, setPedidoAbierto] = useState<{ id: string; titulo: string } | null>(null)
+  // El pedido que se lleva a la Caja desde el boton "Cobrar" de la pantalla del pedido.
+  const [pedidoACobrar, setPedidoACobrar] = useState<string | null>(null)
   // En pantallas chicas (tableta vertical, movil) la barra arranca colapsada para dejar espacio al contenido.
   const [colapsada, setColapsada] = useState(() => window.innerWidth < 900)
   const [enCurso, setEnCurso] = useState(0)
@@ -99,6 +101,7 @@ export default function POS() {
 
   function irA(siguiente: VistaDelPos) {
     setPedidoAbierto(null)
+    setPedidoACobrar(null)
     setVista(siguiente)
   }
 
@@ -124,6 +127,11 @@ export default function POS() {
             pedidoId={pedidoAbierto.id}
             titulo={pedidoAbierto.titulo}
             onVolver={() => setPedidoAbierto(null)}
+            onCobrar={(id) => {
+              setPedidoAbierto(null)
+              setPedidoACobrar(id)
+              setVista('caja')
+            }}
           />
         ) : vista === 'mesas' ? (
           <MapaDeMesas token={mozoActivo.token} onAbrirPedido={(id, titulo) => setPedidoAbierto({ id, titulo })} />
@@ -135,7 +143,7 @@ export default function POS() {
         ) : vista === 'ordenes' ? (
           <PantallaOrdenes token={mozoActivo.token} onVerPedido={(id, titulo) => setPedidoAbierto({ id, titulo })} />
         ) : vista === 'caja' ? (
-          <PantallaCaja token={mozoActivo.token} />
+          <PantallaCaja key={pedidoACobrar ?? 'caja'} token={mozoActivo.token} pedidoInicial={pedidoACobrar} />
         ) : vista === 'historial' ? (
           <PantallaHistorial token={mozoActivo.token} onVerPedido={(id, titulo) => setPedidoAbierto({ id, titulo })} />
         ) : (

@@ -16,6 +16,11 @@ Una vista nueva "Caja" en el POS (menú lateral, antes "Mi sesión · Caja y tur
 - **Cerrar turno:** muestra el efectivo esperado ANTES de contar, el cajero escribe lo contado, la diferencia sale al instante ("Faltan S/ 1.00") y el cierre muestra el resultado con la alerta.
 - **Permisos:** sin `caja.ver` la pantalla dice "La caja es del cajero" (el mozo pide pero no cobra); sin `caja.crear` no hay botones de cobrar ni de cerrar; sin `caja.reabrir` no hay "Reabrir".
 
+## Botón "Cobrar" en la pantalla del pedido (2026-10-11)
+La pantalla del pedido (Orden de la mesa) muestra un botón **Cobrar** junto a "Comandar" cuando el usuario tiene `caja.crear` y hay productos ya comandados. Lleva a la Caja con ese pedido ya
+abierto para cobrar (si no hay turno abierto, primero pide el fondo y luego abre el cobro). Toca `OrdenDeLaMesa.tsx`, `PantallaPedido.tsx` y `apps/pos/index.tsx` (archivos de la sesión de diseño), con cambios mínimos.
+Verificado en el navegador: Órdenes activas → Ver pedido → Cobrar → "Cobrar pedido 0002". El pedido de prueba se limpió anulando su línea y terminándolo (sin tocar el turno abierto).
+
 ## Backend agregado
 `GET /turnos/actual/cobros`: los cobros del turno abierto del cajero (id, pedido, total, vuelto, si se reabrió), el más reciente primero. Una prueba nueva en `CierreYReaperturaAccesoPorRolTest`.
 Cliente de la API en `api/cliente.ts` (`cobrosDelTurno`, y las demás funciones de caja de las entregas 1 a 5).
@@ -28,6 +33,5 @@ Datos de desarrollo que quedaron: 3 motivos creados por la API (descuento "Corte
 
 ## Pendiente
 - El diseño real de la pantalla (esta es provisional) y su versión para impresora/tableta si se quiere.
-- Cobrar desde la pantalla del pedido (hoy se cobra solo desde Caja).
 - El ticket o recibo imprimible del cobro (no se pidió todavía).
 - Mostrar el nombre del pensionista en la orden y los nombres de los cobros de otras cajas.

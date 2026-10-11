@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Ban, Send, StickyNote, Trash2, Utensils, UtensilsCrossed, X } from 'lucide-react'
+import { ArrowLeftRight, Ban, Send, StickyNote, Trash2, Utensils, UtensilsCrossed, Wallet, X } from 'lucide-react'
 import { Boton, Insignia } from '../../comun/componentes'
 import { enSoles } from '../../comun/formato/dinero'
 import type { LineaDelPedido, Pedido, PersonaDelPedido } from '../../api/cliente'
@@ -41,6 +41,7 @@ export function OrdenDeLaMesa({
   onIdentificar,
   onTerminar,
   onComandar,
+  onCobrar,
 }: {
   pedido: Pedido
   /** La persona elegida arriba: solo para su bloque de pensionista; la lista siempre es de toda la mesa. */
@@ -64,6 +65,8 @@ export function OrdenDeLaMesa({
   onIdentificar: (personaId: string) => void
   onTerminar: () => void
   onComandar: () => void
+  /** Lleva a la Caja con este pedido para cobrarlo; solo si el usuario puede cobrar (caja.crear). */
+  onCobrar?: () => void
 }) {
   const filtrada = pedido.personas.find((p) => p.id === filtroId) ?? null
   const visibles = pedido.personas.flatMap((p) => p.lineas.map((l) => ({ l, p })))
@@ -287,6 +290,12 @@ export function OrdenDeLaMesa({
           <button type="button" className="ped3-enlace ped3-terminar" onClick={onTerminar}>
             Terminar pedido
           </button>
+        )}
+        {!cerrado && onCobrar && pedido.personas.some((p) => p.lineas.some((l) => l.estado === 'comandado')) && (
+          <Boton variante="secundario" className="ped2-comandar" onClick={onCobrar}>
+            <Wallet size={18} aria-hidden="true" />
+            Cobrar
+          </Boton>
         )}
         {!cerrado && (
           <Boton

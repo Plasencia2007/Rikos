@@ -84,11 +84,14 @@ export function PantallaPedido({
   pedidoId,
   titulo,
   onVolver,
+  onCobrar,
 }: {
   token: string
   pedidoId: string
   titulo: string
   onVolver: () => void
+  /** Lleva a la Caja a cobrar este pedido (solo se ofrece a quien tiene caja.crear). */
+  onCobrar?: (pedidoId: string) => void
 }) {
   const { mostrar } = useAvisos()
   const [pedido, setPedido] = useState<Pedido | null>(null)
@@ -101,6 +104,7 @@ export function PantallaPedido({
   const [comandas, setComandas] = useState<ComandaResumen[]>([])
   const [comandaAbierta, setComandaAbierta] = useState<string | null>(null)
   const [puedeAnular, setPuedeAnular] = useState(false)
+  const [puedeCobrar, setPuedeCobrar] = useState(false)
   const [puedeReorganizar, setPuedeReorganizar] = useState(false)
   const [marcadas, setMarcadas] = useState<string[]>([])
   const [tituloActual, setTituloActual] = useState(titulo)
@@ -135,10 +139,12 @@ export function PantallaPedido({
       .then((lista) => {
         setPuedeAnular(lista.includes('venta.anular'))
         setPuedeReorganizar(lista.includes('venta.modificar'))
+        setPuedeCobrar(lista.includes('caja.crear'))
       })
       .catch(() => {
         setPuedeAnular(false)
         setPuedeReorganizar(false)
+        setPuedeCobrar(false)
       })
   }, [token])
 
@@ -489,6 +495,7 @@ export function PantallaPedido({
           }}
           onTerminar={() => setDialogo({ tipo: 'terminar' })}
           onComandar={() => comandar(itemsNuevos)}
+          onCobrar={onCobrar && puedeCobrar ? () => onCobrar(pedidoId) : undefined}
         />
       </div>
 

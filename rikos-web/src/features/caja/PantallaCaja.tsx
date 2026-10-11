@@ -32,7 +32,8 @@ function hora(iso: string): string {
  * cobrar y lo ya cobrado (donde se reabre un cobro), y se puede cerrar el turno con el conteo del efectivo. Cobrar es solo de
  * quien tiene permiso (cajero y administradores): el mozo pide pero no cobra.
  */
-export function PantallaCaja({ token }: { token: string }) {
+/** pedidoInicial: si viene (el boton "Cobrar" de la pantalla del pedido), se abre directo a cobrarlo en cuanto hay turno. */
+export function PantallaCaja({ token, pedidoInicial }: { token: string; pedidoInicial?: string | null }) {
   const [permisos, setPermisos] = useState<string[] | null>(null)
   const [turno, setTurno] = useState<TurnoDeCaja | null | undefined>(undefined)
   const [error, setError] = useState(false)
@@ -70,25 +71,35 @@ export function PantallaCaja({ token }: { token: string }) {
     }
     return <AbrirTurnoDeCaja token={token} onAbierto={setTurno} />
   }
-  return <PanelDelTurno token={token} turno={turno} permisos={permisos} onTurnoCerrado={() => setTurno(null)} />
+  return (
+    <PanelDelTurno
+      token={token}
+      turno={turno}
+      permisos={permisos}
+      pedidoInicial={pedidoInicial ?? null}
+      onTurnoCerrado={() => setTurno(null)}
+    />
+  )
 }
 
 function PanelDelTurno({
   token,
   turno,
   permisos,
+  pedidoInicial,
   onTurnoCerrado,
 }: {
   token: string
   turno: TurnoDeCaja
   permisos: string[]
+  pedidoInicial: string | null
   onTurnoCerrado: () => void
 }) {
   const [resumen, setResumen] = useState<ResumenDeTurno | null>(null)
   const [pedidos, setPedidos] = useState<ResumenDePedido[] | null>(null)
   const [cobros, setCobros] = useState<CobroDelTurno[]>([])
   const [error, setError] = useState(false)
-  const [cobrando, setCobrando] = useState<string | null>(null)
+  const [cobrando, setCobrando] = useState<string | null>(pedidoInicial)
   const [cerrando, setCerrando] = useState(false)
   const [reabriendo, setReabriendo] = useState<CobroDelTurno | null>(null)
   const [aviso, setAviso] = useState('')
