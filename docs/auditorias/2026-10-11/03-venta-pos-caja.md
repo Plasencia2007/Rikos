@@ -31,7 +31,28 @@ Una segunda lectura de archivos y `git diff`, posterior a la redacción inicial,
 | [Decisiones técnicas](../../../rikos-backend/doc/RIKOS-decisiones-tecnicas.md), DT-062 a DT-064 | No se había identificado decisión de cierre de cobro en la lectura inicial. | Ahora registra cobro por líneas, turno único y cargo transaccional. Debe complementarse con contenido completo de snapshot y resolución de los riesgos. |
 | V41 y `CobrarPedido.java`, 15:04:11 y 15:09:34 respectivamente | Código en curso leído en esta auditoría. | Última escritura anterior a los compilados preparados aproximadamente 15:36 para la validación general. Se mantienen las ramas de efectivo, snapshot y cierre citadas; no se observaron correcciones de CAJ-01/02/03. No se infiere igualdad binaria únicamente del timestamp. |
 
-En tablas siguientes, **WIP** identifica el corte técnico inicial/local revisado; la declaración posterior de backend hecho se encuentra en esta reconciliación. La implementación sigue sin confirmación Git y no se declara una aceptación nueva.
+En tablas siguientes, **WIP** identifica el corte técnico inicial/local revisado; la declaración posterior de backend hecho se encuentra en esta reconciliación. El estado Git cambió nuevamente después del corte, como se registra a continuación; no se declara una aceptación nueva.
+
+### Cambios posteriores al corte, requieren nueva verificación
+
+La auditoría principal se congela en **V41 y código preparado aproximadamente a las 15:36**, con la suite general terminada aproximadamente a las 15:56 (647 pruebas, dos errores; detalle en [validación](06-validacion-y-aceptacion.md)). No cubre íntegramente la nueva entrega de descuentos V42.
+
+Una lectura posterior encontró que HEAD pasó a `1336ae2` (documentación, 2026-10-11 15:56:35), con padre `23da169` (backend V41, 15:55:53). También encontró modificaciones locales posteriores, con escrituras de `PedidoRepositorio` a las 15:58:52, `CajaPorDefecto` a las 15:58:53 y `CobrarPedido` a las 15:59:29, más V42/descuentos/pruebas nuevas. Se anotan para que un hallazgo del corte no se presente como si ningún desarrollo posterior lo hubiera atendido. **Estas modificaciones no están cubiertas por la suite del corte y no se marcan aceptadas ni verificadas en ejecución.**
+
+Las referencias archivo/línea de las tablas principales corresponden al código V41 auditado; los cambios posteriores desplazan líneas del working tree. `23da169` conserva el código V41 comprometido durante la sesión para contrastar esas referencias; las evidencias siguientes corresponden al diff posterior contra ese código. No se atribuye autoría ni autorización de esos commits a esta auditoría.
+
+| ID | Evidencia posterior por lectura | Estado posterior a registrar en pendientes | Verificación que falta |
+|---|---|---|---|
+| **CAJ-01** | `CobrarPedido.validarPagos` ahora mantiene conjunto de medios y devuelve `MEDIO_REPETIDO` si uno se repite, antes de escribir. `CobrarPedidoTest` agrega efectivo S/5 + S/5 rechazado. | **Solución candidata incorporada después del corte**, mediante un pago por medio. El defecto existía en V41; no describirlo como vigente en esa misma forma sin mencionar este cambio. | Ejecutar AC-CAJ-01 adaptado al contrato 422; comprobar respuesta, rollback y caso efectivo repetido con vuelto. |
+| **CAJ-02** | `snapshotDe` continúa guardando recetaId/costoPorPorcion y, para menú, producto/nombre/componente; cambios agregan motivo de descuento, no ingredientes/árbol histórico. | **Permanece abierto** en segunda lectura técnica. | Snapshot completo y prueba de receta/subreceta editada después del cobro. |
+| **CAJ-03** | `PedidoRepositorio.bloquearPorIdYLocal` agrega `@Lock(PESSIMISTIC_WRITE)`; la sobrecarga transaccional de cinco argumentos de `CobrarPedido` lo usa antes de cargar líneas. | **Mitigación candidata incorporada después del corte** para dos cobros del mismo pedido; no afirmar reproducción ni arreglo probado. | Dos cajeros con conexiones reales y líneas disjuntas; verificar una sola liberación/cierre y recuperación de conflicto. Comprobar transacción tanto por HTTP como por usos directos del caso de uso. |
+| **CAJ-05** | `CajaPorDefecto` pasa a `CajaRepositorio.insertarSiNoExiste`, SQL `ON CONFLICT (local_id, lower(nombre)) DO NOTHING`, seguido de nueva lectura. | **Carrera de creación con solución candidata**. Permanece el aspecto de consulta que crea con actor nulo/sin evento de creación. | Dos primeros GET concurrentes y evento/actor de creación; validar SQL/migraciones y resultado con transacciones independientes. |
+| **POS-01** | El bloqueo nuevo solo lo adopta cobro; `AgregarLinea` continúa leyendo pedido con `findByIdAndLocalId` e insertando línea sin escribir/versionar pedido. `TerminarPedido` y otras mutaciones no comparten protocolo único. | **Permanece abierto**: bloquear únicamente cobro no serializa altas de líneas frente a cerrar. | Prueba real agregar↔cobrar/terminar y adopción del protocolo en todas las mutaciones. |
+| **CAJ-06** | `CobroController` conserva pagos nulos para validación; `validarPagos` ya rechaza elemento nulo y monto mayor que 100.000.000 céntimos. Medios únicos limitan suma de pagos a cuatro entradas válidas. | **Parcialmente atendido después del corte**: nulo/importe de pago sí; límites y aritmética de cantidades/precios de líneas requieren revisión. | HTTP `pagos:[null]` con 4xx, monto extremo y ausencia de escrituras; límites y overflow de bruto de línea/porcentaje. |
+
+La mitigación de CAJ-03 también requiere revisar el límite transaccional nuevo: la sobrecarga pública de **cuatro argumentos perdió `@Transactional` y delega por llamada interna** a la de cinco argumentos. Esa llamada interna no pasa por el proxy Spring; un uso directo sin transacción externa no queda protegido por la anotación de la segunda sobrecarga y puede fallar al intentar tomar el bloqueo. El endpoint HTTP actual llama directamente la de cinco argumentos; las pruebas heredadas suelen disponer de transacción externa. Esta observación exige nueva verificación del cambio, no modifica el resultado de la suite V41.
+
+V42 agrega motivo/observación del descuento y una restricción que exige motivo cuando descuento > 0. `DescuentoSolicitado` y `CobroConDescuentoTest` son trabajo posterior: su presencia no equivale a aceptar toda la entrega 3, permisos o nuevos casos financieros. No se ejecutaron pruebas nuevas en esta reconciliación.
 
 | Fuente | Uso |
 |---|---|
@@ -254,4 +275,29 @@ No se encontró en las pruebas de cobro revisadas una prueba explícita de rollb
 | AC-CAJ-05 / CAJ-05 | Dos usuarios consultan primer GET cajas del local nuevo simultáneamente. | Ambos reciben una misma Caja 1; sin 500 y trazabilidad de creación. |
 | AC-CAJ-06 / transacción | Segunda cuenta del cobro falla tras generar primer cargo y pagos. | Ningún cobro, pago, movimiento, snapshot ni cargo persiste; estado de líneas no cambia. |
 | AC-CAJ-07 / CAJ-07 | Persona A completamente cobrada y B con saldo. | Total consumido, total cobrado y por cobrar son distintos y coherentes; A se identifica saldada y mesa sigue ocupada. |
-| AC-CAJ-08 / entrega 4 | Fondo S/100, 
+| AC-CAJ-08 / entrega 4 | Fondo S/100, cobro recibido S/20/neto S/12/vuelto S/8. | Esperado S/112; no S/104 ni S/120. Diferencia S/0,01 alerta y permite cierre. |
+
+## 9. Qué sigue planificado, sin convertirlo en defecto
+
+| Pendiente previsto | Sprint / entrega | Decisión o dependencia |
+|---|---|---|
+| Descuento por línea con permiso específico, motivo y valores antes/después | 7 / entrega 3 | Tope por rol y motivos iniciales aún por acordar; descuento no debe superar base. |
+| Anulación desde caja | 7 / entrega 3 | `caja.anular` y contrato de línea cobrada/reapertura; no duplicar anulaciones de sala sin reglas. |
+| Conciliación y cierre inalterable del turno | 7 / entrega 4 | Impedir cobro que confirme tras cerrar turno: usar protocolo común sobre turno y cierre, no solo leer estado abierto. |
+| Reapertura dentro del turno de origen | 7 / entrega 5 | Un pedido puede tener cobros parciales en turnos/cajeros diferentes: precisar qué unidad se reabre y cuál es el turno de origen. UNIQUE por línea actual requiere versión/compensación diseñada. |
+| Compensación después del cierre | 11 | Con contador y documentos relacionados. Conservar cierre original. |
+| Inventario y merma post comanda | 9 | Usar composición histórica. Definir momento de congelación de receta para anulado después de comanda, que nunca se cobra. |
+| Offline/sincronización | 10 | Idempotencia de operación, conflictos y fecha operativa; no afirmar que ULID solo vuelve offline al sistema. |
+| HT-10, papel térmico, impresión cancelada/fallida | Hardware pendiente | Registro de intento en navegador no acredita que la comandera haya impreso papel. |
+| Tipo de entrega, US-06 CA6 | Refinamiento de sprint 6/7 | Definir valores con cliente antes de agregar columna/selector. |
+| Terminal táctil 56 px/teclado común, US-01 | Refinamiento de UX | Cierre sprint 6 reconoce brecha; revisar con auditoría frontend. |
+
+## 10. Orden recomendado de ejecución y entrega de equipo
+
+1. **Antes de cerrar US-033:** corregir CAJ-01 y CAJ-02; resolver protocolo de agregado de POS-01/CAJ-03; demostrar rollback real y concurrencia sobre líneas iguales y diferentes.
+2. **Antes de demo operativa con varias personas:** resolver POS-02; incluir AC de locale/permisos ya presentes y revisar respuesta del cliente ante 409. Mantener “cobro en curso” mientras no existan verificación y documento de historia.
+3. **En refinamiento de esta entrega:** decidir POS-07, fecha/segundo consumo POS-04/05 y contrato de saldos CAJ-07; registrar desviaciones del modelo como decisión técnica y actualizar modelo aplicado.
+4. **Entrega 3–5 del sprint 7:** avanzar según plan aprobado; enlazar cada criterio v3 a prueba y estado. Verificar cierre del turno concurrente con cobro y reapertura por cobro/turno, sin dejarlo para reportes.
+5. **Para el compañero que reciba el sistema:** entregar tabla con ID, prioridad, estado, archivo, prueba de aceptación y decisión pendiente. Una tarea solo cambia a resuelta con evidencia y fecha; no borrar su historial del registro.
+
+Los hallazgos son insumos para el [registro consolidado de pendientes de esta auditoría](../../pendientes/02-auditoria-integral-sprints-0-7-2026-10-11.md). Las decisiones sobre futuras entregas deben anotarse allí como previstas; los errores detectados en WIP deben verificarse antes de cerrar la historia, con la implementación a cargo de Claude.

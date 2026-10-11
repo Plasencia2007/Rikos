@@ -2,6 +2,17 @@
 
 Fecha: 11/10/2026. Evidencia: fuentes Java/TS, configuración y migraciones disponibles V1–V41; V41 y sus casos de uso pertenecen al trabajo local en curso. La prueba de migración desde una base vacía se registra en [validación](06-validacion-y-aceptacion.md).
 
+La documentación de otra sesión declaró posteriormente hecha la entrega 2 backend
+(US-033 y DT-062–064). Las referencias a WIP describen el estado inicial observado;
+los archivos de cobro/migración precedían la compilación de esta revisión y los
+hallazgos permanecen. El encabezado nuevo del modelo07 explica las diferencias,
+pero sus tablas y referencias RN antiguas todavía requieren conciliación.
+
+**V42 y modificaciones de descuentos aparecieron después de la corrida principal.**
+El inventario físico y los diagramas de este informe corresponden a V41; V42
+requiere verificación posterior de migración, permisos, dinero y snapshot. No
+se trata su aparición como cierre automático de hallazgos de esta auditoría.
+
 ## Qué modelo estamos usando
 
 | Nivel | Modelo utilizado | Valor para RIKOS | Límite actual |
@@ -109,9 +120,9 @@ flowchart LR
 
 | ID | Hallazgo | Evidencia y valoración | Solución propuesta |
 |---|---|---|---|
-| ARC-01 | Fronteras de módulos no verificadas en verde | `ArquitecturaDeModulosTest` ejecuta `ApplicationModules.verify()`; deuda conocida de ciclos y paquetes públicos amplios. Ver resultado actual en validaciones | Romper ciclos mediante puertos públicos pequeños y mover infraestructura transversal; conservar el test activo, sin excluirlo para declarar verde |
+| ARC-01 | Fronteras de módulos no verificadas en verde | **Error reproducido** en `ArquitecturaDeModulosTest`: ciclo `comun → identidad → comun`, con dependencias desde guarda/configuración de seguridad hacia identidad y auditoría en sentido inverso. Ver suite en validaciones | Romper ciclos mediante puertos públicos pequeños y mover infraestructura transversal; conservar el test activo, sin excluirlo para declarar verde |
 | ARC-02 | Despliegue local/offline aún es un diseño | `gateway/application.yaml` conserva ambas rutas; no hay perfil local del gateway que aplique lo indicado en su comentario. Fuentes no contienen circuito completo de publicación/consumo/sync | Mantener como s10/s11; definir perfiles, frontera de red, outbox/inbox, deduplicación y ensayo desconexión/reconexión |
-| ARC-03 | Tests de integración apuntan por defecto a la base habitual | `application.yaml` usa `rikos_operacion`; no hay `src/test/resources` ni Testcontainers en POM. Algunas pruebas carecen de rollback según historias | Perfil de test y base efímera, migrada desde cero; impedir URL de desarrollo/producción en integración |
+| ARC-03 | Tests de integración usan DB habitual y fixtures ajenos por defecto | `application.yaml` usa `rikos_operacion`; no hay perfil/testcontainers. **Error reproducido** sobre DB vacía: `LineasDelPedidoTest:124` busca producto no vendible sin crearlo, aunque V15 siembra catálogo vacío | Perfil de test/base efímera; cada escenario crea sus datos; impedir URL de desarrollo/producción en integración |
 | ARC-04 | Guarda de semilla solo cubre perfil nube | `GuardaSemillaDesarrollo.java:33` usa `@Profile("nube")`; V9 siembra credenciales conocidas en cualquier perfil. El restaurante desplegaría perfil local | Distinguir desarrollo de producción local; exigir secreto real, administrador real y credenciales seguras antes del primer despliegue. No probarlo sobre usuarios reales |
 | CAL-01 | Falta automatización reproducible de calidad | No se observa `.github` ni suite frontend en el árbol revisado. Build/lint se ejecutan manualmente; tipos API dependen del entorno | Añadir pipeline cuando Claude implemente, con entorno aislado, build/lint, contratos y arquitectura; guardar evidencia por entrega |
 

@@ -2,6 +2,11 @@
 
 Fecha de corte: 11/10/2026. Alcance: sprints 0–6b y sprint 7 parcial.
 
+Durante la consolidación otra sesión documentó US-033/DT-062–064 y declaró hecha
+la entrega 2 backend. La auditoría revisa esa implementación sin certificar el
+circuito UI ni aceptación final; conserva las brechas con evidencia. Los conteos
+de fuentes corresponden al inicio de la revisión.
+
 ## El resultado que debe percibir el cliente
 
 El objetivo es que el dueño delegue la atención y la caja con confianza, y pueda explicar a sus socios qué se vendió, qué se cobró y qué quedó en la cuenta de cada pensionista. Una pantalla funcionando permite demostrar avance; un circuito consistente y aceptado permite operar el negocio.
@@ -28,7 +33,7 @@ Inventario de fuentes al comenzar la auditoría; cantidades son archivos, no por
 | Catálogo, recetas y menú | 90 Java, 11 controllers, 27 archivos de test | Productos, categorías, unidades, proveedores, recetas, menú y disponibilidad | Entregado; problemas de costos, unidades y consistencia documentados | [Fundaciones](02-fundaciones-catalogo-pensionistas.md) |
 | Pensionistas | 64 Java, 6 controllers, 11 archivos de test | Planes, ficha, parámetros, cuenta | Base sprint 5 presente; circuito posterior planificado | [Fundaciones](02-fundaciones-catalogo-pensionistas.md) |
 | Venta / POS | 88 Java, 3 controllers, 35 clases de prueba | Mesas, órdenes, pedido, historial y comanda | Cierre histórico de sprint 6/6b el 05/10/2026 con pendientes diferidos, incluido hardware | [Venta](03-venta-pos-caja.md) |
-| Caja | 28 Java, 2 controllers, 4 archivos de test, incluyendo archivos sin confirmar | Integración de cobro/apertura/cierre en UI incompleta | Sprint 7 en curso; V40 presente y V41 WIP | [Venta](03-venta-pos-caja.md) |
+| Caja | 28 Java, 2 controllers, 4 archivos de test, incluyendo archivos sin confirmar | Integración de cobro/apertura/cierre en UI incompleta | Sprint 7 parcial; V40 y V41 backend declarado hecho, con hallazgos de auditoría | [Venta](03-venta-pos-caja.md) |
 | Facturación | Salud, configuración y migraciones V1/V2 | Superficie fiscal futura | Esqueleto; emisión real del sprint 11 pendiente | [Modelo](05-modelo-datos-arquitectura.md) |
 | Inventario, compras y producción | Sin Java en módulo `inventario`; proveedores sí existen en catálogo | Proveedores operables, inventario restante previsto | Sprint 9 / parte del 14 | Dependencias futuras |
 | Delivery / recojo | Sin Java en módulo `delivery` | Motorizado provisional | Sprint 12 | Dependencias futuras |
@@ -47,7 +52,7 @@ Inventario de fuentes al comenzar la auditoría; cantidades son archivos, no por
 | 5 | Planes y cuenta del pensionista | V26–V28, saldo como suma y ajuste con motivo | Datos reales validados y precios por vigencia correctos; flujo de abonos/portal aún futuro |
 | 6 | Mesa, pedido, comanda, anulaciones y reorganización | V29–V37; adenda V38 «Terminar pedido»; cierre histórico documentado 05/10/2026 | Cierre registrado con HT-10 y otras brechas diferidas; esta auditoría no lo reabre automáticamente. Validar hardware/concurrencia/contenido al preparar la siguiente entrega |
 | 6b | Rediseño POS | Shell, mapa, órdenes, historial y Pedido rápido para llevar; este último hecho según historia del 01/10/2026, incluido en cierre del 05/10 | Conciliar plan antiguo y validar permisos, móvil, errores y actualización entre dispositivos |
-| 7 | Cajas/turnos, cobro, descuentos/anulación, conciliación, reapertura | Plan aprobado y entrega 1 hecha el 05/10/2026; V40 y API de apertura; entrega 2/V41 en cambios locales | Aceptar cada entrega por separado; descuentos, cierre y reapertura siguen previstos |
+| 7 | Cajas/turnos, cobro, descuentos/anulación, conciliación, reapertura | Plan aprobado y entrega 1 hecha el 05/10/2026; entrega 2 backend declarada hecha durante esta revisión, con V41 en cambios locales | Integración UI y aceptación con hallazgos abiertas; descuentos, cierre y reapertura siguen previstos |
 
 El [plan de sprints](../../producto/plan/README.md), `ESTADO.md` y las historias conservan afirmaciones de sesiones anteriores. La auditoría no revoca automáticamente la aceptación histórica ni declara nuevas aceptaciones. Señala qué controles necesitan revisión antes de la próxima entrega.
 

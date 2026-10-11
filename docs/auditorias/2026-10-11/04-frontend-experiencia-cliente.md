@@ -6,6 +6,8 @@ Esta revisión es **estática**: rutas, componentes, cliente HTTP, CSS, contrato
 
 Se respetaron los cambios preexistentes, incluida la ampliación de `cliente.ts` para cobros y el trabajo de V41. Su presencia en el árbol de trabajo **no certifica una entrega cerrada**. Las superficies de kiosco, portal y motorizado están expresamente previstas para otros sprints: sus marcadores no son fallas del sprint 6.
 
+**Actualización documental concurrente:** otra sesión añadió [US-033 — Cobro](../../../rikos-backend/doc/historias/US-033-cobro.md) y DT-062–064, y el [plan del sprint 7](../../producto/plan/sprint-07-cobrar-y-cerrar.md) declaró hecha la entrega 2 **backend**. Las menciones a trabajo en curso describen el corte inicial del código o la integración frontend aún pendiente; no desconocen esa declaración. Los hallazgos WEB-14 y WEB-17 sobre UI/contratos siguen abiertos, y no se verificó aquí un recorrido integrado de caja.
+
 Seguimiento: [registro central de pendientes](../../pendientes/02-auditoria-integral-sprints-0-7-2026-10-11.md). Lectura conjunta: [índice de la auditoría integral](README.md).
 
 ## 1. Lo que ayuda al producto

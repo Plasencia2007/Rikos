@@ -2,6 +2,12 @@
 
 Fecha: 11/10/2026, America/Lima. Se verifica el árbol de trabajo disponible, no solo el commit: incluye los archivos de cobro/V41 sin confirmar existentes al iniciar. No se modificó código de producto ni se confirmó ningún commit.
 
+La corrida principal utiliza el código revisado de V41; su resultado no certifica
+las modificaciones posteriores de descuentos/V42 que aparecieron en el workspace
+compartido. La repetición aislada del fixture se inició después y disparó una
+recompilación con fuentes nuevas; se interrumpió para conservar el corte y no
+certificar esa mezcla. No aporta un segundo resultado ni sustituye la corrida completa.
+
 ## Entorno y protección de datos
 
 | Elemento | Entorno utilizado |
@@ -22,11 +28,13 @@ Fecha: 11/10/2026, America/Lima. Se verifica el árbol de trabajo disponible, no
 | `npm run lint` | **PASS con 5 warnings**, 0 errores, código 0 | Reglas ESLint del árbol actual. No corrige advertencias ni prueba accesibilidad. |
 | Contratos, dentro del reactor Maven | **22 tests, 0 fallos, 0 errores, 0 omitidos** | Pruebas existentes de Dinero/Resultado/Identificador; no detectan MOD-01. |
 | Flyway V1–V41 desde cero | **41 migraciones aplicadas**, última V41 `success=true`; **52 tablas** sin contar `flyway_schema_history` | Esquema actual, incluido WIP V41, puede crearse desde vacío. No prueba upgrade de una copia con datos reales ni migración histórica de todo el producto. |
-| Suite operación/arquitectura | **Resultado final pendiente al redactar; se actualiza al terminar la ejecución** | No contabilizar reports antiguos como si fueran de esta corrida. |
+| Suite operación/arquitectura | **647 tests, 0 fallos de aserción, 2 errores, 0 omitidos; código Maven 1** | Errores: ciclo de módulos y fixture inexistente en `LineasDelPedidoTest:124`. La suite completa no pasa; 645 casos de operación terminan sin error. |
+| Arquitectura, prueba individual dentro de esa suite | **ERROR reproducido:** `comun → identidad → comun` | El fallo conocido es real y sigue activo. No se omitió ni se cambió el test. |
 | MOD-01, decodificación de ULID | **Defecto reproducido con clase Java compilada** | Timestamp de diez caracteres fuera del intervalo real de generación; detalle y propuesta en informe05. |
 | FND-06, resolver de servicio | **Defecto reproducido con clase real y repositorios dobles** | Cena lunes 19:00–martes 00:30: resolver devuelve cena lunes 00:15 y vacío martes 00:15. No se ejecutó una venta real a medianoche. |
 | FND-07, errores HTTP | **Tres casos reproducidos con MockMvc standalone y manejador real** | `@Valid` blank, JSON roto y tipo int inválido responden 500; control válido responde 200. No reproduce todos los endpoints ni cada colisión SQL. |
 | CAT-03, cascada | **Simulación del recorrido reproducida** | Ambas ramas producen C=4/D=3 frente a D=4 esperado. Falta prueba integrada del algoritmo Java con entidades reales. |
+| Documentación de auditoría | **11 archivos, 126 enlaces locales comprobados, 65 IDs únicos, sin duplicados ni bloques de código desbalanceados**, comprobación final | No equivale a renderizado Mermaid ni auditoría de todos los enlaces antiguos del repositorio. |
 | Carreras de pedido/mesas/cobro | **No ejecutadas con hilos/conexiones independientes** | POS-01/02, CAJ-03 y similares siguen como riesgo razonado; los tests secuenciales/dobles no los certifican. |
 | Navegador/dispositivos/impresora | **No verificado en esta sesión** | Las historias contienen verificaciones históricas. HT-10 y recorridos por rol deben comprobarse con hardware/instancia. |
 | Producción/offline/fiscal/restauración/carga | **No verificado** | Dominios posteriores o infraestructura externa; no se afirma disponibilidad, certificación fiscal ni rendimiento medido. |
@@ -57,6 +65,19 @@ npm run build
 ```
 
 Los probes FND-06/FND-07 tienen clases mínimas, classpath y comandos en [informe02](02-fundaciones-catalogo-pensionistas.md). La clase compilada de contratos se inspeccionó con JShell/JDK21 y decodificación Crockford Base32 de los primeros diez caracteres. Resultado concreto: rango real `1791751051459..1791751051623`, timestamp decodificado `1791751051316`; el problema se sigue además directamente en los bucles de `Identificador.generar`.
+
+### Dos errores de la corrida completa
+
+| Error | Evidencia y causa | Solución documentada |
+|---|---|---|
+| `ArquitecturaDeModulosTest.losModulosRespetanSusLimites` | Spring Modulith detecta `comun → identidad → comun`; guarda/configuración de seguridad importan identidad, que consume auditoría común | ARC-01: romper ciclo con fronteras públicas pequeñas; conservar prueba en build |
+| `LineasDelPedidoTest.un_producto_sin_precio_un_no_vendible_uno_del_menu_o_inexistente_no_se_agrega` | `LineasDelPedidoTest.java:124` busca cualquier producto no vendible y ejecuta `orElseThrow` sin crearlo. V15 deja productos vacíos expresamente; la base recién migrada no ofrece ese fixture. El error ocurre antes de probar el rechazo del insumo | ARC-03/CAL-01: crear el producto de prueba no vendible dentro del escenario y no depender de datos manuales de desarrollo; entorno efímero obligatorio |
+
+Resumen del reactor: **22 contratos + 647 operación = 669 casos**, 667 sin error y 2 errores de operación. La ejecución terminó el 11/10/2026 a las **15:56:55 Lima**. No se excluyó arquitectura para presentar un resultado verde. Una consulta posterior devolvió **0 productos no vendibles** en la DB temporal, consistente con el fixture ausente. La repetición opcional del método se interrumpió durante compilación por los cambios concurrentes posteriores; el error documentado procede de la corrida completa.
+
+El contenedor y su volumen temporal se eliminaron al cerrar esta revisión, después
+de terminar la suite y detener la repetición opcional. Los contenedores habituales
+del proyecto y la base de desarrollo se conservaron.
 
 ## Guion de aceptación del recorrido hasta sprint 7
 

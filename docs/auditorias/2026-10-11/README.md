@@ -2,11 +2,45 @@
 
 Fecha: **11 de octubre de 2026**, America/Lima. Base Git de referencia: `9e6391b`; también se revisaron los cambios locales presentes al comenzar, incluidos cobro y V41. Responsable de implementación posterior: Claude y el equipo. Esta entrega modifica documentación Markdown.
 
+**Límite temporal del código:** inventario y revisión principal de V41, con clases
+preparadas alrededor de las 15:36 y suite completa terminada a las 15:56:55 Lima.
+Después aparecieron modificaciones de caja/descuentos y V42 en la carpeta compartida.
+Se registran como cambios posteriores al corte; no se les atribuye el resultado
+de la suite anterior ni se amplía silenciosamente la aceptación del sprint 7.
+
+**Actualización durante la revisión:** otra sesión añadió la historia US-033 y DT-062–064,
+y declaró hecha la entrega 2 **backend** de caja en el plan. Se contrastó esta
+declaración con los mismos archivos V41/CobrarPedido revisados y compilados: los
+hallazgos de cobro permanecen. El informe distingue «backend declarado hecho» de
+«recorrido financiero integrado y aceptado»; no atribuye esas modificaciones a esta auditoría.
+
 ## Dictamen
 
-RIKOS tiene una base funcional valiosa para demostrar administración, recetas, menú, pensionistas y atención en mesa. **El circuito financiero completo todavía no reúne evidencia suficiente para entregarlo al cliente como terminado.** Sprint 6 conserva aceptación de hardware pendiente; sprint 7 tiene cajas/turnos y cobro en curso, con descuentos, conciliación y reapertura pendientes según su plan.
+RIKOS tiene una base funcional valiosa para demostrar administración, recetas, menú, pensionistas y atención en mesa. **El circuito financiero completo todavía no reúne evidencia suficiente para entregarlo al cliente como terminado.** Sprint 6 conserva aceptación de hardware pendiente; sprint 7 tiene cajas/turnos y entrega 2 backend declarada hecha y revisada con hallazgos, mientras integración UI, descuentos, conciliación y reapertura siguen pendientes.
 
 Las decisiones de modelado principales encajan con el negocio: cuenta corriente como libro, importes en céntimos, datos por local, versiones de tarifas y comanda como fotografía. Las prioridades son cerrar las brechas de autorización, consistencia concurrente y preservación histórica, y usar criterios de aceptación verificables para cerrar sprints.
+
+## Hallazgos para revisar primero
+
+| Asunto | Evidencia | Por qué afecta al cliente |
+|---|---|---|
+| FND-01 — Concesión de rol central por admin local | Confirmado por lectura; P0 | Permite eludir la delegación y el ámbito de administración |
+| FND-03/04 — Acceso revocado y PIN ambiguo | Confirmado por lectura | El trabajador puede seguir operando con token anterior o quedar identificado como otro |
+| MOD-01 — Fecha del ULID sobrescrita | Reproducido con Java | El identificador no conserva la semántica temporal documentada |
+| CAT-01/03 — Costos visibles y cascada incompleta | Lectura; simulación de cascada, integración pendiente | Usuarios sin permiso ven costos y un plato puede mostrar costo desactualizado |
+| CAJ-01/02 — Efectivo repetido y snapshot incompleto | Confirmado por lectura al corte; CAJ-01 tiene solución candidata posterior sin aceptación ejecutada | Validar rechazo de medio repetido y conservar composición histórica completa |
+| POS-01/02, CAJ-03 — Estado entre operaciones simultáneas | Riesgos razonados, sin prueba real de hilos | Puede romper cierre de pedido, unión de mesas o liberación tras parciales |
+
+## Verificación de esta sesión
+
+| Control | Resultado |
+|---|---|
+| Frontend | Build correcto; lint 0 errores y 5 advertencias |
+| Backend | 22 pruebas de contratos correctas; 647 de operación, 0 fallos de aserción y **2 errores**: ciclo de módulos y fixture ausente en base limpia |
+| Modelo físico | 41 migraciones aplicadas desde cero; 52 tablas sin contar historial Flyway |
+| Aceptación operativa | Navegador, dos dispositivos, hardware y datos reales pendientes; no se afirma aprobación del cliente |
+
+Detalle y reproducciones en [validación](06-validacion-y-aceptacion.md). La suite se ejecutó en PostgreSQL temporal aislada, sin modificar la base habitual.
 
 ## Alcance y forma de leer los resultados
 

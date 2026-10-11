@@ -1,8 +1,33 @@
 # Pendientes de auditoría integral — sprints 0–7
 
-**Corte:** 11/10/2026, America/Lima. **Estado:** asuntos abiertos para refinamiento o implementación, salvo DOC-02 corregido documentalmente en esta sesión; ninguna solución de código se programó. **Base:** commit `9e6391b` más los cambios locales existentes al comenzar, incluidos cobro/V41 en curso.
+**Corte:** 11/10/2026, America/Lima. **Estado:** asuntos abiertos para refinamiento o implementación, salvo DOC-02 corregido documentalmente en esta sesión; esta auditoría no programó soluciones de código. **Base:** commit `9e6391b` más los cambios locales existentes al comenzar, incluidos cobro/V41 en curso.
 
 Este registro reúne **hallazgos, riesgos, validaciones y entregas previstas**, no 65 errores reproducidos. Cada ID conserva su evidencia y detalle en los informes enlazados. Los IDs P-NN y RF-NNN existentes se conservan; cuando coinciden, se indican como antecedentes y no crean un segundo trabajo.
+
+**Cambio concurrente de documentación:** otra sesión registró US-033/DT-062–064
+y declaró hecha la entrega 2 backend mientras se redactaba el informe. Los
+hallazgos sobre V41 se mantienen sobre los mismos archivos revisados; “WIP” se
+refiere al estado inicial, y no invalida esa declaración de construcción. La
+aceptación del recorrido integrado continúa por verificar. No se modificaron
+esos archivos concurrentes para adaptarlos al informe.
+
+Después de completar la suite principal aparecieron cambios de descuentos/V42.
+El registro conserva los 65 asuntos del corte V41, ahora recuperable en el commit
+`23da169`; documentación concurrente en `1336ae2`. Las soluciones posteriores se
+revisaron por lectura limitada, según [el informe de venta/caja](../auditorias/2026-10-11/03-venta-pos-caja.md),
+sin ejecutar aceptación completa de V42.
+
+| ID | Estado posterior al corte | Qué falta |
+|---|---|---|
+| CAJ-01 | Solución candidata: medios repetidos rechazados antes de guardar | Ejecutar casos de aceptación con código final, incluido efectivo y vuelto |
+| CAJ-03 | Mitigación candidata: bloqueo de pedido en cobro | Prueba de dos parciales; validar transacciones de sobrecargas y protocolo con otras mutaciones |
+| CAJ-05 | Solución candidata para carrera de Caja 1 | Concurrencia real y trazabilidad de actor/evento aún pendientes |
+| CAJ-06 | Parcialmente atendido: pago nulo y límites de pagos | Verificar límites de líneas/cantidades y rollback; no dar cerrado por lectura |
+| CAJ-02 y POS-01 | Permanecen en la relectura posterior | Snapshot completo y escritores del agregado con protocolo común |
+
+Las filas detalladas siguientes conservan la evidencia original para reproducir
+el problema. Esta tabla evita tratar una solución candidata como si aún no
+existiera, o como si ya estuviera aceptada.
 
 ## Cómo usarlo en el equipo
 
@@ -133,9 +158,9 @@ Evidencia: [informe 05](../auditorias/2026-10-11/05-modelo-datos-arquitectura.md
 | ID | Prioridad / tipo | Pendiente | Solución propuesta | Criterio mínimo para cerrar | Responsable sugerido |
 |---|---|---|---|---|---|
 | MOD-01 | P1 / E/C | ULID sobrescribe timestamp en posiciones 8/9 | Distribución 48+80 correcta, validación canónica y análisis de compatibilidad; conservar históricos | Decodificar fecha de IDs nuevos da instante de generación; alfabeto/overflow/case probados; FKs previas intactas | Backend contratos + QA |
-| ARC-01 | P1 / C/V | Test de fronteras falla por ciclos de módulos | Puertos pequeños y seguridad transversal sin ciclos; no omitir test | `ArquitecturaDeModulosTest` y suite con código final pasan íntegros | Backend arquitectura + revisor |
+| ARC-01 | P1 / E/C | Test de fronteras falla por ciclo `comun → identidad → comun` | Puertos pequeños y seguridad transversal sin ciclos; no omitir test | `ArquitecturaDeModulosTest` y suite con código final pasan íntegros | Backend arquitectura + revisor |
 | ARC-02 | P2 / F/D | Diseño local/offline no tiene perfiles/circuito completo | Mantener s10/s11; implementar perfiles/red, outbox/inbox, deduplicación y reconexión | Nodo arranca sin Internet y conserva operación; reconectar no duplica; frontera local/fiscal verificada | Backend/infra + QA, futuro |
-| ARC-03 | P1 calidad / C | Integración usa DB habitual por defecto | Base efímera y perfil test; protección contra URL productiva | Suite limpia migrada desde cero no deja filas en desarrollo; resultado repetible | Backend/infra + QA |
+| ARC-03 | P1 calidad / E/C | Integración usa DB habitual y datos manuales: test de línea falla sin producto no vendible (`LineasDelPedidoTest:124`) | Base efímera/perfil test, fixture no vendible creado en escenario y protección contra URL productiva | Suite limpia desde cero no depende de filas manuales ni deja datos en desarrollo; caso de insumo ejecuta su aserción y resultado es repetible | Backend/infra + QA |
 | ARC-04 | P1 antes de piloto / C | Perfil local puede conservar semilla/secreto de desarrollo | Separar desarrollo de producción local; bootstrap seguro y guarda en entorno real | Arranque productivo local no acepta credenciales conocidas ni secreto fallback; admin real disponible | Infra/backend + QA |
 | CAL-01 | P2 / C | Sin pipeline ni suite frontend observables | Pipeline con DB efímera, build/lint/contratos/arquitectura y recorridos críticos | Una instalación limpia reproduce controles y conserva evidencia por entrega | Infra + Claude + QA |
 | DOC-01 | P2 / D | Resúmenes/modelo/IDs RN y estados contradictorios | Conciliar físico/lógico por fase y entrega con evidencia; incluye DOC-POS/CAJ del informe03 | Plan/estado/historia/modelo coinciden; V41 sigue en curso hasta aceptación; RN enlazadas correctas | Documentación + PO + backend |
