@@ -28,7 +28,7 @@ export class ErrorApi extends Error {
     public readonly estado: number,
     mensaje: string,
     /** productoId: en errores de recetas, el ingrediente que fallo (US-010). */
-    public readonly cuerpo?: { error?: string; segundosRestantes?: number; productoId?: string | null },
+    public readonly cuerpo?: { error?: string; segundosRestantes?: number; intentosRestantes?: number; productoId?: string | null },
   ) {
     super(mensaje)
   }
@@ -1087,6 +1087,7 @@ export interface PersonaDelPedido {
   etiqueta: string
   tipoCliente: 'regular' | 'pensionista'
   pensionistaId: string | null
+  preTicketId?: string | null
   lineas: LineaDelPedido[]
   subtotal: number
   taper: number
@@ -1251,6 +1252,13 @@ export const asignarPensionistaAPersona = (token: string, pedidoId: string, pers
   pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/personas/${personaId}/pensionista`, token, {
     method: 'PUT',
     body: JSON.stringify({ pensionistaId }),
+  })
+
+/** US-020: Vincula el pre-ticket emitido en el kiosco (código de 6 dígitos) a una persona de la mesa */
+export const vincularPreTicketAPersona = (token: string, pedidoId: string, personaId: string, codigo: string) =>
+  pedirAutenticado<Pedido>(`/api/pedidos/${pedidoId}/personas/${personaId}/pre-ticket`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ codigo }),
   })
 
 export const quitarPersonaDelPedido = (token: string, pedidoId: string, personaId: string) =>
@@ -1676,3 +1684,194 @@ export interface CobroDelTurno {
 
 /** Los cobros del turno abierto de quien pregunta, el mas reciente primero (para verlos y reabrir uno). */
 export const cobrosDelTurno = (token: string) => pedirAutenticado<CobroDelTurno[]>('/api/turnos/actual/cobros', token)
+
+/* =========================================================================
+ * US-021: Abonos de pensionistas en caja
+ * ========================================================================= */
+
+export interface SolicitudAbonoEnCaja {
+  pensionistaId: string
+  medio: string // 'efectivo' | 'yape' | 'plin' | 'transferencia'
+  monto: number // centimos
+  numeroOperacion?: string | null
+  cuentaDestino?: string | null
+  observacion?: string | null
+}
+
+export interface ConstanciaAbono {
+  localNombre: string
+  cajeroNombre: string
+  emitidoEn: string
+  leyenda: string
+}
+
+export interface AbonoRegistrado {
+  abono: {
+    id: string
+    pensionistaId: string
+    localId: string
+    medio: string
+    monto: number
+    fechaAbono: string
+    numeroOperacion?: string | null
+    cuentaDestino?: string | null
+    comprobanteUrl?: string | null
+    origen: string
+    estado: 'pendiente' | 'aprobado' | 'rechazado'
+    registradoPor: string
+    aprobadoPor?: string | null
+    aprobadoEn?: string | null
+    motivoRechazo?: string | null
+    turnoCajaId?: string | null
+    observacion?: string | null
+    creadoEn: string
+  }
+  pensionistaNombre: string
+  pensionistaDni: string
+  saldoAnterior: number
+  nuevoSaldo: number
+  saldoAFavor: number
+  alertaDuplicado: boolean
+  constancia: ConstanciaAbono
+}
+
+export interface AbonoDelTurno {
+  id: string
+  pensionistaId: string
+  pensionistaNombre: string
+  pensionistaDni: string
+  monto: number
+  medio: string
+  estado: string
+  numeroOperacion?: string | null
+  cuentaDestino?: string | null
+  creadoEn: string
+  observacion?: string | null
+  turnoCajaId?: string | null
+}
+
+export const registrarAbonoEnCaja = (token: string, solicitud: SolicitudAbonoEnCaja) =>
+  pedirAutenticado<AbonoRegistrado>('/api/turnos/actual/abonos', token, {
+    method: 'POST',
+    body: JSON.stringify(solicitud),
+  })
+
+export const abonosDelTurno = (token: string) =>
+  pedirAutenticado<AbonoDelTurno[]>('/api/turnos/actual/abonos', token)
+
+/* =========================================================================
+ * US-019: Kiosco de autoservicio de pensionistas
+ * ========================================================================= */
+
+export interface SolicitudPreTicket {
+  localCodigo: string
+  dni: string
+  pin: string
+  servicioManual?: string | null
+}
+
+export interface PreTicketEmitido {
+  id: string
+  codigo: string
+  pensionistaId: string
+  pensionistaNombre: string
+  dni: string
+  localId: string
+  localNombre: string
+  servicio: string
+  fecha: string
+  emitidoEn: string
+  venceEn: string
+  reutilizado: boolean
+  mensajeLegal: string
+}
+
+/** US-019: Emite el pre-ticket de autoservicio para el pensionista (sin token de sesion). */
+export const emitirPreTicketKiosco = (solicitud: SolicitudPreTicket) =>
+  pedir<PreTicketEmitido>('/api/kiosco/pre-ticket', {
+    method: 'POST',
+    body: JSON.stringify(solicitud),
+  })
+
+/* =========================================================================
+ * US-024: Aprobación y rechazo de abonos digitales de pensionistas
+ * ========================================================================= */
+
+export interface FilaAbono {
+  id: string
+  pensionistaId: string
+  pensionistaNombre: string
+  pensionistaDni: string
+  localId: string
+  localNombre: string
+  cajaSesionId: string | null
+  monto: number
+  medio: string
+  numeroOperacion: string | null
+  entidadBancaria: string | null
+  comprobanteUrl: string | null
+  estado: 'pendiente' | 'aprobado' | 'rechazado'
+  creadoEn: string
+  revisadoEn: string | null
+  revisadoPor: string | null
+  motivoRechazoId: string | null
+  motivoRechazoDescripcion: string | null
+  observacionRechazo: string | null
+}
+
+export interface AbonoAprobadoRespuesta {
+  abono: {
+    id: string
+    pensionistaId: string
+    monto: number
+    medio: string
+    estado: string
+    numeroOperacion: string | null
+    entidadBancaria: string | null
+    creadoEn: string
+    revisadoEn: string | null
+    revisadoPor: string | null
+  }
+  pensionistaNombre: string
+  pensionistaDni: string
+  nuevoSaldo: number
+  saldoAFavor: number
+}
+
+export interface SolicitudRechazoAbono {
+  motivoId: string
+  observacion?: string | null
+}
+
+export const listarAbonos = (
+  token: string,
+  filtros?: { estado?: string; busqueda?: string },
+) => {
+  const params = new URLSearchParams()
+  if (filtros?.estado && filtros.estado !== 'todos') params.set('estado', filtros.estado)
+  if (filtros?.busqueda) params.set('busqueda', filtros.busqueda)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return pedirAutenticado<FilaAbono[]>(`/api/pensionistas/abonos${q}`, token)
+}
+
+export const listarAbonosPendientes = (token: string) =>
+  pedirAutenticado<FilaAbono[]>('/api/pensionistas/abonos/pendientes', token)
+
+export const obtenerConteoAbonosPendientes = (token: string) =>
+  pedirAutenticado<{ pendientes: number }>('/api/pensionistas/abonos/conteo-pendientes', token)
+
+export const aprobarAbonoDigital = (token: string, abonoId: string) =>
+  pedirAutenticado<AbonoAprobadoRespuesta>(`/api/pensionistas/abonos/${abonoId}/aprobar`, token, {
+    method: 'POST',
+  })
+
+export const rechazarAbonoDigital = (
+  token: string,
+  abonoId: string,
+  datos: SolicitudRechazoAbono,
+) =>
+  pedirAutenticado<{ id: string; estado: string }>(`/api/pensionistas/abonos/${abonoId}/rechazar`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+

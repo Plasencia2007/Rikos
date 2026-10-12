@@ -1,0 +1,661 @@
+/**
+ * Estilos del Kiosco de Autoservicio de Pensionistas (US-019).
+ * Disenado para terminales tactiles de 10" a 24", con estetica premium RIKO'S.
+ */
+
+.kiosco-contenedor {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 20%, #174238 0%, #0d2822 60%, #081a16 100%);
+  color: #f1f7f5;
+  font-family: inherit;
+  user-select: none;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Cabecera superior del Kiosco */
+.kiosco-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 40, 34, 0.7);
+  backdrop-filter: blur(12px);
+}
+
+.kiosco-marca {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kiosco-logo-icono {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #3fa58c 0%, #22705c 100%);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(63, 165, 140, 0.35);
+}
+
+.kiosco-titulo-principal {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.kiosco-subtitulo-principal {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #a4c4bb;
+  font-weight: 500;
+}
+
+.kiosco-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kiosco-badge-local {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: #e0eee9;
+  font-weight: 600;
+}
+
+.kiosco-badge-servicio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(63, 165, 140, 0.2);
+  border: 1px solid rgba(63, 165, 140, 0.4);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: #5ce3c2;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+/* Indicador de pasos (Stepper) */
+.kiosco-pasos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.kiosco-paso-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #72968d;
+  transition: all 0.25s ease;
+}
+
+.kiosco-paso-item.activo {
+  color: #ffffff;
+}
+
+.kiosco-paso-numero {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  color: #a4c4bb;
+  font-weight: 700;
+}
+
+.kiosco-paso-item.activo .kiosco-paso-numero {
+  background: #3fa58c;
+  border-color: #3fa58c;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(63, 165, 140, 0.6);
+}
+
+.kiosco-paso-item.completado .kiosco-paso-numero {
+  background: rgba(63, 165, 140, 0.3);
+  border-color: #3fa58c;
+  color: #5ce3c2;
+}
+
+.kiosco-paso-separador {
+  width: 40px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Cuerpo central */
+.kiosco-cuerpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Tarjeta interactiva del kiosco */
+.kiosco-tarjeta {
+  background: rgba(19, 54, 46, 0.65);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 2.25rem 2rem;
+  width: 100%;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kiosco-instruccion-titulo {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+  color: #ffffff;
+}
+
+.kiosco-instruccion-sub {
+  font-size: 0.95rem;
+  color: #9cbdb3;
+  margin: 0 0 1.75rem;
+}
+
+/* Casillas de entrada DNI */
+.kiosco-dni-casillas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.kiosco-dni-casilla {
+  width: 46px;
+  height: 58px;
+  background: rgba(10, 31, 26, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: monospace;
+  color: #5ce3c2;
+  transition: all 0.2s ease;
+}
+
+.kiosco-dni-casilla.llena {
+  border-color: #3fa58c;
+  background: rgba(29, 68, 58, 0.8);
+  box-shadow: 0 0 12px rgba(63, 165, 140, 0.3);
+}
+
+.kiosco-dni-casilla.actual {
+  border-color: #5ce3c2;
+  animation: pulsoBorde 1.5s infinite;
+}
+
+@keyframes pulsoBorde {
+  0%, 100% { border-color: #5ce3c2; box-shadow: 0 0 10px rgba(92, 227, 194, 0.4); }
+  50% { border-color: rgba(92, 227, 194, 0.5); box-shadow: none; }
+}
+
+/* Puntos de PIN */
+.kiosco-pin-puntos {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+  justify-content: center;
+}
+
+.kiosco-pin-punto {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.kiosco-pin-punto.lleno {
+  background: #5ce3c2;
+  border-color: #5ce3c2;
+  transform: scale(1.15);
+  box-shadow: 0 0 14px rgba(92, 227, 194, 0.7);
+}
+
+/* Mensajes de Alerta y Error */
+.kiosco-mensaje-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 0.85rem 1.25rem;
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.kiosco-mensaje-aviso {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  padding: 0.85rem 1.25rem;
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.kiosco-bloqueo-box {
+  background: rgba(239, 68, 68, 0.18);
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kiosco-bloqueo-contador {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: monospace;
+  color: #fca5a5;
+  letter-spacing: 0.05em;
+}
+
+/* Teclado numerico táctil del Kiosco */
+.kiosco-teclado-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.kiosco-tecla {
+  height: 64px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.kiosco-tecla:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.kiosco-tecla:active:not(:disabled) {
+  background: rgba(63, 165, 140, 0.4);
+  border-color: #5ce3c2;
+  transform: translateY(1px) scale(0.97);
+}
+
+.kiosco-tecla:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.kiosco-tecla-secundaria {
+  background: rgba(255, 255, 255, 0.03);
+  color: #a4c4bb;
+  font-size: 1.1rem;
+}
+
+.kiosco-acciones-fila {
+  display: flex;
+  width: 100%;
+  max-width: 380px;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.kiosco-btn-accion {
+  flex: 1;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.kiosco-btn-primario {
+  background: linear-gradient(135deg, #3fa58c 0%, #20715d 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(63, 165, 140, 0.4);
+}
+
+.kiosco-btn-primario:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4dc2a5 0%, #278870 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(63, 165, 140, 0.55);
+}
+
+.kiosco-btn-primario:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.kiosco-btn-secundario {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e0eee9;
+}
+
+.kiosco-btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================================================================
+ * VISTA DEL PRE-TICKET EMITIDO (Tarjeta simulada de Ticket Termico)
+ * ========================================================================= */
+.kiosco-ticket-contenedor {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: ticketSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ticketSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kiosco-ticket-papel {
+  background: #ffffff;
+  color: #1a202c;
+  width: 100%;
+  border-radius: 16px;
+  padding: 2rem 1.75rem 1.75rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  position: relative;
+  border-top: 6px solid #2b7a68;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.kiosco-ticket-header {
+  text-align: center;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.kiosco-ticket-logo-texto {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #1a4d40;
+  margin: 0;
+}
+
+.kiosco-ticket-subtitulo {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Caja de Codigo de 6 digitos destacado */
+.kiosco-ticket-codigo-box {
+  background: #f1f8f5;
+  border: 2px dashed #2b7a68;
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.kiosco-ticket-codigo-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2b7a68;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.kiosco-ticket-codigo-numero {
+  font-size: 3rem;
+  font-weight: 900;
+  font-family: 'Courier New', Courier, monospace;
+  color: #0f352c;
+  letter-spacing: 0.15em;
+  line-height: 1.1;
+}
+
+.kiosco-badge-reutilizado {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+/* Detalles del Ticket */
+.kiosco-ticket-detalles {
+  display: grid;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.kiosco-ticket-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.kiosco-ticket-fila-etiqueta {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.kiosco-ticket-fila-valor {
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Aviso Legal Obligatorio (US-019) */
+.kiosco-ticket-aviso-legal {
+  background: #f8fafc;
+  border-left: 3px solid #64748b;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.kiosco-ticket-instruccion-final {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Barra y Botones de Accion del Ticket */
+.kiosco-ticket-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.kiosco-contador-reinicio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #a4c4bb;
+  margin-top: 0.25rem;
+}
+
+/* Modo Desarrollador / Fallback selector */
+.kiosco-panel-dev {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(10, 26, 21, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #a4c4bb;
+  z-index: 100;
+}
+
+.kiosco-select-dev {
+  background: #174238;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+/* =========================================================================
+ * ESTILOS DE IMPRESION TERMICA (@media print)
+ * ========================================================================= */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ocultar todo salvo la hoja de ticket imprimible */
+  .kiosco-cabecera,
+  .kiosco-pasos,
+  .kiosco-teclado-grid,
+  .kiosco-acciones-fila,
+  .kiosco-ticket-acciones,
+  .kiosco-panel-dev,
+  .kiosco-contador-reinicio {
+    display: none !important;
+  }
+
+  .kiosco-contenedor {
+    background: none !important;
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .kiosco-cuerpo {
+    max-width: 80mm !important;
+    width: 80mm !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  .kiosco-ticket-contenedor {
+    max-width: 100% !important;
+  }
+
+  .kiosco-ticket-papel {
+    box-shadow: none !important;
+    border: none !important;
+    border-top: none !important;
+    padding: 10px 5px !important;
+    width: 100% !important;
+    font-size: 11pt !important;
+  }
+
+  .kiosco-ticket-codigo-box {
+    border: 2px dashed #000 !important;
+    background: none !important;
+    padding: 8px !important;
+  }
+
+  .kiosco-ticket-codigo-numero {
+    color: #000 !important;
+    font-size: 28pt !important;
+  }
+
+  .kiosco-ticket-aviso-legal {
+    border-left: 2px solid #000 !important;
+    background: none !important;
+    color: #000 !important;
+    font-size: 8pt !important;
+  }
+}

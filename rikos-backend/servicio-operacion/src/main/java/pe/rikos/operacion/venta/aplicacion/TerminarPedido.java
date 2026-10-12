@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.comun.auditoria.RegistradorAuditoria;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicket;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicketRepositorio;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
 import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
@@ -17,8 +19,8 @@ import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
  * "Terminar pedido": un cierre SIN cobro, solo para un pedido sin nada que cobrar (sprint 7, decision del dueño): vacio,
  * o con todas sus lineas anuladas o aun sin comandar (no hay nada que cobrar de ellas). Con productos comandados hay que
  * cobrarlos o anularlos con motivo y permiso. Deja el pedido "cerrado" con quien y cuando; la mesa queda libre y las mesas
- * unidas a ella se separan solas. No toca la cuenta de ningun pensionista ni genera comprobante. Un pedido cerrado ya no se
- * modifica, pero su comanda se sigue consultando (el Historial la reimprime).
+ * unidas a ella se separan solas. No toca la cuenta de ningun pensionista ni genera comprobante. Si habia pre-tickets
+ * vinculados, vuelven a estar pendientes (US-020). Un pedido cerrado ya no se modifica, pero su comanda se sigue consultando.
  */
 @Service
 public class TerminarPedido {
@@ -27,15 +29,18 @@ public class TerminarPedido {
     private final MesaRepositorio mesas;
     private final CuentaPersonaRepositorio personas;
     private final DetallePedidoRepositorio lineas;
+    private final PreTicketRepositorio preTickets;
     private final CerrarPedido cerrarPedido;
     private final RegistradorAuditoria auditoria;
 
     public TerminarPedido(PedidoRepositorio pedidos, MesaRepositorio mesas, CuentaPersonaRepositorio personas,
-                          DetallePedidoRepositorio lineas, CerrarPedido cerrarPedido, RegistradorAuditoria auditoria) {
+                          DetallePedidoRepositorio lineas, PreTicketRepositorio preTickets,
+                          CerrarPedido cerrarPedido, RegistradorAuditoria auditoria) {
         this.pedidos = pedidos;
         this.mesas = mesas;
         this.personas = personas;
         this.lineas = lineas;
+        this.preTickets = preTickets;
         this.cerrarPedido = cerrarPedido;
         this.auditoria = auditoria;
     }
@@ -62,6 +67,14 @@ public class TerminarPedido {
         if (pedido.getMesaId() != null) {
             Mesa mesa = mesas.findById(pedido.getMesaId()).orElse(null);
             numeroDeMesa = mesa == null ? "" : mesa.getNumero();
+        }
+        for (CuentaPersona p : personas.findByPedidoIdOrderByOrden(pedidoId)) {
+            if (p.getPreTicketId() != null) {
+                preTickets.findById(p.getPreTicketId()).ifPresent(pt -> {
+                    pt.desvincular();
+                    preTickets.save(pt);
+                });
+            }
         }
         int separadas = cerrarPedido.cerrar(pedido, actorId);
         auditoria.registrar("pedido_terminado", "pedido", pedido.getId(), null,

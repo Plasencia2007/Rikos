@@ -25,6 +25,7 @@ import {
   IconoHorario,
 } from '../../comun/componentes'
 import { useSesion } from '../../comun/sesion/SesionContexto'
+import { obtenerConteoAbonosPendientes } from '../../api/cliente'
 
 interface SubItemNav {
   etiqueta: string
@@ -86,7 +87,7 @@ const NAVEGACION: SeccionNav[] = [
         subItems: [
           { etiqueta: 'Pensionistas', ruta: '/admin/pensionistas' },
           { etiqueta: 'Cuentas corrientes', ruta: '/admin/pensionistas/cuentas' },
-          { etiqueta: 'Abonos' },
+          { etiqueta: 'Abonos pendientes', ruta: '/admin/pensionistas/abonos' },
           { etiqueta: 'Planes tarifarios', ruta: '/admin/pensionistas/planes' },
           { etiqueta: 'Estados de cuenta' },
         ],
@@ -225,6 +226,14 @@ export function BarraLateral({ abierta, onCerrar }: { abierta: boolean; onCerrar
   const { sesion, salir, tienePermiso } = useSesion()
   const [abierto, setAbierto] = useState<string | null>(leerAbierto)
   const [colapsada, setColapsada] = useState<boolean>(leerColapsada)
+  const [conteoPendientes, setConteoPendientes] = useState<number>(0)
+
+  useEffect(() => {
+    if (!sesion?.token) return
+    obtenerConteoAbonosPendientes(sesion.token)
+      .then((res) => setConteoPendientes(res.pendientes))
+      .catch(() => {})
+  }, [sesion?.token, ubicacion.pathname])
 
   // Los items con requierePermiso (ej. Bitacora, "auditoria.ver") solo se
   // muestran si la sesion tiene ese permiso efectivo -- ocultos, no solo
@@ -355,6 +364,22 @@ export function BarraLateral({ abierta, onCerrar }: { abierta: boolean; onCerrar
                                 onClick={onCerrar}
                               >
                                 <span className="panel-lateral-subitem-texto">{sub.etiqueta}</span>
+                                {sub.etiqueta === 'Abonos pendientes' && conteoPendientes > 0 && (
+                                  <span
+                                    style={{
+                                      marginLeft: 'auto',
+                                      backgroundColor: '#F59E0B',
+                                      color: '#FFFFFF',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700,
+                                      padding: '1px 6px',
+                                      borderRadius: '10px',
+                                      lineHeight: '1.2',
+                                    }}
+                                  >
+                                    {conteoPendientes}
+                                  </span>
+                                )}
                               </NavLink>
                             ) : (
                               <span key={sub.etiqueta} className="panel-lateral-subitem panel-lateral-subitem-deshabilitado">

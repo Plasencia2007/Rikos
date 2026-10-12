@@ -54,7 +54,7 @@ public class ConfiguracionSeguridad {
                 // la cadena de seguridad bloquea el REENVIO (no la peticion
                 // original) y el cliente ve 403 en vez del 500 real. El fallo
                 // interno queda invisible detras de un error que parece de permisos.
-                .requestMatchers("/salud", "/error", "/auth/login", "/auth/pin", "/locales/publico/**").permitAll()
+                .requestMatchers("/salud", "/error", "/auth/login", "/auth/pin", "/locales/publico/**", "/kiosco/**").permitAll()
                 // HT-05: la especificacion OpenAPI solo describe la forma de
                 // la API (rutas, DTOs), no datos -- la usa el generador de
                 // tipos del frontend, que corre sin token.
@@ -104,7 +104,8 @@ public class ConfiguracionSeguridad {
                     .hasAuthority("PERM_caja.administrar")
                 .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/cajas/*")
                     .hasAuthority("PERM_caja.administrar")
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos", "/turnos/actual/cierre")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cajas/*/turnos", "/turnos/actual/cierre",
+                        "/turnos/actual/abonos")
                     .hasAuthority("PERM_caja.crear")
                 // US-035 (entrega 5): reabrir un cobro es caja.reabrir; ver los cobros de un pedido, caja.ver.
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/cobros/*/reapertura")
@@ -153,6 +154,13 @@ public class ConfiguracionSeguridad {
                     .hasAuthority("PERM_pensionistas.administrar")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/pensionistas/*/cuenta/ajustes")
                     .hasAuthority("PERM_pensionistas.modificar")
+                // US-024: aprobar o rechazar abonos digitales (solo oficina central / pensionistas.administrar).
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/pensionistas/abonos/*/aprobar",
+                        "/pensionistas/abonos/*/rechazar")
+                    .hasAuthority("PERM_pensionistas.administrar")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/pensionistas/abonos",
+                        "/pensionistas/abonos/**")
+                    .hasAnyAuthority("PERM_pensionistas.ver", "PERM_pensionistas.administrar")
                 // US-016: fichas de pensionistas. Cada accion con su permiso. Lo
                 // mas especifico primero (el PIN y el estado son sub-rutas del POST).
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/pensionistas/**")

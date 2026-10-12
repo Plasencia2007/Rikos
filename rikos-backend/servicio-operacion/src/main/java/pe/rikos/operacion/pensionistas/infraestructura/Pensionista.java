@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import pe.rikos.operacion.pensionistas.aplicacion.Comida;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.EnumSet;
 import java.util.Set;
@@ -80,6 +81,12 @@ public class Pensionista {
 
     @Column(name = "hash_contrasena_portal", length = 255)
     private String hashContrasenaPortal;
+
+    @Column(name = "intentos_fallidos", nullable = false)
+    private int intentosFallidos = 0;
+
+    @Column(name = "bloqueado_hasta")
+    private OffsetDateTime bloqueadoHasta;
 
     @Column(nullable = false)
     private boolean activo = true;
@@ -236,5 +243,54 @@ public class Pensionista {
 
     public OffsetDateTime getCreadoEn() {
         return creadoEn;
+    }
+
+    public void registrarIntentoFallido(int umbralIntentos, Duration duracionBloqueo) {
+        registrarIntentoFallido(umbralIntentos, duracionBloqueo, OffsetDateTime.now());
+    }
+
+    public void registrarIntentoFallido(int umbralIntentos, Duration duracionBloqueo, OffsetDateTime momento) {
+        this.intentosFallidos++;
+        if (this.intentosFallidos >= umbralIntentos) {
+            this.bloqueadoHasta = momento.plus(duracionBloqueo);
+        }
+    }
+
+    public void registrarIntentoExitoso() {
+        this.intentosFallidos = 0;
+        this.bloqueadoHasta = null;
+    }
+
+    public boolean estaBloqueado() {
+        return estaBloqueado(OffsetDateTime.now());
+    }
+
+    public boolean estaBloqueado(OffsetDateTime momento) {
+        return bloqueadoHasta != null && bloqueadoHasta.isAfter(momento);
+    }
+
+    public long segundosRestantesBloqueo() {
+        return segundosRestantesBloqueo(OffsetDateTime.now());
+    }
+
+    public long segundosRestantesBloqueo(OffsetDateTime momento) {
+        if (!estaBloqueado(momento)) {
+            return 0;
+        }
+        return Math.max(0, Duration.between(momento, bloqueadoHasta).toSeconds());
+    }
+
+    public String getNombreCompleto() {
+        String n = nombres != null ? nombres.trim() : "";
+        String a = apellidos != null ? apellidos.trim() : "";
+        return (n + " " + a).trim();
+    }
+
+    public int getIntentosFallidos() {
+        return intentosFallidos;
+    }
+
+    public OffsetDateTime getBloqueadoHasta() {
+        return bloqueadoHasta;
     }
 }

@@ -23,6 +23,7 @@ import {
   PantallaPensionistaFormulario,
   PantallaCuentaPensionista,
   PantallaCuentasCorrientes,
+  PantallaAbonosPendientes,
 } from '../../features/pensionistas'
 import { PantallaSalon } from '../../features/venta'
 import {
@@ -81,6 +82,8 @@ function Panel() {
           <Route path="pensionistas" element={<PantallaPensionistas />} />
           <Route path="pensionistas/nuevo" element={<PantallaPensionistaFormulario />} />
           <Route path="pensionistas/cuentas" element={<PantallaCuentasCorrientes />} />
+          <Route path="pensionistas/abonos" element={<PantallaAbonosPendientes />} />
+          <Route path="pensionistas/abonos-pendientes" element={<Navigate to="/admin/pensionistas/abonos" replace />} />
           {/* Salones y mesas (Configuración). La lista plana de mesas de antes quedó dentro de cada salón. */}
           <Route path="configuracion/mesas" element={<Navigate to="/admin/configuracion/salones" replace />} />
           <Route path="configuracion/salones" element={<PantallaSalones />} />

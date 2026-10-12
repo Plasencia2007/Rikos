@@ -37,6 +37,10 @@ public class CuentaPersona {
     @Column(name = "pensionista_id", length = 26)
     private String pensionistaId;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "pre_ticket_id", length = 26)
+    private String preTicketId;
+
     @Column(nullable = false, length = 10)
     private String estado;
 
@@ -55,9 +59,21 @@ public class CuentaPersona {
 
     /** Pasa a ser un pensionista; la etiqueta pasa a ser su nombre. */
     public void asignarPensionista(String pensionistaId, String etiqueta) {
+        asignarPensionista(pensionistaId, etiqueta, null);
+    }
+
+    public void asignarPensionista(String pensionistaId, String etiqueta, String preTicketId) {
         this.tipoCliente = "pensionista";
         this.pensionistaId = pensionistaId;
         this.etiqueta = etiqueta;
+        this.preTicketId = preTicketId;
+    }
+
+    public void desvincularPensionista(String etiquetaDefault) {
+        this.tipoCliente = "regular";
+        this.pensionistaId = null;
+        this.preTicketId = null;
+        this.etiqueta = etiquetaDefault;
     }
 
     public String getId() {
@@ -86,5 +102,9 @@ public class CuentaPersona {
 
     public String getEstado() {
         return estado;
+    }
+
+    public String getPreTicketId() {
+        return preTicketId;
     }
 }

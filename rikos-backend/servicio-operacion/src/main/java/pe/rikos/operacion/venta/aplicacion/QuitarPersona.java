@@ -3,6 +3,8 @@ package pe.rikos.operacion.venta.aplicacion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.rikos.contratos.Resultado;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicket;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicketRepositorio;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
 import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
@@ -11,6 +13,7 @@ import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
 /**
  * Quita una persona sin lineas. Un pedido nunca se queda sin personas: la ultima no se quita (se responde
  * PERSONA_CON_LINEAS, "esta persona no se puede quitar", igual que con lineas).
+ * Si la persona tenia un pre-ticket vinculado, se devuelve a estado pendiente (US-020).
  */
 @Service
 public class QuitarPersona {
@@ -18,11 +21,14 @@ public class QuitarPersona {
     private final PedidoRepositorio pedidos;
     private final CuentaPersonaRepositorio personas;
     private final DetallePedidoRepositorio lineas;
+    private final PreTicketRepositorio preTickets;
 
-    public QuitarPersona(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas, DetallePedidoRepositorio lineas) {
+    public QuitarPersona(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas,
+                         DetallePedidoRepositorio lineas, PreTicketRepositorio preTickets) {
         this.pedidos = pedidos;
         this.personas = personas;
         this.lineas = lineas;
+        this.preTickets = preTickets;
     }
 
     @Transactional
@@ -44,6 +50,12 @@ public class QuitarPersona {
         }
         if (lineas.existsByCuentaPersonaId(personaId) || personas.findByPedidoIdOrderByOrden(pedidoId).size() <= 1) {
             return Resultado.fracaso(ErrorPedido.PERSONA_CON_LINEAS);
+        }
+        if (persona.getPreTicketId() != null) {
+            preTickets.findById(persona.getPreTicketId()).ifPresent(pt -> {
+                pt.desvincular();
+                preTickets.save(pt);
+            });
         }
         personas.delete(persona);
         return Resultado.exito(null);

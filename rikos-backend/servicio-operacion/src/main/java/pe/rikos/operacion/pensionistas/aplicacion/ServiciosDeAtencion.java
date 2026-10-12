@@ -95,14 +95,12 @@ public class ServiciosDeAtencion {
 
     /** Los nombres con que se guardan en horario_servicio.dia_semana (sin tildes). */
     private static String nombreDelDia(DayOfWeek dia) {
-        return switch (dia) {
-            case MONDAY -> "lunes";
-            case TUESDAY -> "martes";
-            case WEDNESDAY -> "miercoles";
-            case THURSDAY -> "jueves";
-            case FRIDAY -> "viernes";
-            case SATURDAY -> "sabado";
-            case SUNDAY -> "domingo";
-        };
+        if (dia == DayOfWeek.MONDAY) return "lunes";
+        if (dia == DayOfWeek.TUESDAY) return "martes";
+        if (dia == DayOfWeek.WEDNESDAY) return "miercoles";
+        if (dia == DayOfWeek.THURSDAY) return "jueves";
+        if (dia == DayOfWeek.FRIDAY) return "viernes";
+        if (dia == DayOfWeek.SATURDAY) return "sabado";
+        return "domingo";
     }
 }

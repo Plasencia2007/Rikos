@@ -30,6 +30,7 @@ import pe.rikos.operacion.venta.aplicacion.MoverPedidoDeMesa;
 import pe.rikos.operacion.venta.aplicacion.RegistrarImpresion;
 import pe.rikos.operacion.venta.aplicacion.TerminarPedido;
 import pe.rikos.operacion.venta.aplicacion.TrasladarLineas;
+import pe.rikos.operacion.venta.aplicacion.VincularPreTicket;
 import pe.rikos.operacion.venta.infraestructura.Comanda;
 import pe.rikos.operacion.venta.aplicacion.ErrorPedido;
 import pe.rikos.operacion.venta.aplicacion.LineaDetallada;
@@ -60,6 +61,7 @@ public class PedidoController {
     private final AbrirPedido abrirPedido;
     private final AgregarPersona agregarPersona;
     private final AsignarPensionista asignarPensionista;
+    private final VincularPreTicket vincularPreTicket;
     private final QuitarPersona quitarPersona;
     private final AgregarLinea agregarLinea;
     private final ModificarLinea modificarLinea;
@@ -75,7 +77,8 @@ public class PedidoController {
     private final MoverPedidoDeMesa moverPedidoDeMesa;
 
     public PedidoController(AbrirPedido abrirPedido, AgregarPersona agregarPersona,
-                            AsignarPensionista asignarPensionista, QuitarPersona quitarPersona,
+                            AsignarPensionista asignarPensionista, VincularPreTicket vincularPreTicket,
+                            QuitarPersona quitarPersona,
                             AgregarLinea agregarLinea, ModificarLinea modificarLinea, QuitarLinea quitarLinea,
                             ConsultaPedidos consulta, ComandarPedido comandarPedido,
                             RegistrarImpresion registrarImpresion, ConsultaComandas consultaComandas,
@@ -93,6 +96,7 @@ public class PedidoController {
         this.abrirPedido = abrirPedido;
         this.agregarPersona = agregarPersona;
         this.asignarPensionista = asignarPensionista;
+        this.vincularPreTicket = vincularPreTicket;
         this.quitarPersona = quitarPersona;
         this.agregarLinea = agregarLinea;
         this.modificarLinea = modificarLinea;
@@ -112,6 +116,9 @@ public class PedidoController {
     }
 
     public record PensionistaRequest(String pensionistaId) {
+    }
+
+    public record PreTicketRequest(String codigo) {
     }
 
     public record ComponenteRequest(String componente, String opcionMenuId) {
@@ -188,6 +195,7 @@ public class PedidoController {
     }
 
     public record PersonaRespuesta(String id, String etiqueta, String tipoCliente, String pensionistaId,
+                                   String preTicketId,
                                    List<LineaRespuesta> lineas, long subtotal, long taper, long total) {
     }
 
@@ -208,6 +216,7 @@ public class PedidoController {
     private static PersonaRespuesta de(PersonaDetallada d) {
         var c = d.persona();
         return new PersonaRespuesta(c.getId(), c.getEtiqueta(), c.getTipoCliente(), c.getPensionistaId(),
+                c.getPreTicketId(),
                 d.lineas().stream().map(PedidoController::de).toList(), d.subtotal(), d.taper(), d.total());
     }
 
@@ -303,6 +312,17 @@ public class PedidoController {
                                                 @AuthenticationPrincipal String actorId) {
         return protegido(() -> {
             var resultado = asignarPensionista.ejecutar(id, personaId, cuerpo.pensionistaId(), actorId);
+            return resultado.esExito() ? completo(id, HttpStatus.OK) : errorDe(resultado);
+        });
+    }
+
+    @Operation(summary = "Vincular el pre-ticket del kiosco (código de 6 dígitos) a una persona de la mesa")
+    @PutMapping("/pedidos/{id}/personas/{personaId}/pre-ticket")
+    public ResponseEntity<?> vincularPreTicket(@PathVariable String id, @PathVariable String personaId,
+                                               @RequestBody PreTicketRequest cuerpo,
+                                               @AuthenticationPrincipal String actorId) {
+        return protegido(() -> {
+            var resultado = vincularPreTicket.ejecutar(id, personaId, cuerpo.codigo(), actorId);
             return resultado.esExito() ? completo(id, HttpStatus.OK) : errorDe(resultado);
         });
     }
@@ -492,6 +512,9 @@ public class PedidoController {
                 if (mensaje.contains("ux_cuenta_persona_pensionista")) {
                     return error(HttpStatus.CONFLICT, ErrorPedido.PENSIONISTA_YA_EN_EL_PEDIDO.name());
                 }
+                if (mensaje.contains("uq_cuenta_persona_pre_ticket")) {
+                    return error(HttpStatus.CONFLICT, ErrorPedido.PRE_TICKET_YA_VINCULADO.name());
+                }
                 throw e;
             }
         }
@@ -501,11 +524,13 @@ public class PedidoController {
         ErrorPedido e = ((Resultado.Fracaso<?, ErrorPedido>) resultado).error();
         HttpStatus estado = switch (e) {
             case NO_ENCONTRADO, MESA_NO_ENCONTRADA, PERSONA_NO_ENCONTRADA, LINEA_NO_ENCONTRADA,
-                 PRODUCTO_NO_ENCONTRADO, PENSIONISTA_NO_ENCONTRADO, COMANDA_NO_ENCONTRADA -> HttpStatus.NOT_FOUND;
+                 PRODUCTO_NO_ENCONTRADO, PENSIONISTA_NO_ENCONTRADO, COMANDA_NO_ENCONTRADA,
+                 PRE_TICKET_NO_ENCONTRADO -> HttpStatus.NOT_FOUND;
             case MESA_OCUPADA, PENSIONISTA_YA_EN_EL_PEDIDO, PERSONA_CON_LINEAS, LINEA_YA_COMANDADA,
                  PRODUCTO_AGOTADO, SIN_LINEAS_PENDIENTES, PEDIDO_NO_COMANDABLE, LINEA_ANULADA,
                  PEDIDO_NO_REORGANIZABLE, TIENE_MESAS_UNIDAS, PEDIDO_NO_TERMINABLE, PEDIDO_CERRADO, LINEA_COBRADA,
-                 PEDIDO_CON_LINEAS_POR_COBRAR -> HttpStatus.CONFLICT;
+                 PEDIDO_CON_LINEAS_POR_COBRAR, PRE_TICKET_YA_VINCULADO, PRE_TICKET_ANULADO, PRE_TICKET_CERRADO,
+                 PENSIONISTA_INACTIVO -> HttpStatus.CONFLICT;
             default -> HttpStatus.UNPROCESSABLE_ENTITY;
         };
         return error(estado, e.name());

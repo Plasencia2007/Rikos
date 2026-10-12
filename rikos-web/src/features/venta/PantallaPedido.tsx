@@ -14,6 +14,7 @@ import {
   agregarPersonaAlPedido,
   anularLineaDelPedido,
   asignarPensionistaAPersona,
+  vincularPreTicketAPersona,
   comandarPedido,
   listarComandasDelPedido,
   listarMesas,
@@ -655,6 +656,11 @@ export function PantallaPedido({
           token={token}
           trabajando={trabajando}
           onCerrar={() => setDialogo(null)}
+          onVincularTicket={async (codigo: string) => {
+            const pedidoActualizado = await vincularPreTicketAPersona(token, pedidoId, persona.id, codigo)
+            setPedido(pedidoActualizado)
+            setDialogo(null)
+          }}
           onElegir={(p: ResumenPensionista) =>
             ejecutar(asignarPensionistaAPersona(token, pedidoId, persona.id, p.id), () => {
               setNombresDePensionista((m) => ({ ...m, [p.id]: `${p.nombres} ${p.apellidos}` }))

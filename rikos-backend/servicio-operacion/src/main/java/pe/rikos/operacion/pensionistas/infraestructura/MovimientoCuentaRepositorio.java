@@ -17,6 +17,8 @@ public interface MovimientoCuentaRepositorio extends Repository<MovimientoCuenta
 
     Optional<MovimientoCuenta> findById(String id);
 
+    Optional<MovimientoCuenta> findByAbonoId(String abonoId);
+
     boolean existsByCuentaIdAndTipo(String cuentaId, String tipo);
 
     /** Del mas reciente al mas antiguo segun cuando OCURRIO, no cuando llego. */

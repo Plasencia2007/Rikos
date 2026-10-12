@@ -35,8 +35,9 @@ const MENSAJES: Record<string, string> = {
   SIN_PERMISO_PARA_DESCONTAR: 'No tienes permiso para aplicar descuentos.',
   COBRO_NO_ENCONTRADO: 'Ese cobro ya no existe.',
   COBRO_YA_REVERTIDO: 'Ese cobro ya se reabrió.',
-  TURNO_CERRADO: 'El turno de ese cobro ya se cerró: ya no se puede reabrir.',
   MESA_OCUPADA: 'La mesa ya la ocupa otro pedido: no se puede reabrir.',
+  NUMERO_OPERACION_REQUERIDO: 'Los pagos digitales requieren el número de operación.',
+  PENSIONISTA_NO_ENCONTRADO: 'El pensionista seleccionado no existe.',
 }
 
 export function mensajeDeCaja(error: unknown, porDefecto: string): string {

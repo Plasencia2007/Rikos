@@ -9,6 +9,8 @@ public interface PensionistaRepositorio extends JpaRepository<Pensionista, Strin
 
     boolean existsByDni(String dni);
 
+    java.util.Optional<Pensionista> findByDni(String dni);
+
     /** Mirror del indice unico: otro pensionista (no este) con ese dni. */
     boolean existsByDniAndIdNot(String dni, String id);
 

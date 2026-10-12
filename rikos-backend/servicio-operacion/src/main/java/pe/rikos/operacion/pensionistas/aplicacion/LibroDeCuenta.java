@@ -24,12 +24,18 @@ class LibroDeCuenta {
     MovimientoCuenta agregar(String id, String cuentaId, String localId, TipoMovimiento tipo, Signo signo,
                              long importe, String pedidoId, String motivoId, String descripcion,
                              OffsetDateTime ocurridoEn, String actorId) {
+        return agregar(id, cuentaId, localId, tipo, signo, importe, pedidoId, null, motivoId, descripcion, ocurridoEn, actorId);
+    }
+
+    MovimientoCuenta agregar(String id, String cuentaId, String localId, TipoMovimiento tipo, Signo signo,
+                             long importe, String pedidoId, String abonoId, String motivoId, String descripcion,
+                             OffsetDateTime ocurridoEn, String actorId) {
         String movimientoId = id != null ? id : Identificador.nuevo().valor();
         var existente = movimientos.findById(movimientoId);
         if (existente.isPresent()) {
             return existente.get();
         }
         return movimientos.save(new MovimientoCuenta(movimientoId, cuentaId, localId, tipo.codigo(), signo.codigo(),
-                importe, pedidoId, motivoId, descripcion, ocurridoEn, actorId));
+                importe, pedidoId, abonoId, motivoId, descripcion, ocurridoEn, actorId));
     }
 }

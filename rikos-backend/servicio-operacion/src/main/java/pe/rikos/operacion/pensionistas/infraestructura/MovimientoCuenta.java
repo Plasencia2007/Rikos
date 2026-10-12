@@ -52,6 +52,10 @@ public class MovimientoCuenta {
     private String pedidoId;
 
     @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "abono_id", length = 26)
+    private String abonoId;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "motivo_id", length = 26)
     private String motivoId;
 
@@ -74,6 +78,12 @@ public class MovimientoCuenta {
     public MovimientoCuenta(String id, String cuentaId, String localId, String tipo, String signo, long importe,
                             String pedidoId, String motivoId, String descripcion, OffsetDateTime ocurridoEn,
                             String registradoPor) {
+        this(id, cuentaId, localId, tipo, signo, importe, pedidoId, null, motivoId, descripcion, ocurridoEn, registradoPor);
+    }
+
+    public MovimientoCuenta(String id, String cuentaId, String localId, String tipo, String signo, long importe,
+                            String pedidoId, String abonoId, String motivoId, String descripcion, OffsetDateTime ocurridoEn,
+                            String registradoPor) {
         this.id = id;
         this.cuentaId = cuentaId;
         this.localId = localId;
@@ -81,6 +91,7 @@ public class MovimientoCuenta {
         this.signo = signo;
         this.importe = importe;
         this.pedidoId = pedidoId;
+        this.abonoId = abonoId;
         this.motivoId = motivoId;
         this.descripcion = descripcion;
         this.ocurridoEn = ocurridoEn;
@@ -114,6 +125,10 @@ public class MovimientoCuenta {
 
     public String getPedidoId() {
         return pedidoId;
+    }
+
+    public String getAbonoId() {
+        return abonoId;
     }
 
     public String getMotivoId() {

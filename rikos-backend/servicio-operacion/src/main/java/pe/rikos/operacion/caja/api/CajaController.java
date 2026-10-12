@@ -34,6 +34,14 @@ import pe.rikos.operacion.caja.aplicacion.ErrorCaja;
 import pe.rikos.operacion.caja.aplicacion.FilaDeCaja;
 import pe.rikos.operacion.caja.infraestructura.Caja;
 import pe.rikos.operacion.caja.infraestructura.TurnoCaja;
+import pe.rikos.operacion.caja.aplicacion.RegistrarAbonoEnCaja;
+import pe.rikos.operacion.caja.aplicacion.SolicitudAbono;
+import pe.rikos.operacion.caja.aplicacion.AbonoRegistrado;
+import pe.rikos.operacion.caja.aplicacion.ErrorAbono;
+import pe.rikos.operacion.pensionistas.infraestructura.Abono;
+import pe.rikos.operacion.pensionistas.infraestructura.AbonoRepositorio;
+import pe.rikos.operacion.pensionistas.infraestructura.Pensionista;
+import pe.rikos.operacion.pensionistas.infraestructura.PensionistaRepositorio;
 import pe.rikos.operacion.comun.web.ErrorRespuesta;
 
 import java.time.OffsetDateTime;
@@ -65,6 +73,16 @@ public class CajaController {
     public record CierreRequest(Long efectivoContado, String observacion) {
     }
 
+    public record AbonoCajaRequest(String pensionistaId, String medio, Long monto, String numeroOperacion,
+                                  String cuentaDestino, String observacion) {
+    }
+
+    public record AbonoDetalleRespuesta(String id, String pensionistaId, String pensionistaNombre, String pensionistaDni,
+                                        long monto, String medio, String estado, String numeroOperacion,
+                                        String cuentaDestino, OffsetDateTime creadoEn, String observacion,
+                                        String turnoCajaId) {
+    }
+
     /** Lo que ve el cajero ANTES de contar (RN-067). Centimos. */
     public record ResumenRespuesta(TurnoRespuesta turno, long fondoInicial, long efectivoCobrado, long efectivoEsperado,
                                    long totalYape, long totalPlin, long totalTarjeta, long cobros) {
@@ -85,10 +103,15 @@ public class CajaController {
     private final CambiarEstadoCaja cambiarEstadoCaja;
     private final DefinirCajaPrincipal definirPrincipal;
     private final EliminarCaja eliminarCaja;
+    private final RegistrarAbonoEnCaja registrarAbono;
+    private final AbonoRepositorio abonos;
+    private final PensionistaRepositorio pensionistas;
 
     public CajaController(ConsultaCajas consulta, CrearCaja crearCaja, AbrirTurno abrirTurno, CerrarTurno cerrarTurno,
                           ConsultaCierre consultaCierre, ActualizarCaja actualizarCaja, CambiarEstadoCaja cambiarEstadoCaja,
-                          DefinirCajaPrincipal definirPrincipal, EliminarCaja eliminarCaja) {
+                          DefinirCajaPrincipal definirPrincipal, EliminarCaja eliminarCaja,
+                          RegistrarAbonoEnCaja registrarAbono, AbonoRepositorio abonos,
+                          PensionistaRepositorio pensionistas) {
         this.actualizarCaja = actualizarCaja;
         this.cambiarEstadoCaja = cambiarEstadoCaja;
         this.definirPrincipal = definirPrincipal;
@@ -98,6 +121,9 @@ public class CajaController {
         this.consulta = consulta;
         this.crearCaja = crearCaja;
         this.abrirTurno = abrirTurno;
+        this.registrarAbono = registrarAbono;
+        this.abonos = abonos;
+        this.pensionistas = pensionistas;
     }
 
     private static TurnoRespuesta turno(TurnoCaja t, String cajeroNombre) {
@@ -274,6 +300,62 @@ public class CajaController {
         Resultado<CierreCaja, ErrorCaja> resultado = consultaCierre.deTurno(id);
         return resultado.esExito() ? ResponseEntity.ok(cierre(resultado.valorOLanza(), resultado.valorOLanza().getDiferencia() != 0))
                 : errorDe(resultado);
+    }
+
+    @Operation(summary = "Registrar un abono de pensionista en el turno actual (efectivo o digital)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = AbonoRegistrado.class))),
+            @ApiResponse(responseCode = "404", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class))),
+            @ApiResponse(responseCode = "422", content = @Content(schema = @Schema(implementation = ErrorRespuesta.class)))
+    })
+    @PostMapping("/turnos/actual/abonos")
+    public ResponseEntity<?> registrarAbono(@RequestBody AbonoCajaRequest cuerpo,
+                                            @AuthenticationPrincipal String actorId) {
+        if (cuerpo == null) {
+            return error(HttpStatus.UNPROCESSABLE_ENTITY, "CUERPO_REQUERIDO");
+        }
+        SolicitudAbono sol = new SolicitudAbono(cuerpo.pensionistaId(), cuerpo.medio(), cuerpo.monto(),
+                cuerpo.numeroOperacion(), cuerpo.cuentaDestino(), cuerpo.observacion());
+        Resultado<AbonoRegistrado, ErrorAbono> res = registrarAbono.ejecutar(actorId, sol);
+        if (res.esFracaso()) {
+            ErrorAbono err = ((Resultado.Fracaso<AbonoRegistrado, ErrorAbono>) res).error();
+            HttpStatus status = switch (err) {
+                case SIN_TURNO_ABIERTO, SIN_LOCAL_ACTIVO -> HttpStatus.CONFLICT;
+                case PENSIONISTA_NO_ENCONTRADO, CUENTA_NO_ENCONTRADA -> HttpStatus.NOT_FOUND;
+                default -> HttpStatus.UNPROCESSABLE_ENTITY;
+            };
+            return error(status, err.name());
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(res.valorOLanza());
+    }
+
+    @Operation(summary = "Listar los abonos registrados en el turno actual del cajero")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200")
+    })
+    @GetMapping("/turnos/actual/abonos")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> listarAbonosDelTurno(@AuthenticationPrincipal String actorId) {
+        var turnoOpt = consulta.turnoActual(actorId);
+        if (turnoOpt.esFracaso() || turnoOpt.valorOLanza().isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        TurnoCaja turno = turnoOpt.valorOLanza().get();
+        List<Abono> lista = abonos.findByTurnoCajaIdOrderByCreadoEnDesc(turno.getId());
+        List<AbonoDetalleRespuesta> dtos = lista.stream().map(a -> {
+            String pNombre = "Pensionista";
+            String pDni = "";
+            var pOpt = pensionistas.findById(a.getPensionistaId());
+            if (pOpt.isPresent()) {
+                pNombre = pOpt.get().getNombreCompleto();
+                pDni = pOpt.get().getDni();
+            }
+            return new AbonoDetalleRespuesta(a.getId(), a.getPensionistaId(), pNombre, pDni,
+                    a.getMonto(), a.getMedio(), a.getEstado(), a.getNumeroOperacion(),
+                    a.getCuentaDestino(), a.getCreadoEn(), a.getObservacion(), a.getTurnoCajaId());
+        }).toList();
+        return ResponseEntity.ok(dtos);
     }
 
     /**

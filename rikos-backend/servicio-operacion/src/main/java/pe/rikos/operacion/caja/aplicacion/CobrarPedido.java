@@ -32,6 +32,8 @@ import pe.rikos.operacion.pensionistas.aplicacion.ResumenDeCuenta;
 import pe.rikos.operacion.pensionistas.infraestructura.MovimientoCuenta;
 import pe.rikos.operacion.pensionistas.infraestructura.Pensionista;
 import pe.rikos.operacion.pensionistas.infraestructura.PensionistaRepositorio;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicket;
+import pe.rikos.operacion.pensionistas.infraestructura.PreTicketRepositorio;
 import pe.rikos.operacion.venta.aplicacion.CerrarPedido;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
@@ -84,6 +86,7 @@ public class CobrarPedido {
     private final RecetaRepositorio recetas;
     private final MotivoRepositorio motivos;
     private final PensionistaRepositorio pensionistas;
+    private final PreTicketRepositorio preTickets;
     private final RegistrarConsumo registrarConsumo;
     private final ConsultaCuenta consultaCuenta;
     private final CerrarPedido cerrarPedido;
@@ -94,7 +97,7 @@ public class CobrarPedido {
                         CobroRepositorio cobros, CobroLineaRepositorio cobroLineas, PagoRepositorio pagos,
                         MovimientoCajaRepositorio movimientos, CobroCargoRepositorio cargos,
                         ProductoRepositorio productos, RecetaRepositorio recetas, MotivoRepositorio motivos,
-                        PensionistaRepositorio pensionistas,
+                        PensionistaRepositorio pensionistas, PreTicketRepositorio preTickets,
                         RegistrarConsumo registrarConsumo, ConsultaCuenta consultaCuenta, CerrarPedido cerrarPedido,
                         RegistradorAuditoria auditoria) {
         this.pedidos = pedidos;
@@ -111,6 +114,7 @@ public class CobrarPedido {
         this.recetas = recetas;
         this.motivos = motivos;
         this.pensionistas = pensionistas;
+        this.preTickets = preTickets;
         this.registrarConsumo = registrarConsumo;
         this.consultaCuenta = consultaCuenta;
         this.cerrarPedido = cerrarPedido;
@@ -282,6 +286,14 @@ public class CobrarPedido {
         boolean cerrado = CerrarPedido.sinNadaPorCobrar(todas);
         if (cerrado) {
             cerrarPedido.cerrar(pedido, cajeroId);
+            for (CuentaPersona p : personas.findByPedidoIdOrderByOrden(pedidoId)) {
+                if (p.getPreTicketId() != null) {
+                    preTickets.findById(p.getPreTicketId()).ifPresent(pt -> {
+                        pt.cerrar();
+                        preTickets.save(pt);
+                    });
+                }
+            }
         }
         auditoria.registrar("cobro_registrado", "pedido", pedido.getId(), null,
                 RegistradorAuditoria.campos("nombre", "Pedido " + pedido.getNumero(), "total", cobro.getTotal(),

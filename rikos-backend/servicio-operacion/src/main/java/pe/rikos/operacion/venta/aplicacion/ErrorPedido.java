@@ -77,5 +77,14 @@ public enum ErrorPedido {
     /** Sprint 7: una linea ya cobrada no se modifica, ni se anula, ni se traslada (la reapertura es de caja). */
     LINEA_COBRADA,
     /** Sprint 7: "Terminar pedido" solo cierra un pedido sin nada que cobrar; con lineas comandadas se cobran o se anulan. */
-    PEDIDO_CON_LINEAS_POR_COBRAR
+    PEDIDO_CON_LINEAS_POR_COBRAR,
+    /** Sprint 8 (US-020): errores al vincular pre-ticket de autoservicio a una persona del pedido. */
+    PRE_TICKET_REQUERIDO,
+    PRE_TICKET_NO_ENCONTRADO,
+    PRE_TICKET_DE_OTRO_LOCAL,
+    PRE_TICKET_SERVICIO_DISTINTO,
+    PRE_TICKET_VENCIDO,
+    PRE_TICKET_YA_VINCULADO,
+    PRE_TICKET_ANULADO,
+    PRE_TICKET_CERRADO
 }

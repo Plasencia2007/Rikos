@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Clock, Lock, RefreshCw, Undo2 } from 'lucide-react'
+import { Clock, Lock, RefreshCw, Undo2, Wallet } from 'lucide-react'
 import { Aviso, Boton, EstadoCargando, EstadoError, EstadoVacio, Insignia } from '../../comun/componentes'
 import { enSoles } from '../../comun/formato/dinero'
 import {
+  abonosDelTurno,
   cobrosDelTurno,
   listarCajas,
   listarPedidos,
   permisosPropios,
   resumenDelTurno,
   turnoActualDeCaja,
+  type AbonoDelTurno,
+  type AbonoRegistrado,
   type CajaDelLocal,
   type CobroDelTurno,
   type ResumenDePedido,
@@ -18,6 +21,8 @@ import {
 import { AbrirTurnoDeCaja } from './AbrirTurnoDeCaja'
 import { CobrarPedidoDeCaja } from './CobrarPedidoDeCaja'
 import { DialogoCierre, DialogoReabrir } from './DialogosDeCaja'
+import { DialogoRegistrarAbono } from './DialogoRegistrarAbono'
+import { ConstanciaAbonoModal } from './ConstanciaAbono'
 
 function tituloDe(p: ResumenDePedido): string {
   if (p.mesaNumero) return p.mesaNombre ? `${p.mesaNombre}` : `Mesa ${p.mesaNumero}`
@@ -107,11 +112,14 @@ function PanelDelTurno({
   const [resumen, setResumen] = useState<ResumenDeTurno | null>(null)
   const [pedidos, setPedidos] = useState<ResumenDePedido[] | null>(null)
   const [cobros, setCobros] = useState<CobroDelTurno[]>([])
+  const [abonos, setAbonos] = useState<AbonoDelTurno[]>([])
   const [caja, setCaja] = useState<CajaDelLocal | null>(null)
   const [error, setError] = useState(false)
   const [cobrando, setCobrando] = useState<string | null>(pedidoInicial)
   const [cerrando, setCerrando] = useState(false)
   const [reabriendo, setReabriendo] = useState<CobroDelTurno | null>(null)
+  const [registrandoAbono, setRegistrandoAbono] = useState(false)
+  const [constanciaAbono, setConstanciaAbono] = useState<AbonoRegistrado | null>(null)
   const [aviso, setAviso] = useState('')
 
   const puedeCobrar = permisos.includes('caja.crear')
@@ -124,12 +132,14 @@ function PanelDelTurno({
       listarPedidos(token, { situacion: 'en_curso', tamano: 100 }),
       cobrosDelTurno(token),
       listarCajas(token),
+      abonosDelTurno(token).catch(() => [] as AbonoDelTurno[]),
     ])
-      .then(([r, p, c, cs]) => {
+      .then(([r, p, c, cs, abs]) => {
         setCaja(cs.find((x) => x.id === turno.cajaId) ?? null)
         setResumen(r)
         setPedidos(p.contenido.filter((x) => x.estado === 'comandado'))
         setCobros(c)
+        setAbonos(abs)
       })
       .catch(() => setError(true))
   }, [token, turno.cajaId])
@@ -182,6 +192,11 @@ function PanelDelTurno({
           </span>
           <span>desde las {hora(turno.abiertoEn)}</span>
           <div className="caja-cabecera-acciones">
+            {puedeCobrar && (
+              <Boton onClick={() => setRegistrandoAbono(true)}>
+                <Wallet size={16} aria-hidden="true" /> Abono pensionista
+              </Boton>
+            )}
             <Boton variante="secundario" onClick={cargar} aria-label="Actualizar">
               <RefreshCw size={16} aria-hidden="true" />
             </Boton>
@@ -301,6 +316,47 @@ function PanelDelTurno({
         {vigentes.length > 0 && <p className="cta-nota">Reabrir un cobro solo se puede mientras este turno siga abierto.</p>}
       </section>
 
+      <section aria-label="Abonos de pensionistas en este turno">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="caja-subtitulo mb-0">Abonos de pensionistas</h3>
+          {puedeCobrar && (
+            <Boton variante="secundario" onClick={() => setRegistrandoAbono(true)}>
+              <Wallet size={14} aria-hidden="true" className="mr-1" /> Registrar abono
+            </Boton>
+          )}
+        </div>
+        {abonos.length === 0 ? (
+          <EstadoVacio
+            titulo="Sin abonos en esta sesión"
+            descripcion="Los abonos que registres para pensionistas (efectivo o digitales) aparecerán aquí."
+          />
+        ) : (
+          <ul className="caja-lista">
+            {abonos.map((a) => (
+              <li key={a.id} className="caja-fila">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <strong>{a.pensionistaNombre}</strong>
+                    <span className="cta-nota">DNI {a.pensionistaDni}</span>
+                    {a.estado === 'aprobado' ? (
+                      <Insignia tono="activo">Confirmado</Insignia>
+                    ) : (
+                      <Insignia tono="pendiente">Pendiente</Insignia>
+                    )}
+                  </div>
+                  <span className="cta-nota">
+                    {hora(a.creadoEn)} · {a.medio.toUpperCase()}
+                    {a.numeroOperacion ? ` · Op: ${a.numeroOperacion}` : ''}
+                    {a.cuentaDestino ? ` · ${a.cuentaDestino}` : ''}
+                  </span>
+                </div>
+                <strong className="caja-fila-monto">{enSoles(a.monto)}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {cerrando && (
         <DialogoCierre
           token={token}
@@ -320,6 +376,26 @@ function PanelDelTurno({
             setReabriendo(null)
             setAviso('Cobro reabierto: los productos volvieron a estar por cobrar.')
             cargar()
+          }}
+        />
+      )}
+      {registrandoAbono && (
+        <DialogoRegistrarAbono
+          token={token}
+          onCerrar={() => setRegistrandoAbono(false)}
+          onAbonoExitoso={(res) => {
+            setRegistrandoAbono(false)
+            setConstanciaAbono(res)
+            cargar()
+          }}
+        />
+      )}
+      {constanciaAbono && (
+        <ConstanciaAbonoModal
+          resultado={constanciaAbono}
+          onCerrar={() => {
+            setConstanciaAbono(null)
+            setAviso('Abono registrado con éxito.')
           }}
         />
       )}
