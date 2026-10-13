@@ -72,6 +72,11 @@ public class ConfiguracionSeguridad {
                 // (nunca hay un metodo != GET que proteger aca, CA4).
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/auditoria/**")
                     .hasAuthority("PERM_auditoria.ver")
+                // US-043 (sprint 9): existencias y stock minimo por local. Ver existencias, inventario.ver; fijar stock minimo, inventario.administrar.
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/existencias", "/locales/*/existencias/**")
+                    .hasAuthority("PERM_inventario.ver")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/locales/*/existencias/*/stock-minimo")
+                    .hasAuthority("PERM_inventario.administrar")
                 .requestMatchers("/locales/**", "/usuarios/**", "/roles/**", "/permisos/**")
                     // El nombre real del rol es "administrador de local" (con "de"):
                     // FiltroAutenticacionJwt lo convierte a ROLE_ADMINISTRADOR_DE_LOCAL.

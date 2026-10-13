@@ -114,8 +114,9 @@ const NAVEGACION: SeccionNav[] = [
       {
         etiqueta: 'Inventario',
         Icono: IconoCaja,
+        requierePermiso: 'inventario.ver',
         subItems: [
-          { etiqueta: 'Existencias' },
+          { etiqueta: 'Existencias', ruta: '/admin/inventario/existencias' },
           { etiqueta: 'Kardex' },
           { etiqueta: 'Ajustes' },
           { etiqueta: 'Transferencias' },

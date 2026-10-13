@@ -115,6 +115,8 @@ public class SembradorCatalogoPermisos implements ApplicationRunner {
         // (taper, segundo consumo). Solo el administrador central: el de local
         // ya tiene pensionistas.modificar para las fichas, y no debe tocar precios.
         new DefPermiso("pensionistas", "administrar", "Administrar planes tarifarios y parámetros de cobro"),
+        // sprint 9: existencias y stock minimo (US-043)
+        new DefPermiso("inventario", "administrar", "Administrar existencias y stock mínimo"),
         // administrar_permisos
         new DefPermiso("identidad", "administrar_permisos", "Editar roles, permisos y excepciones de usuario")
     );
@@ -144,7 +146,7 @@ public class SembradorCatalogoPermisos implements ApplicationRunner {
             "identidad.desactivar", "pensionistas.desactivar", "compras.desactivar",
             "pensionistas.aprobar", "compras.aprobar",
             "venta.anular", "caja.anular",
-            "inventario.descontar",
+            "inventario.descontar", "inventario.administrar",
             "venta.reabrir", "caja.reabrir",
             "recetas.ver_costos", "inventario.ver_costos", "reportes.ver_costos",
             "reportes.exportar", "facturacion.exportar", "inventario.exportar",

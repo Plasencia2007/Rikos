@@ -1891,3 +1891,53 @@ export const rechazarAbonoDigital = (
     body: JSON.stringify(datos),
   })
 
+// ---- Inventario y Existencias (US-043, EP-08) -----------------------
+
+export interface FilaExistencia {
+  localId: string
+  productoId: string
+  codigo: string
+  nombre: string
+  categoriaId: string
+  categoriaNombre: string
+  unidadId: string
+  unidadCodigo: string
+  unidadNombre: string
+  controlaStock: boolean
+  stockActual: number
+  stockMinimo: number | null
+  estadoAlerta: 'normal' | 'bajo_minimo' | 'negativo' | 'sin_stock' | string
+  recalculadoEn: string | null
+}
+
+export interface ResumenAlertasInventario {
+  totalProductos: number
+  totalBajoMinimo: number
+  totalNegativos: number
+  totalSinStock: number
+}
+
+export interface SolicitudStockMinimo {
+  stockMinimo: number | null
+}
+
+export const listarExistencias = (token: string, localId: string, filtro?: string) => {
+  const q = filtro && filtro !== 'todos' ? `?filtro=${encodeURIComponent(filtro)}` : ''
+  return pedirAutenticado<FilaExistencia[]>(`/api/locales/${localId}/existencias${q}`, token)
+}
+
+export const obtenerResumenAlertasInventario = (token: string, localId: string) =>
+  pedirAutenticado<ResumenAlertasInventario>(`/api/locales/${localId}/existencias/resumen-alertas`, token)
+
+export const configurarStockMinimo = (
+  token: string,
+  localId: string,
+  productoId: string,
+  stockMinimo: number | null,
+) =>
+  pedirAutenticado<FilaExistencia>(`/api/locales/${localId}/existencias/${productoId}/stock-minimo`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ stockMinimo }),
+  })
+
+

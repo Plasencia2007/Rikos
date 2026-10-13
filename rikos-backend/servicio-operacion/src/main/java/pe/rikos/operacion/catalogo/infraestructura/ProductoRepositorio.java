@@ -38,4 +38,6 @@ public interface ProductoRepositorio extends JpaRepository<Producto, String> {
             + "and p.categoria.naturaleza in ('producto_fijo', 'extra', 'componente_menu') "
             + "order by p.nombre")
     List<Producto> carta();
+
+    List<Producto> findByActivoTrueOrderByNombreAsc();
 }
