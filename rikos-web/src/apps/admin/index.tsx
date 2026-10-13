@@ -33,7 +33,7 @@ import {
   PantallaSalonFormulario,
   PantallaSalones,
 } from '../../features/salones'
-import { PantallaExistencias } from '../../features/inventario'
+import { PantallaExistencias, PantallaKardex } from '../../features/inventario'
 import { PantallaCompras } from '../../features/compras'
 import { BarraLateral } from './BarraLateral'
 
@@ -100,6 +100,7 @@ function Panel() {
           <Route path="pensionistas/:id/cuenta" element={<PantallaCuentaPensionista />} />
           <Route path="pensionistas/:id" element={<PantallaPensionistaFormulario />} />
           <Route path="inventario/existencias" element={<PantallaExistencias />} />
+          <Route path="inventario/kardex" element={<PantallaKardex />} />
           <Route path="inventario" element={<Navigate to="/admin/inventario/existencias" replace />} />
           <Route path="auditoria" element={<PantallaAuditoria />} />
           {/* Ruta absoluta a proposito: una ruta relativa aca se resuelve

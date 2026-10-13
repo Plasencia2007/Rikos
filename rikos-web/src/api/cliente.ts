@@ -1940,6 +1940,73 @@ export const configurarStockMinimo = (
     body: JSON.stringify({ stockMinimo }),
   })
 
+// ---- Kardex de Inventario (US-044, EP-08) -----------------------
+
+export interface FilaKardex {
+  id: string
+  localId: string
+  productoId: string
+  productoCodigo: string
+  productoNombre: string
+  categoriaNombre: string | null
+  origen: 'compra' | 'produccion' | 'venta' | 'ajuste' | 'transferencia' | 'conteo' | 'consumo_interno' | 'anulacion_post_comanda' | string
+  signo: 'entrada' | 'salida' | string
+  cantidad: number
+  unidadMedidaId: string
+  unidadMedidaNombre: string
+  unidadMedidaSimbolo: string
+  cantidadBase: number
+  costoUnitario: number | null
+  costoTotal: number | null
+  stockAnterior: number
+  stockNuevo: number
+  diferencia: number
+  referenciaTipo: string | null
+  referenciaId: string | null
+  motivoDescripcion: string | null
+  observacion: string | null
+  ocurridoEn: string
+  registradoEn: string
+  registradoPorId: string | null
+  registradoPorNombre: string
+}
+
+export interface PaginaKardex {
+  elementos: FilaKardex[]
+  totalElementos: number
+  totalPaginas: number
+  pagina: number
+  tamano: number
+}
+
+export interface FiltroKardexConsulta {
+  productoId?: string
+  origen?: string
+  desde?: string
+  hasta?: string
+  orden?: 'asc' | 'desc'
+  pagina?: number
+  tamano?: number
+}
+
+export const consultarKardex = (
+  token: string,
+  localId: string,
+  filtros?: FiltroKardexConsulta,
+) => {
+  const params = new URLSearchParams()
+  if (filtros?.productoId) params.append('productoId', filtros.productoId)
+  if (filtros?.origen && filtros.origen !== 'todos') params.append('origen', filtros.origen)
+  if (filtros?.desde) params.append('desde', filtros.desde)
+  if (filtros?.hasta) params.append('hasta', filtros.hasta)
+  if (filtros?.orden) params.append('orden', filtros.orden)
+  if (filtros?.pagina !== undefined) params.append('pagina', String(filtros.pagina))
+  if (filtros?.tamano !== undefined) params.append('tamano', String(filtros.tamano))
+
+  const queryString = params.toString() ? `?${params.toString()}` : ''
+  return pedirAutenticado<PaginaKardex>(`/api/locales/${localId}/inventario/kardex${queryString}`, token)
+}
+
 // --- US-050: COMPRAS E INGRESO DE INVENTARIO ---
 
 export interface LineaDetalleCompra {

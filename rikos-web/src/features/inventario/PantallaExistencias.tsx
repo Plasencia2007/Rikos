@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSesion } from '../../comun/sesion/SesionContexto'
 import {
   Boton,
@@ -18,6 +19,7 @@ import { DialogoStockMinimo } from './DialogoStockMinimo'
 type FiltroTab = 'todos' | 'bajo_minimo' | 'negativo'
 
 export function PantallaExistencias() {
+  const navigate = useNavigate()
   const { sesion } = useSesion()
   const token = sesion?.token ?? ''
   const localId = sesion?.localActivoId ?? sesion?.locales[0]?.id ?? ''
@@ -104,6 +106,13 @@ export function PantallaExistencias() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <Boton
+            variante="secundario"
+            onClick={() => navigate('/admin/inventario/kardex')}
+            aria-label="Ver Kardex de movimientos"
+          >
+            Ver Kardex
+          </Boton>
           <Boton
             variante="secundario"
             onClick={cargarDatos}
@@ -471,25 +480,47 @@ export function PantallaExistencias() {
 
                     {/* Acciones */}
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => abrirConfiguracionMinimo(f)}
-                        style={{
-                          padding: '0.35rem 0.75rem',
-                          borderRadius: '0.375rem',
-                          border: '1px solid #cbd5e1',
-                          background: '#ffffff',
-                          color: '#0284c7',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f9ff')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
-                      >
-                        {f.stockMinimo != null ? 'Editar mínimo' : 'Fijar mínimo'}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/inventario/kardex?productoId=${f.productoId}`)}
+                          style={{
+                            padding: '0.35rem 0.65rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #c7d2fe',
+                            background: '#eef2ff',
+                            color: '#4338ca',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#e0e7ff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#eef2ff')}
+                          title={`Ver Kardex de ${f.nombre}`}
+                        >
+                          Ver Kardex
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => abrirConfiguracionMinimo(f)}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #cbd5e1',
+                            background: '#ffffff',
+                            color: '#0284c7',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f9ff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                        >
+                          {f.stockMinimo != null ? 'Editar mínimo' : 'Fijar mínimo'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
