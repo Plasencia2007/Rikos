@@ -34,7 +34,6 @@ public class EmitirPreTicket {
 
     public static final int MAX_INTENTOS_PIN = 5;
     public static final Duration DURACION_BLOQUEO = Duration.ofMinutes(15);
-    public static final Duration VALIDEZ_PRE_TICKET = Duration.ofHours(4);
 
     private final PensionistaRepositorio pensionistas;
     private final PreTicketRepositorio preTickets;
@@ -42,29 +41,44 @@ public class EmitirPreTicket {
     private final ResolverServicioVigente resolverServicio;
     private final PasswordEncoder passwordEncoder;
     private final Clock reloj;
+    private final HuellaPinPensionista huellas;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final java.security.SecureRandom azar = new java.security.SecureRandom();
 
     public EmitirPreTicket(PensionistaRepositorio pensionistas,
                            PreTicketRepositorio preTickets,
                            LocalRepositorio locales,
                            ResolverServicioVigente resolverServicio,
                            PasswordEncoder passwordEncoder,
-                           Clock reloj) {
+                           Clock reloj, HuellaPinPensionista huellas, org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.pensionistas = pensionistas;
         this.preTickets = preTickets;
         this.locales = locales;
         this.resolverServicio = resolverServicio;
         this.passwordEncoder = passwordEncoder;
         this.reloj = reloj;
+        this.huellas = huellas;
+        this.jdbc = jdbc;
     }
 
     @Transactional
     public Resultado<PreTicketEmitido, FalloPreTicket> ejecutar(SolicitudEmitirPreTicket solicitud) {
         // 1. Validar formato de DNI
-        if (solicitud.dni() == null || !solicitud.dni().matches("\\d{8}")) {
+        boolean legado = solicitud.dni() != null && !solicitud.dni().isBlank();
+        if (legado && !solicitud.dni().matches("\\d{8}")) {
             return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.DNI_INVALIDO));
+        }
+        if (solicitud.servicioManual() != null && !solicitud.servicioManual().isBlank()) {
+            return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.SERVICIO_MANUAL_NO_PERMITIDO));
+        }
+        if (!legado && (solicitud.pin() == null || !solicitud.pin().matches("\\d{" + GeneradorDePin.LONGITUD + "}"))) {
+            return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.CREDENCIALES_INVALIDAS));
         }
 
         // 2. Resolver Local
+        if (solicitud.localCodigo() == null || solicitud.localCodigo().isBlank()) {
+            return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.LOCAL_NO_ENCONTRADO));
+        }
         Optional<Local> localOpt = locales.findByCodigo(solicitud.localCodigo());
         if (localOpt.isEmpty()) {
             localOpt = locales.findById(solicitud.localCodigo());
@@ -78,7 +92,9 @@ public class EmitirPreTicket {
         }
 
         // 3. Buscar Pensionista por DNI
-        Optional<Pensionista> pensionistaOpt = pensionistas.findByDni(solicitud.dni());
+        Optional<Pensionista> pensionistaOpt = legado
+                ? pensionistas.buscarPorDniParaActualizar(solicitud.dni())
+                : pensionistas.buscarPorPinParaActualizar(huellas.de(solicitud.pin()));
         if (pensionistaOpt.isEmpty()) {
             return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.CREDENCIALES_INVALIDAS));
         }
@@ -119,16 +135,12 @@ public class EmitirPreTicket {
         }
 
         // 7. Resolver Servicio Vigente
-        String servicio;
-        if (solicitud.servicioManual() != null && !solicitud.servicioManual().isBlank()) {
-            servicio = solicitud.servicioManual().toLowerCase().trim();
-        } else {
-            Optional<String> servicioOpt = resolverServicio.resolver(local.getId(), momentoLocal);
-            if (servicioOpt.isEmpty()) {
-                return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.FUERA_DE_HORARIO));
-            }
-            servicio = servicioOpt.get();
+        var franja = resolverServicio.franjaVigente(local.getId(), momentoLocal);
+        if (franja.isEmpty()) {
+            return Resultado.fracaso(FalloPreTicket.de(ErrorPreTicket.FUERA_DE_HORARIO));
         }
+        String servicio = franja.get().servicio();
+        OffsetDateTime finServicio = franja.get().fin().atZone(ConfiguracionReloj.ZONA_DEL_RESTAURANTE).toOffsetDateTime();
 
         // 8. Reutilizar pre-ticket pendiente si ya existe para este turno (RF-018)
         Optional<PreTicket> existenteOpt = preTickets.findFirstByPensionistaIdAndLocalIdAndServicioAndEstadoOrderByEmitidoEnDesc(
@@ -136,7 +148,10 @@ public class EmitirPreTicket {
 
         if (existenteOpt.isPresent()) {
             PreTicket existente = existenteOpt.get();
-            if (existente.estaPendiente(ahora)) {
+            if (existente.estaPendiente(ahora) && !existente.getEmitidoEn().isBefore(
+                    franja.get().inicio().atZone(ConfiguracionReloj.ZONA_DEL_RESTAURANTE).toOffsetDateTime())) {
+                // Tambien corrige tickets previos que se emitieron con cuatro horas de validez.
+                existente.acotarVigencia(finServicio);
                 return Resultado.exito(new PreTicketEmitido(
                         existente.getId(),
                         existente.getCodigo(),
@@ -158,8 +173,9 @@ public class EmitirPreTicket {
         }
 
         // 9. Generar nuevo pre-ticket
+        jdbc.execute("SELECT pg_advisory_xact_lock(82647102)");
         String codigo = generarCodigoUnico();
-        OffsetDateTime venceEn = ahora.plus(VALIDEZ_PRE_TICKET);
+        OffsetDateTime venceEn = finServicio;
         PreTicket nuevo = new PreTicket(
                 Identificador.nuevo().valor(),
                 codigo,
@@ -189,7 +205,7 @@ public class EmitirPreTicket {
 
     private String generarCodigoUnico() {
         for (int i = 0; i < 10; i++) {
-            String codigo = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
+            String codigo = String.format(java.util.Locale.ROOT, "%06d", azar.nextInt(1_000_000));
             if (!preTickets.existsByCodigo(codigo)) {
                 return codigo;
             }

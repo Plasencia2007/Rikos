@@ -79,6 +79,9 @@ public class Pensionista {
     @Column(name = "hash_pin", nullable = false, length = 255)
     private String hashPin;
 
+    @Column(name = "huella_pin", length = 64)
+    private String huellaPin;
+
     @Column(name = "hash_contrasena_portal", length = 255)
     private String hashContrasenaPortal;
 
@@ -145,8 +148,12 @@ public class Pensionista {
 
     public void cambiarPin(String hashPin, String actorId) {
         this.hashPin = hashPin;
+        this.huellaPin = null;
+        registrarIntentoExitoso();
         tocar(actorId);
     }
+
+    public void asignarHuellaPin(String huella) { this.huellaPin = huella; }
 
     public void cambiarEstado(boolean activo, String actorId) {
         this.activo = activo;

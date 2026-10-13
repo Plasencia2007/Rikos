@@ -33,3 +33,6 @@ desktop.ini
 *.log
 salida-build.txt
 logs/
+
+# ---- Salida de compilación del IDE ----
+bin/

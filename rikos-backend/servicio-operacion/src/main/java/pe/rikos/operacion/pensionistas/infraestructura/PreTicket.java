@@ -91,7 +91,11 @@ public class PreTicket {
     }
 
     public boolean estaVencidoPorTiempo(OffsetDateTime momento) {
-        return momento != null && momento.isAfter(venceEn);
+        return momento != null && !momento.isBefore(venceEn);
+    }
+
+    public void acotarVigencia(OffsetDateTime finServicio) {
+        if (finServicio.isBefore(venceEn)) venceEn = finServicio;
     }
 
     public void marcarVencido() {

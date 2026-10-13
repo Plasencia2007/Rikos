@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.jdbc.core.JdbcTemplate;
 import pe.rikos.contratos.Resultado;
 import pe.rikos.operacion.comun.tiempo.ConfiguracionReloj;
 import pe.rikos.operacion.identidad.aplicacion.ResolverServicioVigente;
@@ -48,6 +49,10 @@ class EmitirPreTicketTest {
     private LocalRepositorio locales;
     @Mock
     private ResolverServicioVigente resolverServicio;
+    @Mock
+    private HuellaPinPensionista huellas;
+    @Mock
+    private JdbcTemplate jdbc;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private Clock relojFijo;
@@ -61,7 +66,7 @@ class EmitirPreTicketTest {
                 .atZone(ConfiguracionReloj.ZONA_DEL_RESTAURANTE).toInstant();
         relojFijo = Clock.fixed(instante, ConfiguracionReloj.ZONA_DEL_RESTAURANTE);
 
-        caso = new EmitirPreTicket(pensionistas, preTickets, locales, resolverServicio, passwordEncoder, relojFijo);
+        caso = new EmitirPreTicket(pensionistas, preTickets, locales, resolverServicio, passwordEncoder, relojFijo, huellas, jdbc);
 
         Empresa empresa = new Empresa("empresa-1", "20123456789", "RIKO'S S.A.C.", "RIKO'S", "Av. Principal 100");
         local = new Local(LOCAL_ID, empresa, LOCAL_CODIGO, "San Isidro", "Av. San Isidro 123", "actor-1");
@@ -77,12 +82,18 @@ class EmitirPreTicketTest {
         return p;
     }
 
+    private void almuerzoVigente() {
+        when(resolverServicio.franjaVigente(eq(LOCAL_ID), any(LocalDateTime.class))).thenReturn(Optional.of(
+                new ResolverServicioVigente.Franja("almuerzo", LocalDateTime.of(2026, 10, 12, 12, 0),
+                        LocalDateTime.of(2026, 10, 12, 15, 0))));
+    }
+
     @Test
     void emiteNuevoPreTicketConExito() {
         Pensionista p = pensionistaActivo();
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
-        when(resolverServicio.resolver(eq(LOCAL_ID), any(LocalDateTime.class))).thenReturn(Optional.of("almuerzo"));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
+        almuerzoVigente();
         when(preTickets.findFirstByPensionistaIdAndLocalIdAndServicioAndEstadoOrderByEmitidoEnDesc(
                 p.getId(), LOCAL_ID, "almuerzo", PreTicket.ESTADO_PENDIENTE)).thenReturn(Optional.empty());
 
@@ -101,11 +112,30 @@ class EmitirPreTicketTest {
     }
 
     @Test
+    void emiteConPinSinSolicitarDni() {
+        String pin = "123456";
+        Pensionista p = new Pensionista("pensionista-1", passwordEncoder.encode(pin), "actor-1");
+        p.actualizarFicha(new Pensionista.Ficha(DNI_VALIDO, "Carlos", "Mendoza Ramos", "987654321",
+                "carlos@correo.pe", "UNI", "20220001", "Sistemas", "6", "plan-1",
+                java.util.EnumSet.of(Comida.ALMUERZO), "semanal"), "actor-1");
+        when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
+        when(huellas.de(pin)).thenReturn("huella-del-pin");
+        when(pensionistas.buscarPorPinParaActualizar("huella-del-pin")).thenReturn(Optional.of(p));
+        almuerzoVigente();
+
+        var resultado = caso.ejecutar(new SolicitudEmitirPreTicket(LOCAL_CODIGO, null, pin));
+
+        assertThat(resultado).isInstanceOf(Resultado.Exito.class);
+        verify(pensionistas, never()).buscarPorDniParaActualizar(any());
+        verify(preTickets).save(any(PreTicket.class));
+    }
+
+    @Test
     void reutilizaPreTicketPendienteExistente() {
         Pensionista p = pensionistaActivo();
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
-        when(resolverServicio.resolver(eq(LOCAL_ID), any(LocalDateTime.class))).thenReturn(Optional.of("almuerzo"));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
+        almuerzoVigente();
 
         OffsetDateTime ahora = OffsetDateTime.now(relojFijo);
         PreTicket ticketExistente = new PreTicket("ticket-1", "381920", p.getId(), LOCAL_ID, "almuerzo",
@@ -136,7 +166,7 @@ class EmitirPreTicketTest {
     @Test
     void rechazaSiPensionistaNoExiste() {
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.empty());
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.empty());
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, PIN_VALIDO);
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -150,7 +180,7 @@ class EmitirPreTicketTest {
     void fallaSiPinIncorrecto_incrementaIntentosFallidos() {
         Pensionista p = pensionistaActivo();
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, "9999");
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -174,7 +204,7 @@ class EmitirPreTicketTest {
         assertThat(p.getIntentosFallidos()).isEqualTo(4);
 
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, "9999");
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -192,7 +222,7 @@ class EmitirPreTicketTest {
         Pensionista p = pensionistaActivo();
         p.registrarIntentoFallido(1, Duration.ofMinutes(15), OffsetDateTime.now(relojFijo)); // bloqueado
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, PIN_VALIDO);
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -208,7 +238,7 @@ class EmitirPreTicketTest {
         Pensionista p = pensionistaActivo();
         p.cambiarEstado(false, "actor-admin");
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, PIN_VALIDO);
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -222,8 +252,7 @@ class EmitirPreTicketTest {
     void rechazaSiEstaFueraDeHorario() {
         Pensionista p = pensionistaActivo();
         when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
-        when(resolverServicio.resolver(eq(LOCAL_ID), any(LocalDateTime.class))).thenReturn(Optional.empty());
+        when(pensionistas.buscarPorDniParaActualizar(DNI_VALIDO)).thenReturn(Optional.of(p));
 
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, PIN_VALIDO);
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
@@ -234,19 +263,11 @@ class EmitirPreTicketTest {
     }
 
     @Test
-    void permiteServicioManualEnModoPrueba() {
-        Pensionista p = pensionistaActivo();
-        when(locales.findByCodigo(LOCAL_CODIGO)).thenReturn(Optional.of(local));
-        when(pensionistas.findByDni(DNI_VALIDO)).thenReturn(Optional.of(p));
-        when(preTickets.findFirstByPensionistaIdAndLocalIdAndServicioAndEstadoOrderByEmitidoEnDesc(
-                p.getId(), LOCAL_ID, "cena", PreTicket.ESTADO_PENDIENTE)).thenReturn(Optional.empty());
-
+    void rechazaServicioManual() {
         SolicitudEmitirPreTicket solicitud = new SolicitudEmitirPreTicket(LOCAL_CODIGO, DNI_VALIDO, PIN_VALIDO, "cena");
         Resultado<PreTicketEmitido, FalloPreTicket> resultado = caso.ejecutar(solicitud);
-
-        assertThat(resultado).isInstanceOf(Resultado.Exito.class);
-        PreTicketEmitido emitido = ((Resultado.Exito<PreTicketEmitido, FalloPreTicket>) resultado).valor();
-        assertThat(emitido.servicio()).isEqualTo("cena");
-        verify(preTickets).save(any(PreTicket.class));
+        assertThat(resultado).isInstanceOf(Resultado.Fracaso.class);
+        assertThat(((Resultado.Fracaso<PreTicketEmitido, FalloPreTicket>) resultado).error().error())
+                .isEqualTo(ErrorPreTicket.SERVICIO_MANUAL_NO_PERMITIDO);
     }
 }

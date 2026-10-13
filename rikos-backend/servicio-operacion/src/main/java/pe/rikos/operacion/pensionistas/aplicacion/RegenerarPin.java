@@ -37,6 +37,7 @@ public class RegenerarPin {
         }
         String pin = generadorDePin.nuevo();
         pensionista.cambiarPin(codificador.encode(pin), actorId);
+        pensionista.asignarHuellaPin(generadorDePin.huella(pin));
         pensionistas.save(pensionista);
         auditoria.registrar("cambio_credencial", "pensionista", id, null,
                 RegistradorAuditoria.campos("nombre", pensionista.nombreCompleto(), "credencial", "pin_presencial"));

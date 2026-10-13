@@ -1765,10 +1765,26 @@ export const abonosDelTurno = (token: string) =>
 
 export interface SolicitudPreTicket {
   localCodigo: string
-  dni: string
+  dni?: string | null
   pin: string
-  servicioManual?: string | null
 }
+
+export interface ContextoKiosco {
+  locales: { codigo: string; nombre: string }[]
+  localCodigo: string | null
+  localNombre: string | null
+  estado: 'sin_local' | 'en_atencion' | 'fuera_de_horario'
+  servicioActual: { servicio: string; inicio: string; fin: string } | null
+  siguienteServicio: { servicio: string; inicio: string; fin: string } | null
+  horaServidor: string
+  longitudPin: number
+}
+
+export const listarLocalesPublicosKiosco = () =>
+  pedir<{ codigo: string; nombre: string }[]>('/api/locales/publico')
+
+export const consultarContextoKiosco = (localCodigo: string) =>
+  pedir<ContextoKiosco>(`/api/kiosco/contexto?localCodigo=${encodeURIComponent(localCodigo)}`)
 
 export interface PreTicketEmitido {
   id: string

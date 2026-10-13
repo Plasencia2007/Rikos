@@ -51,6 +51,7 @@ public class CrearPensionista {
         }
         String pin = generadorDePin.nuevo();
         Pensionista pensionista = new Pensionista(Identificador.nuevo().valor(), codificador.encode(pin), actorId);
+        pensionista.asignarHuellaPin(generadorDePin.huella(pin));
         pensionista.actualizarFicha(ActualizarPensionista.fichaDe(datos), actorId);
         pensionistas.save(pensionista);
         DatosResponsable r = datos.responsable();

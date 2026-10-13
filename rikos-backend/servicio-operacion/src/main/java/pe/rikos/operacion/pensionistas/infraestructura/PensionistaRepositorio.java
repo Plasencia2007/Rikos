@@ -7,6 +7,16 @@ import java.util.List;
 
 public interface PensionistaRepositorio extends JpaRepository<Pensionista, String> {
 
+    boolean existsByHuellaPin(String huellaPin);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Pensionista p where p.huellaPin = :huella")
+    java.util.Optional<Pensionista> buscarPorPinParaActualizar(String huella);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Pensionista p where p.dni = :dni")
+    java.util.Optional<Pensionista> buscarPorDniParaActualizar(String dni);
+
     boolean existsByDni(String dni);
 
     java.util.Optional<Pensionista> findByDni(String dni);

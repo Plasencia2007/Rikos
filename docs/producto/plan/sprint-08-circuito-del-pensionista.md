@@ -51,7 +51,7 @@ Si ya tenía un pre-ticket pendiente del mismo turno, se le recuerda y permite r
 
 ## 3. Modelo de Datos
 
-### 3.1 Tabla `pre_ticket` (Migración Flyway V42)
+### 3.1 Tabla `pre_ticket` (Migración Flyway V47)
 
 ```sql
 CREATE TABLE pre_ticket (

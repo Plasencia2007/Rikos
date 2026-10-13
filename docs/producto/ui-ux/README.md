@@ -4,6 +4,7 @@ Design system y pantallas críticas. Per `docs/METODO-spec-driven.md` §3.
 
 | Archivo | Qué contiene |
 |---|---|
+| [04-kiosco-pensionista.md](04-kiosco-pensionista.md) | Revisión del kiosco contra el código (12/10/2026): propuesta solo PIN, distribución, estados, flujo y dependencias pendientes |
 | `01-mapa-de-pantallas.md` | Las ~70 pantallas del sistema, agrupadas por superficie: POS, kiosco, portal, motorizado, panel del administrador |
 | `03-pos-rediseno.md` | Rediseño del POS (2026-09-30): barra lateral, cabezal, avisos, Inicio, Mesas por salón, Pedido rápido, Órdenes activas en tarjetas e Historial; decisiones con su razón y la contradicción resuelta con "sin barra lateral" |
 | `02-reglas-de-diseno-transversales.md` | El POS se usa de pie, toda acción sensible pide motivo, los permisos ocultan pero el backend decide, alertar sin bloquear, cuatro estados por pantalla, aviso sin conexión, estado compartido que se actualiza solo |

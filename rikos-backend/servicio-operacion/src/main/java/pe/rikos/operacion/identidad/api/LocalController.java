@@ -68,6 +68,16 @@ public class LocalController {
     public record LocalPublicoRespuesta(String codigo, String nombre) {
     }
 
+    @Operation(summary = "Listar locales activos disponibles para autoservicio")
+    @GetMapping("/publico")
+    public ResponseEntity<List<LocalPublicoRespuesta>> listarPublicos() {
+        List<LocalPublicoRespuesta> disponibles = locales.findAllByOrderByNombreAsc().stream()
+                .filter(Local::isActivo)
+                .map(local -> new LocalPublicoRespuesta(local.getCodigo(), local.getNombre()))
+                .toList();
+        return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore()).body(disponibles);
+    }
+
     /**
      * Publica (sin autenticar): el equipo del POS necesita mostrar el
      * nombre real de su local en la pantalla de bloqueo, antes de que
