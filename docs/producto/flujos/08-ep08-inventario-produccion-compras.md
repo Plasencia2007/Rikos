@@ -103,9 +103,10 @@
     - Given un usuario sin permiso de ajustar inventario
     - When intenta registrar un ajuste
     - Then el sistema debe impedirlo.
+- **Estado:** Implementado (2026-10-13)
 - **Dependencias:** US-043, US-012, US-004, US-006.
-- **Datos o entidades involucradas:** Ajuste, MotivoAjuste, MovimientoInventario, Existencia.
-- **Riesgos, supuestos o pendientes:** motivos iniciales pendientes — ver RF-005.
+- **Datos o entidades involucradas:** MovimientoInventario, Motivo, Existencia, Auditoria.
+- **Riesgos, supuestos o pendientes:** Resuelto — motivos de `ajuste_inventario` configurables en BD con validación de observación obligatoria (CA2).
 - **Trazabilidad:** `04-menu-recetas-inventario-compras.md` § Inventario y Kardex; `01-alcance-y-reglas.md` § Auditoría transversal; `06-modelo-de-datos.md` § Inventario; `07-criterios-de-aceptacion-y-pendientes.md` § Casos críticos (19).
 - **Estimación inicial:** M
 

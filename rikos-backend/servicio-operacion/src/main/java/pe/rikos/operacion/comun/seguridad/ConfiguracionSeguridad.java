@@ -80,6 +80,11 @@ public class ConfiguracionSeguridad {
                 // US-044 (sprint 9): consultar el Kardex por local. Ver movimientos, inventario.ver.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/inventario/kardex", "/locales/*/inventario/kardex/**")
                     .hasAuthority("PERM_inventario.ver")
+                // US-045 (sprint 9): registro y consulta de ajustes de inventario con motivo.
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/inventario/ajustes", "/locales/*/inventario/ajustes/**")
+                    .hasAnyAuthority("PERM_inventario.ver", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/locales/*/inventario/ajustes", "/locales/*/inventario/ajustes/**")
+                    .hasAnyAuthority("PERM_inventario.descontar", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
                 // US-050 (sprint 9): registro, consulta y comprobantes de compras por local.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/compras", "/locales/*/compras/**")
                     .hasAuthority("PERM_compras.ver")

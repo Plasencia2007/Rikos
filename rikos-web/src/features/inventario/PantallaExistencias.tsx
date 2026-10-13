@@ -15,6 +15,7 @@ import {
   type ResumenAlertasInventario,
 } from '../../api/cliente'
 import { DialogoStockMinimo } from './DialogoStockMinimo'
+import { ModalRegistrarAjuste } from './ModalRegistrarAjuste'
 
 type FiltroTab = 'todos' | 'bajo_minimo' | 'negativo'
 
@@ -34,6 +35,10 @@ export function PantallaExistencias() {
   // Estado para el modal de configuración de stock mínimo
   const [seleccionado, setSeleccionado] = useState<FilaExistencia | null>(null)
   const [modalAbierto, setModalAbierto] = useState(false)
+
+  // Estado para el modal de ajuste de inventario (US-045)
+  const [modalAjusteAbierto, setModalAjusteAbierto] = useState(false)
+  const [productoAjusteId, setProductoAjusteId] = useState('')
 
   const nombreLocal = useMemo(() => {
     return sesion?.locales.find((l) => l.id === localId)?.nombre ?? 'Local'
@@ -105,7 +110,14 @@ export function PantallaExistencias() {
             Control de stock físico, umbrales mínimos y alertas en tiempo real para <strong>{nombreLocal}</strong> (ADM-16).
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Boton
+            variante="secundario"
+            onClick={() => navigate('/admin/inventario/ajustes')}
+            aria-label="Ver Historial de Ajustes"
+          >
+            Ajustes de Inventario
+          </Boton>
           <Boton
             variante="secundario"
             onClick={() => navigate('/admin/inventario/kardex')}
@@ -483,6 +495,29 @@ export function PantallaExistencias() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <button
                           type="button"
+                          onClick={() => {
+                            setProductoAjusteId(f.productoId)
+                            setModalAjusteAbierto(true)
+                          }}
+                          style={{
+                            padding: '0.35rem 0.65rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #fed7aa',
+                            background: '#fff7ed',
+                            color: '#c2410c',
+                            fontWeight: 600,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = '#ffedd5')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '#fff7ed')}
+                          title={`Registrar ajuste de inventario para ${f.nombre}`}
+                        >
+                          Ajustar
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => navigate(`/admin/inventario/kardex?productoId=${f.productoId}`)}
                           style={{
                             padding: '0.35rem 0.65rem',
@@ -538,6 +573,19 @@ export function PantallaExistencias() {
         localId={localId}
         onGuardado={alGuardarMinimo}
         onCerrar={() => setModalAbierto(false)}
+      />
+
+      {/* Modal de registro de ajuste de inventario (US-045) */}
+      <ModalRegistrarAjuste
+        abierto={modalAjusteAbierto}
+        token={token}
+        localId={localId}
+        existencias={existencias}
+        productoInicialId={productoAjusteId}
+        onGuardado={() => {
+          cargarDatos()
+        }}
+        onCerrar={() => setModalAjusteAbierto(false)}
       />
     </div>
   )

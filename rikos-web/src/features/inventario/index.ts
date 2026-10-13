@@ -1,3 +1,5 @@
 export { PantallaExistencias } from './PantallaExistencias'
 export { DialogoStockMinimo } from './DialogoStockMinimo'
 export { PantallaKardex } from './PantallaKardex'
+export { PantallaAjustes } from './PantallaAjustes'
+export { ModalRegistrarAjuste } from './ModalRegistrarAjuste'

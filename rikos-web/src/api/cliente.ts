@@ -2206,3 +2206,59 @@ export const registrarProduccion = (token: string, localId: string, datos: Regis
     method: 'POST',
     body: JSON.stringify(datos),
   })
+
+// ---- Ajustes de Inventario (US-045, EP-08) -----------------------
+
+export interface DetalleAjuste {
+  id: string
+  localId: string
+  productoId: string
+  productoCodigo: string
+  productoNombre: string
+  unidadMedida: string
+  signo: 'entrada' | 'salida' | string
+  cantidad: number
+  stockAnterior: number
+  stockNuevo: number
+  costoUnitario: number | null
+  costoTotal: number | null
+  motivoId: string
+  motivoDescripcion: string
+  observacion: string | null
+  ocurridoEn: string
+  registradoPorId: string | null
+  registradoPorNombre: string
+}
+
+export interface SolicitudRegistroAjuste {
+  productoId: string
+  motivoId: string
+  tipoAjuste: 'INCREMENTO' | 'DISMINUCION' | 'REEMPLAZO_STOCK' | 'variacion' | 'stock_final' | string
+  cantidad?: number | null
+  stockFinal?: number | null
+  observacion?: string | null
+  fecha?: string | null
+}
+
+export const listarAjustesInventario = (
+  token: string,
+  localId: string,
+  filtros?: { productoId?: string; desde?: string; hasta?: string },
+) => {
+  const params = new URLSearchParams()
+  if (filtros?.productoId) params.append('productoId', filtros.productoId)
+  if (filtros?.desde) params.append('desde', filtros.desde)
+  if (filtros?.hasta) params.append('hasta', filtros.hasta)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return pedirAutenticado<DetalleAjuste[]>(`/api/locales/${localId}/inventario/ajustes${q}`, token)
+}
+
+export const registrarAjusteInventario = (
+  token: string,
+  localId: string,
+  datos: SolicitudRegistroAjuste,
+) =>
+  pedirAutenticado<DetalleAjuste>(`/api/locales/${localId}/inventario/ajustes`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })

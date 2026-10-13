@@ -118,7 +118,7 @@ const NAVEGACION: SeccionNav[] = [
         subItems: [
           { etiqueta: 'Existencias', ruta: '/admin/inventario/existencias' },
           { etiqueta: 'Kardex', ruta: '/admin/inventario/kardex' },
-          { etiqueta: 'Ajustes' },
+          { etiqueta: 'Ajustes', ruta: '/admin/inventario/ajustes' },
           { etiqueta: 'Transferencias' },
           { etiqueta: 'Conteos físicos' },
         ],

@@ -79,6 +79,8 @@ public class ExistenciaController {
                     .body(new ErrorRespuesta("PRODUCTO_INACTIVO"));
             case STOCK_MINIMO_NEGATIVO -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorRespuesta("STOCK_MINIMO_NEGATIVO"));
+            default -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorRespuesta(error.name()));
         };
     }
 }
