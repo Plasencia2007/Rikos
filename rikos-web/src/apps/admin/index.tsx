@@ -35,6 +35,7 @@ import {
 } from '../../features/salones'
 import { PantallaExistencias, PantallaKardex } from '../../features/inventario'
 import { PantallaCompras } from '../../features/compras'
+import { PantallaProduccion } from '../../features/produccion/PantallaProduccion'
 import { BarraLateral } from './BarraLateral'
 
 /**
@@ -74,6 +75,7 @@ function Panel() {
           <Route path="compras/proveedores/nuevo" element={<PantallaProveedorFormulario />} />
           <Route path="compras/proveedores/:id/editar" element={<PantallaProveedorFormulario />} />
           <Route path="compras" element={<PantallaCompras />} />
+          <Route path="produccion" element={<PantallaProduccion />} />
           <Route path="menu/normal-y-extra" element={<PantallaMenuNormalYExtra />} />
           <Route path="menu/programacion" element={<PantallaProgramacionSemanal />} />
           <Route path="menu/disponibilidad" element={<PantallaDisponibilidad />} />

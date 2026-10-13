@@ -183,6 +183,7 @@
 
 ### [US-048] Producir subrecetas y descontar receta al vender
 
+- **Estado:** ✅ Implementada (Sprint 9 — Existencias reales)
 - **Épica/Módulo:** EP-08 — Inventario y compras
 - **Prioridad:** Must
 - **Release sugerido:** MVP

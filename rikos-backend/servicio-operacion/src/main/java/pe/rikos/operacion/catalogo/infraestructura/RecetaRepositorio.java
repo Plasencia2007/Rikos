@@ -10,6 +10,8 @@ public interface RecetaRepositorio extends JpaRepository<Receta, String> {
 
     Optional<Receta> findByProductoIdAndActivoTrue(String productoId);
 
+    List<Receta> findByActivoTrue();
+
     /** Recalculo en cascada: las recetas activas que usan este producto como ingrediente. */
     @Query("select distinct i.receta from IngredienteReceta i where i.producto.id = :productoId and i.receta.activo = true")
     List<Receta> findActivasQueUsan(String productoId);

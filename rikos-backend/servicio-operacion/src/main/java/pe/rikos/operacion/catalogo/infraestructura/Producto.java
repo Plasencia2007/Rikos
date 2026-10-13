@@ -171,6 +171,15 @@ public class Producto {
         this.actualizadoPor = actualizadoPor;
     }
 
+    /** Lo llama el caso de uso de registrar producción de subrecetas (US-048). */
+    public void registrarCostoDeProduccion(BigDecimal costo, LocalDate fecha, String actualizadoPor) {
+        this.costoUltimaCompra = costo;
+        this.origenCosto = "compra";
+        this.fechaUltimaCompra = fecha;
+        this.actualizadoEn = OffsetDateTime.now();
+        this.actualizadoPor = actualizadoPor;
+    }
+
     /** Nuevo precio del menu (CambiarPrecioMenu). La ficha de producto no puede cambiarlo. */
     public void cambiarPrecio(Long precioVenta, String actualizadoPor) {
         this.precioVenta = precioVenta;

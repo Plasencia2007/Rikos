@@ -34,16 +34,19 @@ public class ComandarPedido {
     private final ComandaRepositorio comandas;
     private final DetalleComandaRepositorio detalles;
     private final RegistradorAuditoria auditoria;
+    private final pe.rikos.operacion.inventario.aplicacion.DescontarInventarioPorComanda descontarInventarioPorComanda;
 
     public ComandarPedido(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas, DetallePedidoRepositorio lineas,
                           ComandaRepositorio comandas, DetalleComandaRepositorio detalles,
-                          RegistradorAuditoria auditoria) {
+                          RegistradorAuditoria auditoria,
+                          pe.rikos.operacion.inventario.aplicacion.DescontarInventarioPorComanda descontarInventarioPorComanda) {
         this.pedidos = pedidos;
         this.personas = personas;
         this.lineas = lineas;
         this.comandas = comandas;
         this.detalles = detalles;
         this.auditoria = auditoria;
+        this.descontarInventarioPorComanda = descontarInventarioPorComanda;
     }
 
     @Transactional
@@ -88,6 +91,7 @@ public class ComandarPedido {
         }
         pedido.comandar();
         pedidos.save(pedido);
+        descontarInventarioPorComanda.descontar(localId, comanda.getId(), pendientes, actorId);
         auditoria.registrar("comanda_emitida", "comanda", comanda.getId(), null,
                 RegistradorAuditoria.campos("nombre", "Pedido " + pedido.getNumero(), "numero", numero, "productos",
                         pendientes.size()));

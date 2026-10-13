@@ -197,4 +197,11 @@ public class Usuario {
     public int getVersion() {
         return version;
     }
+
+    public String getNombreCompleto() {
+        String n = nombres != null ? nombres : "";
+        String a = apellidos != null ? apellidos : "";
+        String compl = (n + " " + a).trim();
+        return compl.isEmpty() ? (nombreUsuario != null ? nombreUsuario : "Usuario") : compl;
+    }
 }

@@ -51,7 +51,7 @@ public class Existencia {
     @Column(name = "stock_minimo", precision = 14, scale = 6)
     private BigDecimal stockMinimo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {jakarta.persistence.CascadeType.PERSIST, jakarta.persistence.CascadeType.MERGE})
     @JdbcTypeCode(SqlTypes.CHAR)
     @JoinColumn(name = "ultimo_movimiento_id")
     private MovimientoInventario ultimoMovimiento;

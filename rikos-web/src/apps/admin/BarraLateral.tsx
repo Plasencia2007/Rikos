@@ -126,7 +126,8 @@ const NAVEGACION: SeccionNav[] = [
       {
         etiqueta: 'Producción',
         Icono: IconoGorroChef,
-        subItems: [{ etiqueta: 'Producción' }, { etiqueta: 'Consumo interno' }],
+        requierePermiso: 'produccion.ver',
+        subItems: [{ etiqueta: 'Producción', ruta: '/admin/produccion' }, { etiqueta: 'Consumo interno' }],
       },
       {
         etiqueta: 'Compras',

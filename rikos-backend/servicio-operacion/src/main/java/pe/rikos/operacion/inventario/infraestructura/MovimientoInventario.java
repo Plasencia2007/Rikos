@@ -193,4 +193,11 @@ public class MovimientoInventario {
     public Usuario getRegistradoPor() {
         return registradoPor;
     }
+
+    public BigDecimal getCostoTotal() {
+        if (costoUnitario == null || cantidadBase == null) {
+            return null;
+        }
+        return costoUnitario.multiply(cantidadBase);
+    }
 }

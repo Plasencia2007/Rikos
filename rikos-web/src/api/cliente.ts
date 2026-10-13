@@ -2125,5 +2125,84 @@ export const subirComprobanteCompra = async (
 export const listarPresentacionesProducto = (token: string, productoId: string) =>
   pedirAutenticado<PresentacionCatalogo[]>(`/api/productos/${productoId}/presentaciones`, token)
 
+// ==========================================
+// Producción de Subrecetas y Platos (US-048)
+// ==========================================
 
+export interface DetalleProduccion {
+  id: string
+  localId: string
+  productoId: string
+  productoCodigo: string
+  productoNombre: string
+  unidadMedidaSimbolo: string
+  esSubreceta: boolean
+  recetaId: string
+  fecha: string
+  servicio?: string | null
+  porcionesPlanificadas?: number | null
+  porcionesPreparadas: number
+  porcionesVendidas: number
+  rendimientoObtenido: number
+  costoUnitarioEstimado?: number | null
+  costoTotalLote?: number | null
+  estado: string
+  registradoPorNombre?: string | null
+  creadoEn: string
+}
 
+export interface RegistroProduccionComando {
+  productoId: string
+  recetaId?: string | null
+  fecha: string
+  servicio?: string | null
+  porcionesPlanificadas?: number | null
+  porcionesPreparadas: number
+  rendimientoObtenido: number
+  usuarioId?: string
+}
+
+export interface IngredientePrecarga {
+  productoId: string
+  productoNombre: string
+  cantidadBase: number
+  unidadMedidaSimbolo: string
+  stockActual: number
+  costoUnitario: number
+}
+
+export interface ProductoConReceta {
+  id: string
+  codigo: string
+  nombre: string
+  unidadMedidaSimbolo: string
+  esSubreceta: boolean
+  recetaId: string
+  rendimientoBase: number
+  porcionesBase: number
+  ingredientes: IngredientePrecarga[]
+}
+
+export interface PrecargaProduccion {
+  productos: ProductoConReceta[]
+  porcionesPlanificadasPorProductoId: Record<string, number>
+}
+
+export const listarProduccion = (token: string, localId: string, fecha?: string) => {
+  const q = fecha ? `?fecha=${encodeURIComponent(fecha)}` : ''
+  return pedirAutenticado<DetalleProduccion[]>(`/api/locales/${localId}/produccion${q}`, token)
+}
+
+export const obtenerPrecargaProduccion = (token: string, localId: string, fecha?: string, servicio?: string) => {
+  const params = new URLSearchParams()
+  if (fecha) params.append('fecha', fecha)
+  if (servicio) params.append('servicio', servicio)
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return pedirAutenticado<PrecargaProduccion>(`/api/locales/${localId}/produccion/precarga${q}`, token)
+}
+
+export const registrarProduccion = (token: string, localId: string, datos: RegistroProduccionComando) =>
+  pedirAutenticado<DetalleProduccion>(`/api/locales/${localId}/produccion`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
