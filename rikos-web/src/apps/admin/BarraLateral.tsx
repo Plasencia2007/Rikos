@@ -131,7 +131,8 @@ const NAVEGACION: SeccionNav[] = [
       {
         etiqueta: 'Compras',
         Icono: IconoCarrito,
-        subItems: [{ etiqueta: 'Compras' }, { etiqueta: 'Proveedores', ruta: '/admin/compras/proveedores' }],
+        requierePermiso: 'compras.ver',
+        subItems: [{ etiqueta: 'Compras', ruta: '/admin/compras' }, { etiqueta: 'Proveedores', ruta: '/admin/compras/proveedores' }],
       },
       {
         etiqueta: 'Facturación',

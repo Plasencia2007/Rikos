@@ -11,7 +11,7 @@
 
 Flujos en `flujos/08-ep08-inventario-produccion-compras.md`; modelo en `modelo-de-datos/09-inventario-produccion-compras--ep08.md`.
 
-**Estado:** En curso — especificando e implementando **Entrega 1: US-043 (Mantener existencias por local con stock mínimo y alertas)**.
+**Estado:** En curso — **Entrega 1: US-043 completada**. **Entrega 2: US-050 (Registrar compras y actualizar costo de última compra) completada**. Listo para continuar con la siguiente historia de EP-08.
 
 **Cómo se llegó a esto:** Brainstorming y entrevista /grill-me con el usuario el 2026-10-12.
 Cada decisión lleva su razón explícita y alternativas descartadas.

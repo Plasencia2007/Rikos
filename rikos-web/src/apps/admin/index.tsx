@@ -34,6 +34,7 @@ import {
   PantallaSalones,
 } from '../../features/salones'
 import { PantallaExistencias } from '../../features/inventario'
+import { PantallaCompras } from '../../features/compras'
 import { BarraLateral } from './BarraLateral'
 
 /**
@@ -72,6 +73,7 @@ function Panel() {
           <Route path="compras/proveedores" element={<PantallaProveedores />} />
           <Route path="compras/proveedores/nuevo" element={<PantallaProveedorFormulario />} />
           <Route path="compras/proveedores/:id/editar" element={<PantallaProveedorFormulario />} />
+          <Route path="compras" element={<PantallaCompras />} />
           <Route path="menu/normal-y-extra" element={<PantallaMenuNormalYExtra />} />
           <Route path="menu/programacion" element={<PantallaProgramacionSemanal />} />
           <Route path="menu/disponibilidad" element={<PantallaDisponibilidad />} />

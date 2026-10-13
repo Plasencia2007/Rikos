@@ -1940,4 +1940,123 @@ export const configurarStockMinimo = (
     body: JSON.stringify({ stockMinimo }),
   })
 
+// --- US-050: COMPRAS E INGRESO DE INVENTARIO ---
+
+export interface LineaDetalleCompra {
+  id: string
+  productoId: string
+  productoCodigo: string
+  productoNombre: string
+  unidadBaseSimbolo: string
+  presentacionId?: string | null
+  presentacionNombre?: string | null
+  cantidad: number
+  cantidadBase: number
+  precioUnitario: number // centimos
+  subtotal: number // centimos
+}
+
+export interface Compra {
+  id: string
+  localId: string
+  proveedorId: string
+  proveedorRazonSocial: string
+  proveedorRuc?: string | null
+  tipoDocumento: 'factura' | 'boleta' | 'ticket' | 'sin_documento'
+  serie?: string | null
+  numero?: string | null
+  fechaDocumento: string
+  total: number // centimos
+  rutaAdjunto?: string | null
+  estado: 'borrador' | 'confirmada' | 'anulada'
+  confirmadaEn?: string | null
+  observacion?: string | null
+  creadoEn: string
+  detalles: LineaDetalleCompra[]
+}
+
+export interface ItemRegistroCompra {
+  productoId: string
+  presentacionId?: string | null
+  cantidad: number
+  precioUnitario: number // centimos
+}
+
+export interface SolicitudRegistroCompra {
+  proveedorId: string
+  tipoDocumento: 'factura' | 'boleta' | 'ticket' | 'sin_documento'
+  serie?: string | null
+  numero?: string | null
+  fechaDocumento: string
+  observacion?: string | null
+  confirmarInmediatamente: boolean
+  detalles: ItemRegistroCompra[]
+}
+
+export interface ProveedorCatalogo {
+  id: string
+  ruc?: string | null
+  razonSocial: string
+  nombreComercial?: string | null
+  telefono?: string | null
+  correo?: string | null
+  direccion?: string | null
+  contacto?: string | null
+  activo: boolean
+}
+
+export interface PresentacionCatalogo {
+  id: string
+  nombre: string
+  unidadId: string
+  factor: number
+  esPredeterminada: boolean
+  activo: boolean
+}
+
+export const listarCompras = (token: string, localId: string, estado?: string) => {
+  const q = estado ? `?estado=${encodeURIComponent(estado)}` : ''
+  return pedirAutenticado<Compra[]>(`/api/locales/${localId}/compras${q}`, token)
+}
+
+export const obtenerCompra = (token: string, localId: string, compraId: string) =>
+  pedirAutenticado<Compra>(`/api/locales/${localId}/compras/${compraId}`, token)
+
+export const registrarCompra = (token: string, localId: string, datos: SolicitudRegistroCompra) =>
+  pedirAutenticado<Compra>(`/api/locales/${localId}/compras`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+export const confirmarCompra = (token: string, localId: string, compraId: string) =>
+  pedirAutenticado<Compra>(`/api/locales/${localId}/compras/${compraId}/confirmar`, token, {
+    method: 'POST',
+  })
+
+export const subirComprobanteCompra = async (
+  token: string,
+  localId: string,
+  compraId: string,
+  archivo: File,
+): Promise<{ rutaAdjunto: string }> => {
+  const form = new FormData()
+  form.append('archivo', archivo)
+  const res = await fetch(`${BASE}/api/locales/${localId}/compras/${compraId}/adjunto`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => undefined)
+    throw new ErrorApi(res.status, 'Error al subir comprobante', err)
+  }
+  return res.json()
+}
+
+export const listarPresentacionesProducto = (token: string, productoId: string) =>
+  pedirAutenticado<PresentacionCatalogo[]>(`/api/productos/${productoId}/presentaciones`, token)
+
+
 
