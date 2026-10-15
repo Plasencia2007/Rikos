@@ -3,3 +3,6 @@ export { DialogoStockMinimo } from './DialogoStockMinimo'
 export { PantallaKardex } from './PantallaKardex'
 export { PantallaAjustes } from './PantallaAjustes'
 export { ModalRegistrarAjuste } from './ModalRegistrarAjuste'
+export { PantallaConsumoInterno } from './PantallaConsumoInterno'
+export { ModalRegistrarConsumoInterno } from './ModalRegistrarConsumoInterno'
+

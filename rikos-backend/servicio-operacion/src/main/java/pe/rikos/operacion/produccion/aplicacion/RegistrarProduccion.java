@@ -282,7 +282,11 @@ public class RegistrarProduccion {
                 costoTotal,
                 p.getEstado(),
                 p.getRegistradoPor() != null ? p.getRegistradoPor().getNombreCompleto() : "Sistema",
-                p.getCreadoEn()
+                p.getCreadoEn(),
+                p.getSobrante(),
+                p.getDestinoSobrante(),
+                p.getMotivo() != null ? p.getMotivo().getId() : null,
+                p.getMotivo() != null ? p.getMotivo().getDescripcion() : null
         );
     }
 }

@@ -119,6 +119,7 @@ const NAVEGACION: SeccionNav[] = [
           { etiqueta: 'Existencias', ruta: '/admin/inventario/existencias' },
           { etiqueta: 'Kardex', ruta: '/admin/inventario/kardex' },
           { etiqueta: 'Ajustes', ruta: '/admin/inventario/ajustes' },
+          { etiqueta: 'Consumo interno', ruta: '/admin/inventario/consumo-interno' },
           { etiqueta: 'Transferencias' },
           { etiqueta: 'Conteos físicos' },
         ],
@@ -127,7 +128,10 @@ const NAVEGACION: SeccionNav[] = [
         etiqueta: 'Producción',
         Icono: IconoGorroChef,
         requierePermiso: 'produccion.ver',
-        subItems: [{ etiqueta: 'Producción', ruta: '/admin/produccion' }, { etiqueta: 'Consumo interno' }],
+        subItems: [
+          { etiqueta: 'Producción', ruta: '/admin/produccion' },
+          { etiqueta: 'Consumo interno', ruta: '/admin/inventario/consumo-interno' },
+        ],
       },
       {
         etiqueta: 'Compras',

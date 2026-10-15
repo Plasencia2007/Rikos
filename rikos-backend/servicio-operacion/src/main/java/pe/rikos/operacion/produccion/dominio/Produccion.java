@@ -119,6 +119,29 @@ public class Produccion {
         }
     }
 
+    public void liquidarSobrante(BigDecimal sobrante, String destino, Motivo motivo) {
+        if (this.destinoSobrante != null) {
+            throw new IllegalStateException("El sobrante de esta producción ya fue registrado previamente");
+        }
+        if (sobrante == null || sobrante.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("El sobrante debe ser mayor a 0");
+        }
+        if (sobrante.compareTo(this.rendimientoObtenido) > 0) {
+            throw new IllegalArgumentException("El sobrante no puede exceder el rendimiento obtenido (" + this.rendimientoObtenido + ")");
+        }
+        if (destino == null || destino.isBlank()) {
+            throw new IllegalArgumentException("El destino del sobrante es obligatorio");
+        }
+        String destinoNormalizado = destino.trim().toLowerCase();
+        if (!java.util.Set.of("conservar", "personal", "perdida", "reutilizacion", "otro").contains(destinoNormalizado)) {
+            throw new IllegalArgumentException("Destino de sobrante no reconocido: " + destino);
+        }
+
+        this.sobrante = sobrante;
+        this.destinoSobrante = destinoNormalizado;
+        this.motivo = motivo;
+    }
+
     public String getId() {
         return id;
     }

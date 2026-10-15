@@ -26,11 +26,14 @@ public class ProduccionController {
 
     private final ConsultarProducciones consultarProducciones;
     private final RegistrarProduccion registrarProduccion;
+    private final pe.rikos.operacion.produccion.aplicacion.RegistrarDestinoSobrante registrarDestinoSobrante;
 
     public ProduccionController(ConsultarProducciones consultarProducciones,
-                                RegistrarProduccion registrarProduccion) {
+                                RegistrarProduccion registrarProduccion,
+                                pe.rikos.operacion.produccion.aplicacion.RegistrarDestinoSobrante registrarDestinoSobrante) {
         this.consultarProducciones = consultarProducciones;
         this.registrarProduccion = registrarProduccion;
+        this.registrarDestinoSobrante = registrarDestinoSobrante;
     }
 
     @Operation(summary = "Listar registros de producción de un local")
@@ -81,14 +84,41 @@ public class ProduccionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res.valorOLanza());
     }
 
+    @Operation(summary = "Registrar destino del sobrante de producción (US-049)")
+    @PostMapping("/{id}/sobrante")
+    public ResponseEntity<?> registrarSobrante(@PathVariable String localId,
+                                              @PathVariable String id,
+                                              @RequestBody pe.rikos.operacion.produccion.aplicacion.dto.LiquidarSobranteComando comandoBody,
+                                              @AuthenticationPrincipal String usuarioId) {
+        pe.rikos.operacion.produccion.aplicacion.dto.LiquidarSobranteComando comando =
+                new pe.rikos.operacion.produccion.aplicacion.dto.LiquidarSobranteComando(
+                        id,
+                        localId,
+                        comandoBody.sobrante(),
+                        comandoBody.destinoSobrante(),
+                        comandoBody.motivoId(),
+                        comandoBody.observacion(),
+                        usuarioId != null ? usuarioId : comandoBody.usuarioId()
+                );
+
+        Resultado<DetalleProduccionDTO, ErrorProduccion> res = registrarDestinoSobrante.ejecutar(comando);
+        if (res.esFracaso()) {
+            return mapearError(((Resultado.Fracaso<DetalleProduccionDTO, ErrorProduccion>) res).error());
+        }
+        return ResponseEntity.ok(res.valorOLanza());
+    }
+
     private ResponseEntity<?> mapearError(ErrorProduccion error) {
         return switch (error) {
-            case LOCAL_NO_ENCONTRADO, PRODUCTO_NO_ENCONTRADO, RECETA_NO_ENCONTRADA ->
+            case LOCAL_NO_ENCONTRADO, PRODUCTO_NO_ENCONTRADO, RECETA_NO_ENCONTRADA, PRODUCCION_NO_ENCONTRADA ->
                     ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorRespuesta(error.name()));
             case LOCAL_INACTIVO, PRODUCTO_INACTIVO, RECETA_INACTIVA,
                  RECETA_NO_CORRESPONDE_A_PRODUCTO, RENDIMIENTO_INVALIDO,
-                 PORCIONES_INVALIDAS, FECHA_REQUERIDA ->
+                 PORCIONES_INVALIDAS, FECHA_REQUERIDA, SOBRANTE_INVALIDO,
+                 DESTINO_INVALIDO, MOTIVO_REQUERIDO ->
                     ResponseEntity.badRequest().body(new ErrorRespuesta(error.name()));
+            case SOBRANTE_YA_REGISTRADO ->
+                    ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorRespuesta(error.name()));
             case USUARIO_NO_ENCONTRADO ->
                     ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorRespuesta(error.name()));
         };

@@ -2148,6 +2148,10 @@ export interface DetalleProduccion {
   costoTotalLote?: number | null
   estado: string
   registradoPorNombre?: string | null
+  sobrante?: number | null
+  destinoSobrante?: 'conservar' | 'personal' | 'perdida' | 'reutilizacion' | 'otro' | null
+  motivoId?: string | null
+  motivoDescripcion?: string | null
   creadoEn: string
 }
 
@@ -2160,6 +2164,13 @@ export interface RegistroProduccionComando {
   porcionesPreparadas: number
   rendimientoObtenido: number
   usuarioId?: string
+}
+
+export interface LiquidarSobranteComando {
+  sobrante: number
+  destino: 'conservar' | 'personal' | 'perdida' | 'reutilizacion' | 'otro'
+  motivoId?: string | null
+  observacion?: string | null
 }
 
 export interface IngredientePrecarga {
@@ -2206,6 +2217,90 @@ export const registrarProduccion = (token: string, localId: string, datos: Regis
     method: 'POST',
     body: JSON.stringify(datos),
   })
+
+export const registrarSobranteProduccion = (
+  token: string,
+  localId: string,
+  produccionId: string,
+  datos: LiquidarSobranteComando,
+) =>
+  pedirAutenticado<DetalleProduccion>(`/api/locales/${localId}/produccion/${produccionId}/sobrante`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
+// ==========================================
+// Consumo Interno de Personal (US-051)
+// ==========================================
+
+export interface FilaConsumoInterno {
+  id: string
+  localId: string
+  usuarioId: string
+  usuarioNombre: string
+  fecha: string
+  servicio: string
+  turno?: string | null
+  productoId: string
+  productoCodigo: string
+  productoNombre: string
+  unidadMedidaSimbolo: string
+  cantidad: number
+  costoUnitario: number
+  costoTotal: number
+  requirioAutorizacion: boolean
+  autorizadoPorId?: string | null
+  autorizadoPorNombre?: string | null
+  observacion?: string | null
+  movimientoId?: string | null
+  creadoEn: string
+}
+
+export interface ResumenConsumoInterno {
+  totalComidas: number
+  costoTotal: number
+  totalConAutorizacion: number
+}
+
+export interface RegistroConsumoInternoComando {
+  usuarioId: string
+  fecha?: string
+  servicio: string
+  turno?: string
+  productoId: string
+  cantidad: number
+  observacion?: string
+  supervisorPin?: string
+}
+
+export const listarConsumosInternos = (
+  token: string,
+  localId: string,
+  fecha?: string,
+) => {
+  const q = fecha ? `?fecha=${encodeURIComponent(fecha)}` : ''
+  return pedirAutenticado<FilaConsumoInterno[]>(`/api/locales/${localId}/consumo-interno${q}`, token)
+}
+
+export const obtenerResumenConsumoInterno = (
+  token: string,
+  localId: string,
+  fecha?: string,
+) => {
+  const q = fecha ? `?fecha=${encodeURIComponent(fecha)}` : ''
+  return pedirAutenticado<ResumenConsumoInterno>(`/api/locales/${localId}/consumo-interno/resumen${q}`, token)
+}
+
+export const registrarConsumoInterno = (
+  token: string,
+  localId: string,
+  datos: RegistroConsumoInternoComando,
+) =>
+  pedirAutenticado<FilaConsumoInterno>(`/api/locales/${localId}/consumo-interno`, token, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+
 
 // ---- Ajustes de Inventario (US-045, EP-08) -----------------------
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useSesion } from '../../comun/sesion/SesionContexto'
 import { listarProduccion, type DetalleProduccion } from '../../api/cliente'
 import { ModalRegistrarProduccion } from './ModalRegistrarProduccion'
+import { ModalLiquidarSobrante } from './ModalLiquidarSobrante'
 
 interface Props {
   token?: string
@@ -20,6 +21,9 @@ export function PantallaProduccion(props: Props) {
   const [fechaFiltro, setFechaFiltro] = useState('')
   const [filtroTipo, setFiltroTipo] = useState<'todas' | 'subrecetas' | 'platos'>('todas')
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [produccionALiquidar, setProduccionALiquidar] = useState<DetalleProduccion | null>(null)
+  const [modalSobranteAbierto, setModalSobranteAbierto] = useState(false)
+
 
   const cargarDatos = async () => {
     try {
@@ -300,18 +304,19 @@ export function PantallaProduccion(props: Props) {
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Rendimiento</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Costo Real Unit.</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Registrado Por</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'center' }}>Sobrante (US-049)</th>
               </tr>
             </thead>
             <tbody>
               {cargando ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
+                  <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
                     Cargando registros de producción...
                   </td>
                 </tr>
               ) : produccionesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
+                  <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
                     No se encontraron registros de producción para los filtros seleccionados.
                   </td>
                 </tr>
@@ -404,6 +409,76 @@ export function PantallaProduccion(props: Props) {
                     <td style={{ padding: '0.75rem 1rem', color: '#4b5563', fontSize: '0.8125rem' }}>
                       {p.registradoPorNombre || 'Sistema'}
                     </td>
+
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                      {p.sobrante != null ? (
+                        <div>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              backgroundColor:
+                                p.destinoSobrante === 'conservar'
+                                  ? '#dcfce7'
+                                  : p.destinoSobrante === 'reutilizacion'
+                                  ? '#fef3c7'
+                                  : p.destinoSobrante === 'personal'
+                                  ? '#e0e7ff'
+                                  : '#fee2e2',
+                              color:
+                                p.destinoSobrante === 'conservar'
+                                  ? '#166534'
+                                  : p.destinoSobrante === 'reutilizacion'
+                                  ? '#92400e'
+                                  : p.destinoSobrante === 'personal'
+                                  ? '#3730a3'
+                                  : '#991b1b',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            {p.destinoSobrante === 'conservar' && '📦 '}
+                            {p.destinoSobrante === 'reutilizacion' && '🔄 '}
+                            {p.destinoSobrante === 'personal' && '👥 '}
+                            {p.destinoSobrante === 'perdida' && '⚠️ '}
+                            {p.destinoSobrante === 'otro' && 'ℹ️ '}
+                            {p.destinoSobrante}: {p.sobrante} {p.unidadMedidaSimbolo}
+                          </span>
+                          {p.motivoDescripcion && (
+                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem' }}>
+                              {p.motivoDescripcion}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setProduccionALiquidar(p)
+                            setModalSobranteAbierto(true)
+                          }}
+                          style={{
+                            padding: '0.35rem 0.65rem',
+                            backgroundColor: '#f3f4f6',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: '#374151',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e5e7eb')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                        >
+                          ⚖️ Liquidar
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
@@ -419,6 +494,21 @@ export function PantallaProduccion(props: Props) {
         onProduccionRegistrada={cargarDatos}
         token={token}
         localId={localId}
+      />
+
+      {/* Modal para Liquidar Sobrante (US-049) */}
+      <ModalLiquidarSobrante
+        abierto={modalSobranteAbierto}
+        produccion={produccionALiquidar}
+        token={token}
+        localId={localId}
+        onCerrar={() => {
+          setModalSobranteAbierto(false)
+          setProduccionALiquidar(null)
+        }}
+        onGuardado={() => {
+          cargarDatos()
+        }}
       />
     </div>
   )

@@ -90,11 +90,16 @@ public class ConfiguracionSeguridad {
                     .hasAuthority("PERM_compras.ver")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/locales/*/compras", "/locales/*/compras/**")
                     .hasAuthority("PERM_compras.crear")
-                // US-048 (sprint 9): registro y consulta de producción de subrecetas y platos.
+                // US-048 y US-049 (sprint 9): registro, consulta y liquidación de sobrantes de producción.
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/produccion", "/locales/*/produccion/**")
                     .hasAnyAuthority("PERM_produccion.ver", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/locales/*/produccion", "/locales/*/produccion/**")
-                    .hasAnyAuthority("PERM_produccion.registrar", "PERM_produccion.crear", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
+                    .hasAnyAuthority("PERM_produccion.registrar", "PERM_produccion.crear", "PERM_produccion.sobrante", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
+                // US-051 (sprint 9): registro y consulta de consumo interno del personal.
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/locales/*/consumo-interno", "/locales/*/consumo-interno/**")
+                    .hasAnyAuthority("PERM_consumo_interno.ver", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/locales/*/consumo-interno", "/locales/*/consumo-interno/**")
+                    .hasAnyAuthority("PERM_consumo_interno.crear", "PERM_consumo_interno.registrar", "ROLE_ADMINISTRADOR_CENTRAL", "ROLE_ADMINISTRADOR_DE_LOCAL")
                 .requestMatchers("/locales/**", "/usuarios/**", "/roles/**", "/permisos/**")
                     // El nombre real del rol es "administrador de local" (con "de"):
                     // FiltroAutenticacionJwt lo convierte a ROLE_ADMINISTRADOR_DE_LOCAL.

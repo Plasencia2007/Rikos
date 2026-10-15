@@ -23,5 +23,9 @@ public record DetalleProduccionDTO(
         BigDecimal costoTotalLote,
         String estado,
         String registradoPorNombre,
-        OffsetDateTime creadoEn
+        OffsetDateTime creadoEn,
+        BigDecimal sobrante,
+        String destinoSobrante,
+        String motivoId,
+        String motivoDescripcion
 ) {}
