@@ -102,6 +102,8 @@ public class AjusteInventarioController {
                     ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorRespuesta(error.name()));
             case USUARIO_NO_ENCONTRADO ->
                     ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorRespuesta(error.name()));
+            default ->
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorRespuesta(error.name()));
         };
     }
 }
