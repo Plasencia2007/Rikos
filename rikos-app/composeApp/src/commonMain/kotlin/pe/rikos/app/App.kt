@@ -36,7 +36,10 @@ fun App(container: AppContainer = remember { AppContainer() }) {
         var localConfigurado by rememberSaveable { mutableStateOf<String?>(null) }
         var sesion by remember { mutableStateOf<Sesion?>(null) }
 
-        Box(Modifier.fillMaxSize().background(Rikos.colors.bg).safeDrawingPadding()) {
+        val enPantallaPin = !bienvenidaVisible && localConfigurado != null && sesion == null
+        val fondoRaiz = if (enPantallaPin) Rikos.colors.navy else Rikos.colors.bg
+
+        Box(Modifier.fillMaxSize().background(fondoRaiz).safeDrawingPadding()) {
             when {
                 bienvenidaVisible -> {
                     BienvenidaScreen(alConfigurar = { bienvenidaVisible = false })
@@ -55,9 +58,14 @@ fun App(container: AppContainer = remember { AppContainer() }) {
                 }
                 sesion == null -> {
                     val codigoActivo = localConfigurado ?: container.localCodigo
+                    val nombreLocal = if (codigoActivo == "NORTE") "Riko's Norte" else "Riko's Centro"
                     val vm: PinViewModel = viewModel(factory = viewModelFactory {
                         initializer {
-                            PinViewModel(codigoActivo, container.iniciarConPin) { sesion = it }
+                            PinViewModel(
+                                localCodigo = codigoActivo,
+                                iniciarConPin = container.iniciarConPin,
+                                localNombre = nombreLocal,
+                            ) { sesion = it }
                         }
                     })
                     PinScreen(vm)
