@@ -71,8 +71,14 @@ fun App(container: AppContainer = remember { AppContainer() }) {
                     PinScreen(vm)
                 }
                 else -> {
+                    val actualSesion = sesion
                     val vm: MesasViewModel = viewModel(factory = viewModelFactory {
-                        initializer { MesasViewModel(container.obtenerMesas) }
+                        initializer {
+                            MesasViewModel(
+                                obtenerMesas = container.obtenerMesas,
+                                mozoNombre = actualSesion?.nombreUsuario ?: "Luis",
+                            )
+                        }
                     })
                     MesasScreen(vm, alElegirMesa = { /* TODO: abrir mesa / pedido (M04, M07) */ })
                 }

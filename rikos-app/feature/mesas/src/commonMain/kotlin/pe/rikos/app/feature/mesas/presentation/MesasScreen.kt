@@ -1,27 +1,65 @@
 package pe.rikos.app.feature.mesas.presentation
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import pe.rikos.app.core.designsystem.components.MesaCard
-import pe.rikos.app.core.designsystem.components.MesaEstadoUi
-import pe.rikos.app.core.designsystem.components.RkButton
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pe.rikos.app.core.designsystem.theme.Rikos
 import pe.rikos.app.core.designsystem.theme.RikosSpace
+import pe.rikos.app.feature.mesas.domain.AvisoMesa
 import pe.rikos.app.feature.mesas.domain.EstadoMesa
+import pe.rikos.app.feature.mesas.domain.FormaMesa
 import pe.rikos.app.feature.mesas.domain.Mesa
+import pe.rikos.app.feature.mesas.domain.Salon
+import pe.rikos.app.feature.mesas.domain.TipoAviso
+import pe.rikos.app.feature.mesas.presentation.components.DrawnTable
+import pe.rikos.app.feature.mesas.presentation.components.MesasBottomNav
+import pe.rikos.app.feature.mesas.presentation.components.mesaColores
 
 @Composable
 fun MesasScreen(
@@ -30,47 +68,513 @@ fun MesasScreen(
     modifier: Modifier = Modifier,
 ) {
     val estado by viewModel.estado.collectAsState()
-    val c = Rikos.colors
-    Column(modifier.fillMaxSize().background(c.bg).padding(RikosSpace.screenMargin)) {
-        BasicText("Mesas", style = Rikos.type.title1.copy(color = c.ink))
-        Box(Modifier.fillMaxSize().padding(top = RikosSpace.s16), contentAlignment = Alignment.TopStart) {
-            when (val e = estado) {
-                MesasState.Cargando -> BasicText("Cargando mesas…", style = Rikos.type.body.copy(color = c.ink3))
-                is MesasState.Error -> Column(verticalArrangement = Arrangement.spacedBy(RikosSpace.s12)) {
-                    BasicText("No se pudieron cargar las mesas.", style = Rikos.type.body.copy(color = c.red))
-                    RkButton("Reintentar", onClick = viewModel::cargar)
-                }
-                is MesasState.Listo -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = RikosSpace.s32 * 4),
-                    horizontalArrangement = Arrangement.spacedBy(RikosSpace.cardGap),
-                    verticalArrangement = Arrangement.spacedBy(RikosSpace.cardGap),
-                ) {
-                    items(e.mesas, key = { it.id }) { mesa ->
-                        MesaCard(
-                            numero = "Mesa ${mesa.numero}",
-                            estado = mesa.estado.aUi(),
-                            detalle = detalle(mesa),
-                            onClick = { alElegirMesa(mesa) },
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8FAFC)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            // 1. Cabecera (Header)
+            MesasHeader(
+                mozoNombre = estado.mozoNombre,
+                turno = estado.turnoNombre,
+                enLinea = estado.enLinea,
+                alVerAgotados = { /* TODO: Avisos y agotados (M03d) */ },
+            )
+
+            // 2. Chips de Salones (Horizontal scroll)
+            SalonesChipsRow(
+                salones = estado.salones,
+                salonActivoId = estado.salonActivoId,
+                alSeleccionarSalon = viewModel::alSeleccionarSalon,
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // 3. Avisos «Te necesitan» (Horizontal scroll)
+            if (estado.avisos.isNotEmpty()) {
+                AvisosUrgentRow(
+                    avisos = estado.avisos,
+                    alTocarAviso = { /* TODO: Acción de aviso */ },
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // 4. Barra de resumen (Leyenda)
+            LeyendaBarra(
+                libres = estado.libresCount,
+                ocupadas = estado.ocupadasCount,
+                porCobrar = estado.porCobrarCount,
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // 5. Grilla de mesas dibujadas
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) {
+                if (estado.cargando && estado.mesas.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        BasicText(
+                            text = "Cargando salón…",
+                            style = TextStyle(color = Color(0xFF64748B), fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
                         )
                     }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(
+                            items = estado.mesasFiltradas,
+                            key = { it.id },
+                            span = { mesa ->
+                                if (mesa.forma == FormaMesa.UNIDA) GridItemSpan(2) else GridItemSpan(1)
+                            },
+                        ) { mesa ->
+                            MesaCardItem(
+                                mesa = mesa,
+                                onClick = { alElegirMesa(mesa) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. Barra de navegación inferior flotante
+        MesasBottomNav(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            alNuevoPedido = { /* TODO: Nuevo Pedido (M04 / M08) */ },
+        )
+    }
+}
+
+@Composable
+private fun MesasHeader(
+    mozoNombre: String,
+    turno: String,
+    enLinea: Boolean,
+    alVerAgotados: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column {
+            BasicText(
+                text = "Mesas",
+                style = TextStyle(
+                    color = Color(0xFF0F172A),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.02).sp,
+                ),
+            )
+            BasicText(
+                text = "Hola, $mozoNombre. $turno",
+                style = TextStyle(
+                    color = Color(0xFF64748B),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Pill "En línea"
+            Row(
+                modifier = Modifier
+                    .height(34.dp)
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(17.dp))
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(if (enLinea) Color(0xFF10B981) else Color(0xFFEF4444), CircleShape),
+                )
+                BasicText(
+                    text = if (enLinea) "En línea" else "Sin conexión",
+                    style = TextStyle(
+                        color = if (enLinea) Color(0xFF047857) else Color(0xFFDC2626),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                )
+            }
+
+            // Botón de avisos / campanita (.ib)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = alVerAgotados,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(Modifier.size(22.dp)) {
+                    val color = Color(0xFF0F172A)
+                    val sx = size.width / 24f
+                    val sy = size.height / 24f
+                    val p = Path().apply {
+                        moveTo(18f * sx, 8f * sy)
+                        cubicTo(18f * sx, 4.7f * sy, 15.3f * sx, 2f * sy, 12f * sx, 2f * sy)
+                        cubicTo(8.7f * sx, 2f * sy, 6f * sx, 4.7f * sy, 6f * sx, 8f * sy)
+                        cubicTo(6f * sx, 15f * sy, 3f * sy, 17f * sy, 3f * sx, 17f * sy)
+                        lineTo(21f * sx, 17f * sy)
+                        cubicTo(21f * sx, 17f * sy, 18f * sx, 15f * sy, 18f * sx, 8f * sy)
+                    }
+                    drawPath(p, color, style = Stroke(width = 2f * sx, cap = StrokeCap.Round))
+                    drawLine(color, Offset(10f * sx, 20f * sy), Offset(14f * sx, 20f * sy), strokeWidth = 2f * sx, cap = StrokeCap.Round)
+                }
+
+                // Punto naranja de notificación (.dot)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 8.dp)
+                        .size(8.dp)
+                        .background(Color(0xFFFF8A5C), CircleShape)
+                        .border(1.5.dp, Color.White, CircleShape),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SalonesChipsRow(
+    salones: List<Salon>,
+    salonActivoId: String,
+    alSeleccionarSalon: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        for (salon in salones) {
+            val activo = salon.id == salonActivoId
+            val fondo = if (activo) Color(0xFF021E43) else Color.White
+            val textoColor = if (activo) Color.White else Color(0xFF0F172A)
+            val badgeFondo = if (activo) Color(0xFF0B2A5B) else Color(0xFFF1F5F9)
+            val badgeTexto = if (activo) Color(0xFF93C5FD) else Color(0xFF64748B)
+
+            Row(
+                modifier = Modifier
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(fondo)
+                    .border(1.dp, if (activo) Color.Transparent else Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { alSeleccionarSalon(salon.id) },
+                    )
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                BasicText(
+                    text = salon.nombre,
+                    style = TextStyle(
+                        color = textoColor,
+                        fontSize = 14.sp,
+                        fontWeight = if (activo) FontWeight.Bold else FontWeight.SemiBold,
+                    ),
+                )
+                Box(
+                    modifier = Modifier
+                        .height(22.dp)
+                        .clip(RoundedCornerShape(11.dp))
+                        .background(badgeFondo)
+                        .padding(horizontal = 7.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText(
+                        text = salon.totalMesas.toString(),
+                        style = TextStyle(
+                            color = badgeTexto,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
                 }
             }
         }
     }
 }
 
-private fun EstadoMesa.aUi() = when (this) {
-    EstadoMesa.LIBRE -> MesaEstadoUi.Libre
-    EstadoMesa.OCUPADA -> MesaEstadoUi.Ocupada
-    EstadoMesa.POR_COBRAR -> MesaEstadoUi.PorCobrar
-    EstadoMesa.LISTO -> MesaEstadoUi.Listo
-    EstadoMesa.FUERA_DE_SERVICIO -> MesaEstadoUi.FueraDeServicio
+@Composable
+private fun AvisosUrgentRow(
+    avisos: List<AvisoMesa>,
+    alTocarAviso: (AvisoMesa) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        for (aviso in avisos) {
+            val badgeFondo = when (aviso.tipo) {
+                TipoAviso.PLATOS_LISTOS -> Color(0xFF059669)
+                TipoAviso.PIDIO_CUENTA -> Color(0xFFFF8A5C)
+                TipoAviso.TIEMPO_SIN_PASAR -> Color(0xFFB45309)
+            }
+
+            Row(
+                modifier = Modifier
+                    .width(224.dp)
+                    .height(64.dp)
+                    .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp), ambientColor = Color(0x0C0F172A))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White)
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { alTocarAviso(aviso) },
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Avatar redondo con número de mesa
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(badgeFondo),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText(
+                        text = aviso.mesaNumero,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        ),
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    BasicText(
+                        text = aviso.titulo,
+                        style = TextStyle(
+                            color = Color(0xFF0F172A),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                    BasicText(
+                        text = aviso.subtitulo,
+                        style = TextStyle(
+                            color = Color(0xFF64748B),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                        modifier = Modifier.padding(top = 1.dp),
+                    )
+                }
+            }
+        }
+    }
 }
 
-private fun detalle(m: Mesa): String = when (m.estado) {
-    EstadoMesa.LIBRE -> "Libre"
-    EstadoMesa.FUERA_DE_SERVICIO -> "Fuera de servicio"
-    EstadoMesa.LISTO -> "Listo · ${m.total.formatear()}"
-    EstadoMesa.POR_COBRAR -> "Por cobrar · ${m.total.formatear()}"
-    EstadoMesa.OCUPADA -> "${m.comensales} personas · ${m.total.formatear()}"
+@Composable
+private fun LeyendaBarra(
+    libres: Int,
+    ocupadas: Int,
+    porCobrar: Int,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        LeyendaItem(Color(0xFF059669), "$libres libres")
+        LeyendaItem(Color(0xFFD97706), "$ocupadas ocupadas")
+        LeyendaItem(Color(0xFF1E3A8A), "$porCobrar por cobrar")
+    }
+}
+
+@Composable
+private fun LeyendaItem(color: Color, texto: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .background(color, CircleShape),
+        )
+        BasicText(
+            text = texto,
+            style = TextStyle(
+                color = Color(0xFF64748B),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun MesaCardItem(
+    mesa: Mesa,
+    onClick: () -> Unit,
+) {
+    val colores = mesaColores(mesa)
+    val esOtroMozo = mesa.mozoNombre != null
+    val esSeleccionada = mesa.seleccionada
+    val tieneRing = mesa.comidaLista
+
+    // Animación de pulso verde si tiene comida lista
+    val infiniteTransition = rememberInfiniteTransition()
+    val ringBorderAlpha by if (tieneRing) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.3f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        )
+    } else {
+        remember { androidx.compose.runtime.mutableStateOf(0f) }
+    }
+
+    val bordeMod = when {
+        esSeleccionada -> Modifier.border(2.dp, Color(0xFF2563EB), RoundedCornerShape(20.dp))
+        tieneRing -> Modifier.border(2.dp, Color(0xFF059669).copy(alpha = ringBorderAlpha), RoundedCornerShape(20.dp))
+        else -> Modifier.border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+    }
+
+    val cardFondo = if (mesa.estado == EstadoMesa.FUERA_DE_SERVICIO) Color(0xFFF1F5F9) else Color.White
+    val cardAlpha = if (esOtroMozo) 0.55f else 1f
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(cardAlpha)
+            .shadow(
+                elevation = if (esSeleccionada) 4.dp else 1.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = Color(0x0C0F172A),
+            )
+            .clip(RoundedCornerShape(20.dp))
+            .background(cardFondo)
+            .then(bordeMod)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        // Mesa dibujada con sillas
+        DrawnTable(mesa = mesa, colores = colores)
+
+        // Fila: "Mesa X" + Badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                text = if (mesa.forma == FormaMesa.UNIDA) "Mesas ${mesa.numero}" else "Mesa ${mesa.numero}",
+                style = TextStyle(
+                    color = Color(0xFF0F172A),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+
+            // Status Badge Pill
+            val badgeLabel = when {
+                mesa.comidaLista -> "Comida lista"
+                esOtroMozo -> mesa.mozoNombre ?: "De otro"
+                mesa.forma == FormaMesa.UNIDA -> "Unidas, una cuenta"
+                mesa.estado == EstadoMesa.LIBRE -> "Libre"
+                mesa.estado == EstadoMesa.OCUPADA -> "Ocupada"
+                mesa.estado == EstadoMesa.POR_COBRAR -> "Por cobrar"
+                mesa.estado == EstadoMesa.FUERA_DE_SERVICIO -> "Fuera de servicio"
+                mesa.estado == EstadoMesa.LISTO -> "Comida lista"
+                else -> "Libre"
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(colores.badgeFondo)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText(
+                    text = badgeLabel,
+                    style = TextStyle(
+                        color = colores.badgeTexto,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                )
+            }
+        }
+
+        // Subtítulo con detalle
+        val detalleTexto = when {
+            mesa.estado == EstadoMesa.LIBRE -> "Toca para abrirla"
+            mesa.estado == EstadoMesa.FUERA_DE_SERVICIO -> "Mantén para activarla"
+            mesa.forma == FormaMesa.UNIDA -> "${mesa.total.formatear()}, ${mesa.comensales} personas, ${mesa.minutosTranscurridos ?: 0} min, principal: mesa ${mesa.mesaPrincipalNumero ?: "3"}"
+            mesa.mozoNombre != null -> "${mesa.total.formatear()}, ${mesa.comensales} pers."
+            mesa.comensales > 0 && mesa.minutosTranscurridos != null -> "${mesa.total.formatear()}, ${mesa.comensales} pers., ${mesa.minutosTranscurridos} min"
+            mesa.comensales > 0 -> "${mesa.total.formatear()}, ${mesa.comensales} pers."
+            else -> mesa.total.formatear()
+        }
+
+        BasicText(
+            text = detalleTexto,
+            style = TextStyle(
+                color = Color(0xFF64748B),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            ),
+        )
+    }
 }
