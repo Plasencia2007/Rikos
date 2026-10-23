@@ -2,15 +2,17 @@ package pe.rikos.app.feature.mesas.presentation
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,18 +41,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pe.rikos.app.core.designsystem.theme.Rikos
-import pe.rikos.app.core.designsystem.theme.RikosSpace
+import pe.rikos.app.core.designsystem.theme.RikosMotion
 import pe.rikos.app.feature.mesas.domain.AvisoMesa
 import pe.rikos.app.feature.mesas.domain.EstadoMesa
 import pe.rikos.app.feature.mesas.domain.FormaMesa
@@ -68,6 +72,7 @@ fun MesasScreen(
     modifier: Modifier = Modifier,
 ) {
     val estado by viewModel.estado.collectAsState()
+    val type = Rikos.type
 
     Box(
         modifier = modifier
@@ -77,7 +82,7 @@ fun MesasScreen(
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
-            // 1. Cabecera (Header)
+            // 1. Cabecera (Header) con tipografía Plus Jakarta Sans
             MesasHeader(
                 mozoNombre = estado.mozoNombre,
                 turno = estado.turnoNombre,
@@ -85,7 +90,7 @@ fun MesasScreen(
                 alVerAgotados = { /* TODO: Avisos y agotados (M03d) */ },
             )
 
-            // 2. Chips de Salones (Horizontal scroll)
+            // 2. Chips de Salones (Horizontal scroll con animación táctil)
             SalonesChipsRow(
                 salones = estado.salones,
                 salonActivoId = estado.salonActivoId,
@@ -94,7 +99,7 @@ fun MesasScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // 3. Avisos «Te necesitan» (Horizontal scroll)
+            // 3. Avisos «Te necesitan» (Horizontal scroll con feedback táctil)
             if (estado.avisos.isNotEmpty()) {
                 AvisosUrgentRow(
                     avisos = estado.avisos,
@@ -122,7 +127,7 @@ fun MesasScreen(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         BasicText(
                             text = "Cargando salón…",
-                            style = TextStyle(color = Color(0xFF64748B), fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                            style = type.body.copy(color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold),
                         )
                     }
                 } else {
@@ -150,7 +155,7 @@ fun MesasScreen(
             }
         }
 
-        // 6. Barra de navegación inferior flotante
+        // 6. Barra de navegación inferior flotante con animación viva
         MesasBottomNav(
             modifier = Modifier.align(Alignment.BottomCenter),
             alNuevoPedido = { /* TODO: Nuevo Pedido (M04 / M08) */ },
@@ -165,6 +170,15 @@ private fun MesasHeader(
     enLinea: Boolean,
     alVerAgotados: () -> Unit,
 ) {
+    val type = Rikos.type
+    val bellInteraction = remember { MutableInteractionSource() }
+    val bellPressed by bellInteraction.collectIsPressedAsState()
+    val bellScale by animateFloatAsState(
+        targetValue = if (bellPressed) 0.92f else 1f,
+        animationSpec = RikosMotion.press(),
+        label = "bellPress",
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -175,7 +189,7 @@ private fun MesasHeader(
         Column {
             BasicText(
                 text = "Mesas",
-                style = TextStyle(
+                style = type.title1.copy(
                     color = Color(0xFF0F172A),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -184,7 +198,7 @@ private fun MesasHeader(
             )
             BasicText(
                 text = "Hola, $mozoNombre. $turno",
-                style = TextStyle(
+                style = type.subhead.copy(
                     color = Color(0xFF64748B),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -215,7 +229,7 @@ private fun MesasHeader(
                 )
                 BasicText(
                     text = if (enLinea) "En línea" else "Sin conexión",
-                    style = TextStyle(
+                    style = type.caption.copy(
                         color = if (enLinea) Color(0xFF047857) else Color(0xFFDC2626),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -223,15 +237,16 @@ private fun MesasHeader(
                 )
             }
 
-            // Botón de avisos / campanita (.ib)
+            // Botón de avisos / campanita (.ib con animación táctil)
             Box(
                 modifier = Modifier
                     .size(44.dp)
+                    .graphicsLayer { scaleX = bellScale; scaleY = bellScale }
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color.White)
                     .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = bellInteraction,
                         indication = null,
                         onClick = alVerAgotados,
                     ),
@@ -273,6 +288,7 @@ private fun SalonesChipsRow(
     salonActivoId: String,
     alSeleccionarSalon: (String) -> Unit,
 ) {
+    val type = Rikos.type
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -287,14 +303,23 @@ private fun SalonesChipsRow(
             val badgeFondo = if (activo) Color(0xFF0B2A5B) else Color(0xFFF1F5F9)
             val badgeTexto = if (activo) Color(0xFF93C5FD) else Color(0xFF64748B)
 
+            val interaction = remember { MutableInteractionSource() }
+            val isPressed by interaction.collectIsPressedAsState()
+            val scale by animateFloatAsState(
+                targetValue = if (isPressed) 0.96f else 1f,
+                animationSpec = RikosMotion.press(),
+                label = "chipPress_${salon.id}",
+            )
+
             Row(
                 modifier = Modifier
                     .height(40.dp)
+                    .graphicsLayer { scaleX = scale; scaleY = scale }
                     .clip(RoundedCornerShape(20.dp))
                     .background(fondo)
                     .border(1.dp, if (activo) Color.Transparent else Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = interaction,
                         indication = null,
                         onClick = { alSeleccionarSalon(salon.id) },
                     )
@@ -304,7 +329,7 @@ private fun SalonesChipsRow(
             ) {
                 BasicText(
                     text = salon.nombre,
-                    style = TextStyle(
+                    style = type.subhead.copy(
                         color = textoColor,
                         fontSize = 14.sp,
                         fontWeight = if (activo) FontWeight.Bold else FontWeight.SemiBold,
@@ -320,7 +345,7 @@ private fun SalonesChipsRow(
                 ) {
                     BasicText(
                         text = salon.totalMesas.toString(),
-                        style = TextStyle(
+                        style = type.caption.copy(
                             color = badgeTexto,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
@@ -337,6 +362,7 @@ private fun AvisosUrgentRow(
     avisos: List<AvisoMesa>,
     alTocarAviso: (AvisoMesa) -> Unit,
 ) {
+    val type = Rikos.type
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,16 +377,25 @@ private fun AvisosUrgentRow(
                 TipoAviso.TIEMPO_SIN_PASAR -> Color(0xFFB45309)
             }
 
+            val interaction = remember { MutableInteractionSource() }
+            val isPressed by interaction.collectIsPressedAsState()
+            val scale by animateFloatAsState(
+                targetValue = if (isPressed) 0.97f else 1f,
+                animationSpec = RikosMotion.press(),
+                label = "avisoPress_${aviso.id}",
+            )
+
             Row(
                 modifier = Modifier
                     .width(224.dp)
                     .height(64.dp)
+                    .graphicsLayer { scaleX = scale; scaleY = scale }
                     .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp), ambientColor = Color(0x0C0F172A))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color.White)
                     .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = interaction,
                         indication = null,
                         onClick = { alTocarAviso(aviso) },
                     )
@@ -378,7 +413,7 @@ private fun AvisosUrgentRow(
                 ) {
                     BasicText(
                         text = aviso.mesaNumero,
-                        style = TextStyle(
+                        style = type.headline.copy(
                             color = Color.White,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.ExtraBold,
@@ -392,7 +427,7 @@ private fun AvisosUrgentRow(
                 ) {
                     BasicText(
                         text = aviso.titulo,
-                        style = TextStyle(
+                        style = type.subhead.copy(
                             color = Color(0xFF0F172A),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -400,7 +435,7 @@ private fun AvisosUrgentRow(
                     )
                     BasicText(
                         text = aviso.subtitulo,
-                        style = TextStyle(
+                        style = type.caption.copy(
                             color = Color(0xFF64748B),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Normal,
@@ -434,6 +469,7 @@ private fun LeyendaBarra(
 
 @Composable
 private fun LeyendaItem(color: Color, texto: String) {
+    val type = Rikos.type
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -445,7 +481,7 @@ private fun LeyendaItem(color: Color, texto: String) {
         )
         BasicText(
             text = texto,
-            style = TextStyle(
+            style = type.caption.copy(
                 color = Color(0xFF64748B),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -459,29 +495,46 @@ private fun MesaCardItem(
     mesa: Mesa,
     onClick: () -> Unit,
 ) {
+    val type = Rikos.type
     val colores = mesaColores(mesa)
     val esOtroMozo = mesa.mozoNombre != null
     val esSeleccionada = mesa.seleccionada
     val tieneRing = mesa.comidaLista
 
-    // Animación de pulso verde si tiene comida lista
-    val infiniteTransition = rememberInfiniteTransition()
-    val ringBorderAlpha by if (tieneRing) {
-        infiniteTransition.animateFloat(
-            initialValue = 0.3f,
+    // Animación de interacción al presionar tarjeta (.mc:active { transform: scale(0.97); })
+    val interaction = remember { MutableInteractionSource() }
+    val isPressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = RikosMotion.press(),
+        label = "cardPress_${mesa.id}",
+    )
+
+    // Animación de anillo pulsante verde medida exactamente del prototipo (@keyframes rk-ring, 1800ms)
+    val ringTransition = rememberInfiniteTransition(label = "mesaRing")
+    val ringProgress = if (tieneRing) {
+        ringTransition.animateFloat(
+            initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(900),
-                repeatMode = RepeatMode.Reverse,
+                animation = keyframes {
+                    durationMillis = 1800
+                    0f at 0 using RikosMotion.RingEase
+                    0.7f at 1260 using RikosMotion.RingEase
+                    1f at 1800 using RikosMotion.RingEase
+                },
+                repeatMode = RepeatMode.Restart,
             ),
-        )
-    } else {
-        remember { androidx.compose.runtime.mutableStateOf(0f) }
-    }
+            label = "ringExpansion",
+        ).value
+    } else 0f
+
+    val ringBorderAlpha = if (tieneRing) (1f - ringProgress).coerceIn(0f, 0.7f) else 0f
+    val ringExtraSize = if (tieneRing) ringProgress * 8f else 0f
 
     val bordeMod = when {
         esSeleccionada -> Modifier.border(2.dp, Color(0xFF2563EB), RoundedCornerShape(20.dp))
-        tieneRing -> Modifier.border(2.dp, Color(0xFF059669).copy(alpha = ringBorderAlpha), RoundedCornerShape(20.dp))
+        tieneRing -> Modifier.border(2.dp, Color(0xFF059669), RoundedCornerShape(20.dp))
         else -> Modifier.border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
     }
 
@@ -491,7 +544,24 @@ private fun MesaCardItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .alpha(cardAlpha)
+            .then(
+                if (tieneRing) {
+                    Modifier.drawBehind {
+                        drawRoundRect(
+                            color = Color(0xFF059669).copy(alpha = ringBorderAlpha),
+                            topLeft = Offset(-ringExtraSize, -ringExtraSize),
+                            size = androidx.compose.ui.geometry.Size(
+                                size.width + ringExtraSize * 2f,
+                                size.height + ringExtraSize * 2f,
+                            ),
+                            cornerRadius = CornerRadius(20.dp.toPx() + ringExtraSize),
+                            style = Stroke(width = 2.dp.toPx()),
+                        )
+                    }
+                } else Modifier,
+            )
             .shadow(
                 elevation = if (esSeleccionada) 4.dp else 1.dp,
                 shape = RoundedCornerShape(20.dp),
@@ -501,7 +571,7 @@ private fun MesaCardItem(
             .background(cardFondo)
             .then(bordeMod)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interaction,
                 indication = null,
                 onClick = onClick,
             )
@@ -519,7 +589,7 @@ private fun MesaCardItem(
         ) {
             BasicText(
                 text = if (mesa.forma == FormaMesa.UNIDA) "Mesas ${mesa.numero}" else "Mesa ${mesa.numero}",
-                style = TextStyle(
+                style = type.callout.copy(
                     color = Color(0xFF0F172A),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -529,7 +599,7 @@ private fun MesaCardItem(
             // Status Badge Pill
             val badgeLabel = when {
                 mesa.comidaLista -> "Comida lista"
-                esOtroMozo -> mesa.mozoNombre ?: "De otro"
+                esOtroMozo -> if (mesa.mozoNombre.isNotEmpty()) mesa.mozoNombre else "De otro"
                 mesa.forma == FormaMesa.UNIDA -> "Unidas, una cuenta"
                 mesa.estado == EstadoMesa.LIBRE -> "Libre"
                 mesa.estado == EstadoMesa.OCUPADA -> "Ocupada"
@@ -548,7 +618,7 @@ private fun MesaCardItem(
             ) {
                 BasicText(
                     text = badgeLabel,
-                    style = TextStyle(
+                    style = type.caption.copy(
                         color = colores.badgeTexto,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -570,7 +640,7 @@ private fun MesaCardItem(
 
         BasicText(
             text = detalleTexto,
-            style = TextStyle(
+            style = type.caption.copy(
                 color = Color(0xFF64748B),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,

@@ -28,9 +28,9 @@ internal fun rememberRikosType(): RikosType {
 }
 
 /** Plus Jakarta Sans empaquetada con licencia OFL; no requiere conexión. */
-class RikosType internal constructor(private val jakarta: FontFamily) {
+class RikosType internal constructor(val fontFamily: FontFamily) {
     private fun s(size: Float, peso: FontWeight, interletra: Float = 0f, alto: Float = size * 1.25f) = TextStyle(
-        fontFamily = jakarta,
+        fontFamily = fontFamily,
         fontSize = size.sp,
         fontWeight = peso,
         letterSpacing = interletra.em,

@@ -2,6 +2,7 @@ package pe.rikos.app.feature.mesas.presentation.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.BasicText
@@ -18,10 +19,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pe.rikos.app.core.designsystem.theme.Rikos
 import pe.rikos.app.feature.mesas.domain.EstadoMesa
 import pe.rikos.app.feature.mesas.domain.FormaMesa
 import pe.rikos.app.feature.mesas.domain.Mesa
@@ -105,6 +106,7 @@ private fun DrawnRectTable(
     colores: MesaColores,
     modifier: Modifier = Modifier,
 ) {
+    val type = Rikos.type
     Box(
         modifier = modifier.fillMaxWidth().height(84.dp),
         contentAlignment = Alignment.Center,
@@ -185,14 +187,12 @@ private fun DrawnRectTable(
             )
         }
 
-        // Número centrado
+        // Número centrado con Plus Jakarta Sans
         BasicText(
             text = mesa.numero,
-            style = TextStyle(
+            style = type.title3.copy(
                 color = colores.numero,
-                fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.02).sp,
             ),
         )
     }
@@ -204,6 +204,7 @@ private fun DrawnRoundTable(
     colores: MesaColores,
     modifier: Modifier = Modifier,
 ) {
+    val type = Rikos.type
     Box(
         modifier = modifier.fillMaxWidth().height(84.dp),
         contentAlignment = Alignment.Center,
@@ -251,14 +252,12 @@ private fun DrawnRoundTable(
             }
         }
 
-        // Número centrado
+        // Número centrado con Plus Jakarta Sans
         BasicText(
             text = mesa.numero,
-            style = TextStyle(
+            style = type.title3.copy(
                 color = colores.numero,
-                fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.02).sp,
             ),
         )
     }
@@ -270,6 +269,7 @@ private fun DrawnWideTable(
     colores: MesaColores,
     modifier: Modifier = Modifier,
 ) {
+    val type = Rikos.type
     Box(
         modifier = modifier.fillMaxWidth().height(96.dp),
         contentAlignment = Alignment.Center,
@@ -347,17 +347,16 @@ private fun DrawnWideTable(
             )
         }
 
-        // Números duales "3" y "4"
-        androidx.compose.foundation.layout.Row(
+        // Números duales con Plus Jakarta Sans
+        Row(
             modifier = Modifier.fillMaxWidth().height(96.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BasicText(
                     text = mesa.mesaPrincipalNumero ?: "3",
-                    style = TextStyle(
+                    style = type.title2.copy(
                         color = colores.numero,
-                        fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
                     ),
                 )
@@ -365,9 +364,8 @@ private fun DrawnWideTable(
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BasicText(
                     text = mesa.unidaCon ?: "4",
-                    style = TextStyle(
+                    style = type.title2.copy(
                         color = colores.numero,
-                        fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
                     ),
                 )
