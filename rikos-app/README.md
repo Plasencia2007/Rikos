@@ -19,6 +19,8 @@ Todo cambio, commit y push de la app toca **únicamente** la carpeta `rikos-app/
 |---|---|
 | `:core:common` | `Resultado<T,E>`, `Dinero` (céntimos), `Ulid` (26 caracteres) |
 | `:core:designsystem` | Tokens claro/oscuro, tipografía, espacios, radios, movimiento; `RkButton`, `RkTag`, `MesaCard` |
+| `:feature:bienvenida` | M00: tres pasos, ilustración vectorial, entrada escalonada y halo de comida lista; “Empezar” y “Saltar” avanzan a configurar local |
+| `:feature:configuracion` | Pantalla **Configurar local** (M01): vinculación al servidor, estado de respuesta y selección de local activo |
 | `:feature:auth` | Pantalla **PIN** (M02): 4 dígitos, entra solo al 4.º, sin botón de confirmar (DT-028) |
 | `:feature:mesas` | Pantalla **Mesas** (M03): cuadrícula con estados |
 | `:composeApp` | `App()` compartida, raíz de composición (`AppContainer`), framework `ComposeApp` para iOS |

@@ -34,6 +34,10 @@ object RikosTouch {
 /** Movimiento (`01-sistema-de-diseno.md`, sección 4). */
 object RikosMotion {
     val Ease = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
+    // Curvas CSS y tiempos medidos en el prototipo M00.
+    val WelcomeEase = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
+    val RingEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
+    fun <T> welcome(delayMillis: Int = 0) = tween<T>(400, delayMillis, WelcomeEase)
     fun <T> press() = tween<T>(120)
     fun <T> color() = tween<T>(200)
     fun <T> push() = tween<T>(320, easing = Ease)

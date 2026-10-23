@@ -25,6 +25,8 @@ kotlin {
             api(project(":core:common"))
             api(project(":core:designsystem"))
             api(project(":feature:auth"))
+            api(project(":feature:bienvenida"))
+            api(project(":feature:configuracion"))
             api(project(":feature:mesas"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
