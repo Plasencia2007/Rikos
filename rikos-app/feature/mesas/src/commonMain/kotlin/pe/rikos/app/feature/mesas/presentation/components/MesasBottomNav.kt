@@ -1,6 +1,7 @@
 package pe.rikos.app.feature.mesas.presentation.components
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -167,9 +169,24 @@ fun MesasBottomNav(
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Canvas(Modifier.size(24.dp)) {
-                            drawLine(Color.White, Offset(12f, 5f), Offset(12f, 19f), strokeWidth = 2.4f, cap = StrokeCap.Round)
-                            drawLine(Color.White, Offset(5f, 12f), Offset(19f, 12f), strokeWidth = 2.4f, cap = StrokeCap.Round)
+                        Canvas(Modifier.size(26.dp)) {
+                            val sx = size.width / 24f
+                            val sy = size.height / 24f
+                            val strokePx = 2.4f * sx
+                            drawLine(
+                                color = Color.White,
+                                start = Offset(12f * sx, 5f * sy),
+                                end = Offset(12f * sx, 19f * sy),
+                                strokeWidth = strokePx,
+                                cap = StrokeCap.Round,
+                            )
+                            drawLine(
+                                color = Color.White,
+                                start = Offset(5f * sx, 12f * sy),
+                                end = Offset(19f * sx, 12f * sy),
+                                strokeWidth = strokePx,
+                                cap = StrokeCap.Round,
+                            )
                         }
                     }
                 }
@@ -247,20 +264,33 @@ private fun NavItemButton(
         label = "navItemPress",
     )
 
-    // Animación de pulso del punto verde de turno abierto (.tb-dot::after rk-live)
-    val infiniteTransition = rememberInfiniteTransition()
-    val dotAlpha by if (tienePuntoVerde) {
+    // Animación de onda expansiva en punto verde de turno abierto (.tb-dot::after rk-live: 2s ease-out infinite)
+    val infiniteTransition = rememberInfiniteTransition(label = "cajaDotTransition")
+    val liveScale by if (tienePuntoVerde) {
         infiniteTransition.animateFloat(
-            initialValue = 0.4f,
-            targetValue = 1f,
+            initialValue = 1f,
+            targetValue = 2.6f,
             animationSpec = infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
+                animation = tween(2000, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart,
             ),
-            label = "dotPulse",
+            label = "liveScale",
         )
     } else {
-        remember { androidx.compose.runtime.mutableStateOf(1f) }
+        remember { mutableStateOf(1f) }
+    }
+    val liveAlpha by if (tienePuntoVerde) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.6f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "liveAlpha",
+        )
+    } else {
+        remember { mutableStateOf(0f) }
     }
 
     val colorIcono = if (activo) Color(0xFF0D9488) else Color(0xFF64748B)
@@ -306,11 +336,29 @@ private fun NavItemButton(
             if (tienePuntoVerde) {
                 Box(
                     modifier = Modifier
-                        .offset(x = 8.dp, y = (-4).dp)
-                        .size(8.dp)
-                        .background(Color(0xFF10B981).copy(alpha = dotAlpha), CircleShape)
-                        .border(1.5.dp, Color.White, CircleShape),
-                )
+                        .offset(x = 10.dp, y = (-5).dp)
+                        .size(9.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // Onda expansiva exterior (.tb-dot::after rk-live)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = liveScale
+                                scaleY = liveScale
+                                alpha = liveAlpha
+                            }
+                            .background(Color(0xFF059669), CircleShape),
+                    )
+                    // Punto verde central sólido con halo blanco (box-shadow: 0 0 0 2.5px var(--s1))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF059669), CircleShape)
+                            .border(2.dp, Color.White, CircleShape),
+                    )
+                }
             }
         }
 

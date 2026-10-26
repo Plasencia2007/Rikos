@@ -1,11 +1,14 @@
 package pe.rikos.app.feature.mesas.presentation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +48,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -237,6 +241,35 @@ private fun MesasHeader(
                 )
             }
 
+            val dotTransition = rememberInfiniteTransition(label = "bellDotTransition")
+            val dotScale by dotTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.35f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "bellDotScale",
+            )
+            val ringExpand by dotTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 2.4f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1600, easing = LinearOutSlowInEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "bellRingExpand",
+            )
+            val ringAlpha by dotTransition.animateFloat(
+                initialValue = 0.6f,
+                targetValue = 0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1600, easing = LinearOutSlowInEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "bellRingAlpha",
+            )
+
             // Botón de avisos / campanita (.ib con animación táctil)
             Box(
                 modifier = Modifier
@@ -268,15 +301,37 @@ private fun MesasHeader(
                     drawLine(color, Offset(10f * sx, 20f * sy), Offset(14f * sx, 20f * sy), strokeWidth = 2f * sx, cap = StrokeCap.Round)
                 }
 
-                // Punto naranja de notificación (.dot)
+                // Punto naranja de notificación (.dot con rk-dot + anillo de pulso)
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 8.dp, end = 8.dp)
-                        .size(8.dp)
-                        .background(Color(0xFFFF8A5C), CircleShape)
-                        .border(1.5.dp, Color.White, CircleShape),
-                )
+                        .padding(top = 7.dp, end = 7.dp)
+                        .size(10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // Anillo expansivo exterior
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = ringExpand
+                                scaleY = ringExpand
+                                alpha = ringAlpha
+                            }
+                            .border(1.dp, Color(0xFFFF8A5C), CircleShape),
+                    )
+                    // Punto coral central pulsante (.dot con rk-dot)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = dotScale
+                                scaleY = dotScale
+                            }
+                            .background(Color(0xFFFF8A5C), CircleShape)
+                            .border(2.dp, Color.White, CircleShape),
+                    )
+                }
             }
         }
     }
@@ -363,14 +418,47 @@ private fun AvisosUrgentRow(
     alTocarAviso: (AvisoMesa) -> Unit,
 ) {
     val type = Rikos.type
+
+    // Animación de pulso expansivo verde para la primera tarjeta (.need .nd:first-child: rk-ring 1.8s ease-out infinite)
+    val ringTransition = rememberInfiniteTransition(label = "urgentRingTransition")
+    val ringSpread by ringTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 12f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1800
+                0f at 0 using FastOutSlowInEasing
+                12f at 1260
+                12f at 1800
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "urgentRingSpread",
+    )
+    val ringAlpha by ringTransition.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1800
+                0.45f at 0 using FastOutSlowInEasing
+                0f at 1260
+                0f at 1800
+            },
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "urgentRingAlpha",
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        for (aviso in avisos) {
+        for ((index, aviso) in avisos.withIndex()) {
+            val esPrimero = index == 0 && aviso.tipo == TipoAviso.PLATOS_LISTOS
             val badgeFondo = when (aviso.tipo) {
                 TipoAviso.PLATOS_LISTOS -> Color(0xFF059669)
                 TipoAviso.PIDIO_CUENTA -> Color(0xFFFF8A5C)
@@ -390,6 +478,19 @@ private fun AvisosUrgentRow(
                     .width(224.dp)
                     .height(64.dp)
                     .graphicsLayer { scaleX = scale; scaleY = scale }
+                    .then(
+                        if (esPrimero && ringAlpha > 0.01f) {
+                            Modifier.drawBehind {
+                                val sPx = ringSpread.dp.toPx()
+                                drawRoundRect(
+                                    color = Color(0xFF059669).copy(alpha = ringAlpha),
+                                    topLeft = Offset(-sPx, -sPx),
+                                    size = Size(size.width + sPx * 2f, size.height + sPx * 2f),
+                                    cornerRadius = CornerRadius(20.dp.toPx() + sPx),
+                                )
+                            }
+                        } else Modifier
+                    )
                     .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp), ambientColor = Color(0x0C0F172A))
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color.White)
