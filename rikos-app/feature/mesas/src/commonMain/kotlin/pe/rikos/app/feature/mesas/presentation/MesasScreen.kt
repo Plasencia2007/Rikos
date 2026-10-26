@@ -166,7 +166,7 @@ fun MesasScreen(
                                         if (mesa.estado == EstadoMesa.OCUPADA || mesa.estado == EstadoMesa.LISTO || mesa.estado == EstadoMesa.POR_COBRAR) {
                                             viewModel.alAbrirVistazo(mesa)
                                         } else {
-                                            alElegirMesa(mesa)
+                                            viewModel.alAbrirMesa(mesa)
                                         }
                                     },
                                     onLongClick = {
@@ -182,7 +182,12 @@ fun MesasScreen(
             // 6. Barra de navegación inferior flotante con animación viva
             MesasBottomNav(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                alNuevoPedido = { /* TODO: Nuevo Pedido (M04 / M08) */ },
+                alNuevoPedido = {
+                    val mesaLibre = estado.mesasFiltradas.find { it.numero == "7" }
+                        ?: estado.mesasFiltradas.find { it.estado == EstadoMesa.LIBRE }
+                        ?: estado.mesas.firstOrNull()
+                    viewModel.alAbrirMesa(mesaLibre)
+                },
             )
 
             // M03c: Vistazo de mesa (BottomSheet emergente al mantener pulsada una mesa ocupada)
@@ -210,6 +215,29 @@ fun MesasScreen(
                     enLinea = estado.enLinea,
                     alVolver = { viewModel.alMostrarAvisos(false) },
                 )
+            }
+
+            // M04: Pantalla Abrir mesa (configurar comensales, cliente, mozo, pensionistas y comentario)
+            AnimatedVisibility(
+                visible = estado.mesaAbrir != null,
+                enter = fadeIn(tween(220, easing = RikosMotion.Ease)),
+                exit = fadeOut(tween(180, easing = RikosMotion.Ease)),
+            ) {
+                estado.mesaAbrir?.let { mesaParaAbrir ->
+                    val salonActual = estado.salones.find { it.id == mesaParaAbrir.salonId }?.nombre ?: "Salón principal"
+                    AbrirMesaScreen(
+                        mesa = mesaParaAbrir,
+                        mozoNombre = estado.mozoNombre,
+                        salonNombre = salonActual,
+                        capacidad = 8,
+                        enLinea = estado.enLinea,
+                        alVolver = { viewModel.alAbrirMesa(null) },
+                        alAbrirMesa = { m, comensales, cliente, pensionistas, comentario ->
+                            viewModel.alAbrirMesa(null)
+                            alElegirMesa(m.copy(comensales = comensales))
+                        },
+                    )
+                }
             }
         }
     }
