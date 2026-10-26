@@ -59,6 +59,7 @@ fun MesasBottomNav(
     alNuevoPedido: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val colors = Rikos.colors
     val centerInteraction = remember { MutableInteractionSource() }
     val centerPressed by centerInteraction.collectIsPressedAsState()
     val centerScale by animateFloatAsState(
@@ -81,12 +82,12 @@ fun MesasBottomNav(
                 .shadow(
                     elevation = 16.dp,
                     shape = RoundedCornerShape(28.dp),
-                    ambientColor = Color(0x28021E43),
-                    spotColor = Color(0x38021E43),
+                    ambientColor = if (colors.isDark) Color(0x80000000) else Color(0x28021E43),
+                    spotColor = if (colors.isDark) Color(0x80000000) else Color(0x38021E43),
                 )
                 .clip(RoundedCornerShape(28.dp))
-                .background(Color.White)
-                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(28.dp))
+                .background(if (colors.isDark) Color(0xFF131C2E).copy(alpha = 0.88f) else Color.White)
+                .border(1.dp, if (colors.isDark) Color(0x1FFFFFFF) else colors.line, RoundedCornerShape(28.dp))
                 .padding(horizontal = 6.dp, vertical = 6.dp),
         ) {
             Row(
@@ -150,18 +151,25 @@ fun MesasBottomNav(
                     }
                 }
 
-                // 3. Botón central '+' flotante
+                // 3. Botón central '+' flotante (.tb-new)
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val centerBg = if (colors.isDark) colors.primary else colors.navy
+                    val centerFg = if (colors.isDark) colors.onPrimary else Color.White
                     Box(
                         modifier = Modifier
                             .size(56.dp)
                             .graphicsLayer { scaleX = centerScale; scaleY = centerScale }
-                            .shadow(8.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x38021E43), spotColor = Color(0x55021E43))
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                ambientColor = if (colors.isDark) Color(0x302DD4BF) else Color(0x38021E43),
+                                spotColor = if (colors.isDark) Color(0x502DD4BF) else Color(0x55021E43),
+                            )
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFF021E43))
+                            .background(centerBg)
                             .clickable(
                                 interactionSource = centerInteraction,
                                 indication = null,
@@ -174,14 +182,14 @@ fun MesasBottomNav(
                             val sy = size.height / 24f
                             val strokePx = 2.4f * sx
                             drawLine(
-                                color = Color.White,
+                                color = centerFg,
                                 start = Offset(12f * sx, 5f * sy),
                                 end = Offset(12f * sx, 19f * sy),
                                 strokeWidth = strokePx,
                                 cap = StrokeCap.Round,
                             )
                             drawLine(
-                                color = Color.White,
+                                color = centerFg,
                                 start = Offset(5f * sx, 12f * sy),
                                 end = Offset(19f * sx, 12f * sy),
                                 strokeWidth = strokePx,
@@ -256,6 +264,7 @@ private fun NavItemButton(
     icon: @Composable (Color) -> Unit,
 ) {
     val type = Rikos.type
+    val colors = Rikos.colors
     val interaction = remember { MutableInteractionSource() }
     val isPressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -293,15 +302,15 @@ private fun NavItemButton(
         remember { mutableStateOf(0f) }
     }
 
-    val colorIcono = if (activo) Color(0xFF0D9488) else Color(0xFF64748B)
-    val colorTexto = if (activo) Color(0xFF0D9488) else Color(0xFF64748B)
+    val colorIcono = if (activo) colors.primary else colors.ink3
+    val colorTexto = if (activo) colors.primary else colors.ink3
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(22.dp))
-            .then(if (activo) Modifier.background(Color(0xFFE0F5EC)) else Modifier)
+            .then(if (activo) Modifier.background(colors.primarySoft) else Modifier)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -319,7 +328,7 @@ private fun NavItemButton(
                         .offset(x = 10.dp, y = (-6).dp)
                         .size(18.dp)
                         .background(badgeColor, CircleShape)
-                        .border(1.5.dp, Color.White, CircleShape),
+                        .border(1.5.dp, colors.surface, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     BasicText(
@@ -349,14 +358,14 @@ private fun NavItemButton(
                                 scaleY = liveScale
                                 alpha = liveAlpha
                             }
-                            .background(Color(0xFF059669), CircleShape),
+                            .background(colors.green, CircleShape),
                     )
-                    // Punto verde central sólido con halo blanco (box-shadow: 0 0 0 2.5px var(--s1))
+                    // Punto verde central sólido con halo (.tb-dot con box-shadow: 0 0 0 2.5px var(--s1))
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(0xFF059669), CircleShape)
-                            .border(2.dp, Color.White, CircleShape),
+                            .background(colors.green, CircleShape)
+                            .border(2.dp, colors.surface, CircleShape),
                     )
                 }
             }

@@ -36,55 +36,59 @@ data class MesaColores(
     val badgeTexto: Color,
 )
 
-fun mesaColores(mesa: Mesa): MesaColores = when {
-    mesa.estado == EstadoMesa.LIBRE -> MesaColores(
-        silla = Color(0xFF34D399),
-        mesaFondo = Color(0xFFE0F5EC),
-        mesaBorde = Color(0xFF059669),
-        numero = Color(0xFF047857),
-        badgeFondo = Color(0xFFE0F5EC),
-        badgeTexto = Color(0xFF047857),
-    )
-    mesa.estado == EstadoMesa.POR_COBRAR -> MesaColores(
-        silla = Color(0xFF93C5FD),
-        mesaFondo = Color(0xFFE2E8FB),
-        mesaBorde = Color(0xFF1E3A8A),
-        numero = Color(0xFF1E3A8A),
-        badgeFondo = Color(0xFFE2E8FB),
-        badgeTexto = Color(0xFF1E3A8A),
-    )
-    mesa.estado == EstadoMesa.FUERA_DE_SERVICIO -> MesaColores(
-        silla = Color(0xFFCBD5E1),
-        mesaFondo = Color(0xFFE2E8F0),
-        mesaBorde = Color(0xFF94A3B8),
-        numero = Color(0xFF475569),
-        badgeFondo = Color(0xFFE2E8F0),
-        badgeTexto = Color(0xFF475569),
-    )
-    mesa.mozoNombre != null -> MesaColores(
-        silla = Color(0xFFFBBF24),
-        mesaFondo = Color(0xFFFFF3D6),
-        mesaBorde = Color(0xFFD97706),
-        numero = Color(0xFF7A4A00),
-        badgeFondo = Color(0xFFEEF2F6),
-        badgeTexto = Color(0xFF475569),
-    )
-    mesa.comidaLista -> MesaColores(
-        silla = Color(0xFFFBBF24),
-        mesaFondo = Color(0xFFFFF3D6),
-        mesaBorde = Color(0xFFD97706),
-        numero = Color(0xFF7A4A00),
-        badgeFondo = Color(0xFFE0F5EC),
-        badgeTexto = Color(0xFF047857),
-    )
-    else -> MesaColores( // Ocupada
-        silla = Color(0xFFFBBF24),
-        mesaFondo = Color(0xFFFFF3D6),
-        mesaBorde = Color(0xFFD97706),
-        numero = Color(0xFF7A4A00),
-        badgeFondo = Color(0xFFFFF3D6),
-        badgeTexto = Color(0xFF7A4A00),
-    )
+@Composable
+fun mesaColores(mesa: Mesa): MesaColores {
+    val colors = Rikos.colors
+    return when {
+        mesa.estado == EstadoMesa.LIBRE -> MesaColores(
+            silla = colors.green,
+            mesaFondo = colors.greenSoft,
+            mesaBorde = colors.green,
+            numero = colors.greenText,
+            badgeFondo = colors.greenSoft,
+            badgeTexto = colors.greenText,
+        )
+        mesa.estado == EstadoMesa.POR_COBRAR -> MesaColores(
+            silla = colors.blue,
+            mesaFondo = colors.blueSoft,
+            mesaBorde = colors.blue,
+            numero = colors.blue,
+            badgeFondo = colors.blueSoft,
+            badgeTexto = colors.blue,
+        )
+        mesa.estado == EstadoMesa.FUERA_DE_SERVICIO -> MesaColores(
+            silla = if (colors.isDark) Color(0xFF334155) else Color(0xFFCBD5E1),
+            mesaFondo = colors.surface2,
+            mesaBorde = colors.line,
+            numero = colors.ink3,
+            badgeFondo = colors.surface2,
+            badgeTexto = colors.ink3,
+        )
+        mesa.mozoNombre != null -> MesaColores(
+            silla = colors.amber,
+            mesaFondo = colors.amberSoft,
+            mesaBorde = colors.amberStrong,
+            numero = colors.amberText,
+            badgeFondo = colors.surface2,
+            badgeTexto = colors.ink3,
+        )
+        mesa.comidaLista -> MesaColores(
+            silla = colors.amber,
+            mesaFondo = colors.amberSoft,
+            mesaBorde = colors.amberStrong,
+            numero = colors.amberText,
+            badgeFondo = colors.greenSoft,
+            badgeTexto = colors.greenText,
+        )
+        else -> MesaColores( // Ocupada
+            silla = colors.amber,
+            mesaFondo = colors.amberSoft,
+            mesaBorde = colors.amberStrong,
+            numero = colors.amberText,
+            badgeFondo = colors.amberSoft,
+            badgeTexto = colors.amberText,
+        )
+    }
 }
 
 @Composable

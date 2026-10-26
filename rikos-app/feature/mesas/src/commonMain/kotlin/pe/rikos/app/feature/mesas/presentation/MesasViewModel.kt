@@ -25,6 +25,9 @@ data class MesasState(
     val mozoNombre: String = "Luis",
     val turnoNombre: String = "Turno almuerzo",
     val enLinea: Boolean = true,
+    val modoNoche: Boolean = false,
+    val mesaVistazo: Mesa? = null,
+    val mostrarAvisos: Boolean = false,
 ) {
     val mesasFiltradas: List<Mesa>
         get() = mesas.filter { it.salonId == salonActivoId }
@@ -84,5 +87,27 @@ class MesasViewModel(
 
     fun alSeleccionarSalon(salonId: String) {
         _estado.update { it.copy(salonActivoId = salonId) }
+    }
+
+    fun alternarModoNoche() {
+        _estado.update {
+            val nuevoModo = !it.modoNoche
+            it.copy(
+                modoNoche = nuevoModo,
+                turnoNombre = if (nuevoModo) "Turno noche" else "Turno almuerzo",
+            )
+        }
+    }
+
+    fun alAbrirVistazo(mesa: Mesa) {
+        _estado.update { it.copy(mesaVistazo = mesa) }
+    }
+
+    fun alCerrarVistazo() {
+        _estado.update { it.copy(mesaVistazo = null) }
+    }
+
+    fun alMostrarAvisos(mostrar: Boolean) {
+        _estado.update { it.copy(mostrarAvisos = mostrar) }
     }
 }
