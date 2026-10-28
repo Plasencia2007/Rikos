@@ -1,8 +1,8 @@
 package pe.rikos.app.feature.mesas.presentation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,16 +36,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -59,6 +62,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -153,18 +159,19 @@ fun MesasScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            items(
+                            itemsIndexed(
                                 items = estado.mesasFiltradas,
-                                key = { it.id },
-                                span = { mesa ->
+                                key = { _, mesa -> mesa.id },
+                                span = { _, mesa ->
                                     if (mesa.forma == FormaMesa.UNIDA) GridItemSpan(2) else GridItemSpan(1)
                                 },
-                            ) { mesa ->
+                            ) { index, mesa ->
                                 MesaCardItem(
                                     mesa = mesa,
+                                    entradaIndex = index,
                                     onClick = {
                                         if (mesa.estado == EstadoMesa.OCUPADA || mesa.estado == EstadoMesa.LISTO || mesa.estado == EstadoMesa.POR_COBRAR) {
-                                            viewModel.alAbrirVistazo(mesa)
+                                            viewModel.alAbrirPedido(mesa)
                                         } else {
                                             viewModel.alAbrirMesa(mesa)
                                         }
@@ -197,7 +204,7 @@ fun MesasScreen(
                 alCerrar = viewModel::alCerrarVistazo,
                 alAbrirPedido = { mesa ->
                     viewModel.alCerrarVistazo()
-                    alElegirMesa(mesa)
+                    viewModel.alAbrirPedido(mesa)
                 },
                 alVerCuenta = { /* Cuenta (M15) */ },
                 alCambiarMesa = { /* Cambiar mesa (M05) */ },
@@ -234,8 +241,26 @@ fun MesasScreen(
                         alVolver = { viewModel.alAbrirMesa(null) },
                         alAbrirMesa = { m, comensales, cliente, pensionistas, comentario ->
                             viewModel.alAbrirMesa(null)
-                            alElegirMesa(m.copy(comensales = comensales))
+                            viewModel.alAbrirPedido(m.copy(comensales = comensales))
                         },
+                    )
+                }
+            }
+
+            // M07: Pantalla Pedido con mapa de asientos
+            AnimatedVisibility(
+                visible = estado.mesaPedido != null,
+                enter = fadeIn(tween(220, easing = RikosMotion.Ease)),
+                exit = fadeOut(tween(180, easing = RikosMotion.Ease)),
+            ) {
+                estado.mesaPedido?.let { mesaDelPedido ->
+                    PedidoScreen(
+                        mesa = mesaDelPedido,
+                        enLinea = estado.enLinea,
+                        alVolver = viewModel::alCerrarPedido,
+                        alVerAcciones = { /* Acciones de mesa M13 */ },
+                        alVerCuenta = { /* Cuenta M15 */ },
+                        alAgregarPlato = { /* Agregar plato M08 */ },
                     )
                 }
             }
@@ -253,6 +278,7 @@ private fun MesasHeader(
 ) {
     val colors = Rikos.colors
     val type = Rikos.type
+    val reducirMovimiento = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
     val bellInteraction = remember { MutableInteractionSource() }
     val bellPressed by bellInteraction.collectIsPressedAsState()
     val bellScale by animateFloatAsState(
@@ -285,7 +311,7 @@ private fun MesasHeader(
                 ),
             )
             BasicText(
-                text = "Hola, $mozoNombre. $turno",
+                text = "Hola, ${mozoNombre.substringBefore(' ')}. $turno",
                 style = type.subhead.copy(
                     color = colors.ink3,
                     fontSize = 14.sp,
@@ -326,33 +352,19 @@ private fun MesasHeader(
             }
 
             val dotTransition = rememberInfiniteTransition(label = "bellDotTransition")
-            val dotScale by dotTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.35f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(800, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "bellDotScale",
-            )
-            val ringExpand by dotTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 2.4f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1600, easing = LinearOutSlowInEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
-                label = "bellRingExpand",
-            )
-            val ringAlpha by dotTransition.animateFloat(
-                initialValue = 0.6f,
-                targetValue = 0f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1600, easing = LinearOutSlowInEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
-                label = "bellRingAlpha",
-            )
+            val dotScale = if (reducirMovimiento) {
+                1f
+            } else {
+                dotTransition.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.35f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(800, easing = RikosMotion.EaseInOut),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                    label = "bellDotScale",
+                ).value
+            }
 
             // Botón de avisos / campanita (.ib con animación táctil)
             Box(
@@ -362,9 +374,11 @@ private fun MesasHeader(
                     .clip(RoundedCornerShape(14.dp))
                     .background(colors.surface)
                     .border(1.dp, colors.line, RoundedCornerShape(14.dp))
+                    .semantics { contentDescription = "Avisos y agotados" }
                     .clickable(
                         interactionSource = bellInteraction,
                         indication = null,
+                        role = Role.Button,
                         onClick = alVerAvisos,
                     ),
                 contentAlignment = Alignment.Center,
@@ -385,7 +399,7 @@ private fun MesasHeader(
                     drawLine(color, Offset(10f * sx, 20f * sy), Offset(14f * sx, 20f * sy), strokeWidth = 2f * sx, cap = StrokeCap.Round)
                 }
 
-                // Punto naranja de notificación (.dot con rk-dot + anillo de pulso)
+                // Punto naranja de notificación (.dot con rk-dot)
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -393,18 +407,6 @@ private fun MesasHeader(
                         .size(10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Anillo expansivo exterior
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = ringExpand
-                                scaleY = ringExpand
-                                alpha = ringAlpha
-                            }
-                            .border(1.dp, Color(0xFFFF8A5C), CircleShape),
-                    )
-                    // Punto coral central pulsante (.dot con rk-dot)
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -699,6 +701,7 @@ private fun LeyendaItem(color: Color, texto: String) {
 @Composable
 private fun MesaCardItem(
     mesa: Mesa,
+    entradaIndex: Int,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -707,7 +710,24 @@ private fun MesaCardItem(
     val colores = mesaColores(mesa)
     val esOtroMozo = mesa.mozoNombre != null
     val esSeleccionada = mesa.seleccionada
-    val tieneRing = mesa.comidaLista
+    val tieneRing = mesa.comidaLista || esSeleccionada
+    val reducirMovimiento = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
+
+    val entrada = remember(mesa.id) { Animatable(if (reducirMovimiento) 1f else 0f) }
+    LaunchedEffect(mesa.id, reducirMovimiento) {
+        if (reducirMovimiento) {
+            entrada.snapTo(1f)
+        } else {
+            entrada.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 420,
+                    delayMillis = entradaIndex.coerceAtMost(7) * 40,
+                    easing = RikosMotion.Ease,
+                ),
+            )
+        }
+    }
 
     // Animación de interacción al presionar tarjeta (.mc:active { transform: scale(0.97); })
     val interaction = remember { MutableInteractionSource() }
@@ -718,18 +738,19 @@ private fun MesaCardItem(
         label = "cardPress_${mesa.id}",
     )
 
-    // Animación de anillo pulsante verde medida exactamente del prototipo (@keyframes rk-ring, 1800ms)
+    // Anillos medidos del prototipo: verde 1.8 s y selección azul 2.2 s.
     val ringTransition = rememberInfiniteTransition(label = "mesaRing")
-    val ringProgress = if (tieneRing) {
+    val ringDuration = if (esSeleccionada) 2200 else 1800
+    val ringProgress = if (tieneRing && !reducirMovimiento) {
         ringTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
                 animation = keyframes {
-                    durationMillis = 1800
+                    durationMillis = ringDuration
                     0f at 0 using RikosMotion.RingEase
-                    0.7f at 1260 using RikosMotion.RingEase
-                    1f at 1800 using RikosMotion.RingEase
+                    0.7f at (ringDuration * 7 / 10) using RikosMotion.RingEase
+                    1f at ringDuration using RikosMotion.RingEase
                 },
                 repeatMode = RepeatMode.Restart,
             ),
@@ -737,8 +758,11 @@ private fun MesaCardItem(
         ).value
     } else 0f
 
-    val ringBorderAlpha = if (tieneRing) (1f - ringProgress).coerceIn(0f, 0.7f) else 0f
-    val ringExtraSize = if (tieneRing) ringProgress * 8f else 0f
+    val ringBorderAlpha = if (tieneRing) {
+        (1f - ringProgress).coerceIn(0f, if (esSeleccionada) 0.4f else 0.7f)
+    } else 0f
+    val ringExtraSize = if (tieneRing) ringProgress * (if (esSeleccionada) 12f else 8f) else 0f
+    val ringColor = if (esSeleccionada) colors.blue else colors.green
 
     val bordeMod = when {
         esSeleccionada -> Modifier.border(2.dp, colors.blue, RoundedCornerShape(20.dp))
@@ -752,13 +776,18 @@ private fun MesaCardItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                alpha = entrada.value
+                translationY = if (reducirMovimiento) 0f else (1f - entrada.value) * 10.dp.toPx()
+            }
             .alpha(cardAlpha)
             .then(
                 if (tieneRing) {
                     Modifier.drawBehind {
                         drawRoundRect(
-                            color = colors.green.copy(alpha = ringBorderAlpha),
+                            color = ringColor.copy(alpha = ringBorderAlpha),
                             topLeft = Offset(-ringExtraSize, -ringExtraSize),
                             size = androidx.compose.ui.geometry.Size(
                                 size.width + ringExtraSize * 2f,

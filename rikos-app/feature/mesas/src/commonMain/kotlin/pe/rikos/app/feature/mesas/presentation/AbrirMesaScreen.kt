@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -47,6 +48,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -161,6 +165,7 @@ fun AbrirMesaScreen(
                     .clickable(
                         interactionSource = dockInteraction,
                         indication = null,
+                        role = Role.Button,
                         onClick = {
                             alAbrirMesa(mesa, comensales, cliente, hayPensionistas, comentario)
                         },
@@ -175,8 +180,8 @@ fun AbrirMesaScreen(
                         text = "Abrir mesa y tomar pedido",
                         style = type.headline.copy(
                             color = colors.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 17.sp,
                         ),
                     )
                     Spacer(Modifier.width(6.dp))
@@ -244,9 +249,11 @@ private fun AbrirMesaHeader(
                     .clip(RoundedCornerShape(12.dp))
                     .background(colors.surface)
                     .border(1.dp, colors.line, RoundedCornerShape(12.dp))
+                    .semantics { contentDescription = "Volver" }
                     .clickable(
                         interactionSource = volverInteraction,
                         indication = null,
+                        role = Role.Button,
                         onClick = alVolver,
                     ),
                 contentAlignment = Alignment.Center,
@@ -301,8 +308,8 @@ private fun AbrirMesaHeader(
             text = "Abrir mesa $mesaNumero",
             style = type.title2.copy(
                 color = colors.ink,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.02).sp,
             ),
         )
@@ -442,6 +449,7 @@ private fun MesaVisualCard(
         ) {
             // Botón (-)
             CirculoIconButton(
+                descripcion = "Quitar comensal",
                 enabled = comensales > 1,
                 onClick = { if (comensales > 1) alCambiarComensales(comensales - 1) },
             ) { sx, sy, col ->
@@ -468,6 +476,7 @@ private fun MesaVisualCard(
 
             // Botón (+)
             CirculoIconButton(
+                descripcion = "Agregar comensal",
                 enabled = comensales < 10,
                 onClick = { if (comensales < 10) alCambiarComensales(comensales + 1) },
             ) { sx, sy, col ->
@@ -567,6 +576,7 @@ private fun ChipNumero(
  */
 @Composable
 private fun CirculoIconButton(
+    descripcion: String,
     enabled: Boolean,
     onClick: () -> Unit,
     drawIcon: androidx.compose.ui.graphics.drawscope.DrawScope.(Float, Float, Color) -> Unit,
@@ -592,10 +602,12 @@ private fun CirculoIconButton(
             .clip(CircleShape)
             .background(colors.surface)
             .border(1.dp, colors.line, CircleShape)
+            .semantics { contentDescription = descripcion }
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
                 indication = null,
+                role = Role.Button,
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
@@ -713,7 +725,11 @@ private fun GroupedOptionsList(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(62.dp)
-                .clickable(onClick = alAlternarPensionistas)
+                .toggleable(
+                    value = hayPensionistas,
+                    role = Role.Switch,
+                    onValueChange = { alAlternarPensionistas() },
+                )
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -740,7 +756,6 @@ private fun GroupedOptionsList(
             // Switch (.sw) animado exactamente según el prototipo CSS
             RkSwitch(
                 activo = hayPensionistas,
-                alAlternar = alAlternarPensionistas,
             )
         }
     }
@@ -752,7 +767,6 @@ private fun GroupedOptionsList(
 @Composable
 private fun RkSwitch(
     activo: Boolean,
-    alAlternar: () -> Unit,
 ) {
     val colors = Rikos.colors
 
@@ -778,12 +792,7 @@ private fun RkSwitch(
         modifier = Modifier
             .size(width = 56.dp, height = 32.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(switchBgAnim)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = alAlternar,
-            ),
+            .background(switchBgAnim),
         contentAlignment = Alignment.CenterStart,
     ) {
         Box(

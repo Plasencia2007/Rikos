@@ -19,7 +19,7 @@ class FakeAuthRepository : AuthRepository {
                 Sesion(
                     token = "token-de-prueba",
                     usuarioId = "01J00000000000000000000001",
-                    nombreUsuario = "Luis",
+                    nombreUsuario = "Luis Quispe",
                     roles = listOf("MOZO"),
                     localActivoId = "01J00000000000000000000002",
                     permisos = emptySet(),

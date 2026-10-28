@@ -37,6 +37,8 @@ object RikosMotion {
     // Curvas CSS y tiempos medidos en el prototipo M00.
     val WelcomeEase = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
     val RingEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
+    val ShakeEase = CubicBezierEasing(0.36f, 0.07f, 0.19f, 0.97f)
+    val EaseInOut = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
     fun <T> welcome(delayMillis: Int = 0) = tween<T>(400, delayMillis, WelcomeEase)
     fun <T> press() = tween<T>(120)
     fun <T> color() = tween<T>(200)

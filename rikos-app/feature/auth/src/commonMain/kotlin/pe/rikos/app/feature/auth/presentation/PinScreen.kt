@@ -1,7 +1,6 @@
 package pe.rikos.app.feature.auth.presentation
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.Canvas
@@ -34,7 +33,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -91,21 +92,27 @@ fun PinContent(
 ) {
     val c = Rikos.colors
     val type = Rikos.type
+    val reducirMovimiento = rememberCoroutineScope().coroutineContext[MotionDurationScale]?.scaleFactor == 0f
 
     // Animación de sacudida (shake) al fallar PIN (token 'shake', 460 ms, offset ±10 dp)
     val shakeOffsetX = remember { Animatable(0f) }
     LaunchedEffect(estado.shakeCount) {
-        if (estado.shakeCount > 0) {
+        if (estado.shakeCount > 0 && !reducirMovimiento) {
+            shakeOffsetX.snapTo(0f)
             shakeOffsetX.animateTo(
                 targetValue = 0f,
                 animationSpec = keyframes {
                     durationMillis = 460
-                    -10f at 60 using LinearEasing
-                    10f at 140 using LinearEasing
-                    -8f at 220 using LinearEasing
-                    8f at 300 using LinearEasing
-                    -4f at 380 using LinearEasing
-                    0f at 460 using LinearEasing
+                    -2f at 46 using RikosMotion.ShakeEase
+                    5f at 92 using RikosMotion.ShakeEase
+                    -10f at 138 using RikosMotion.ShakeEase
+                    10f at 184 using RikosMotion.ShakeEase
+                    -10f at 230 using RikosMotion.ShakeEase
+                    10f at 276 using RikosMotion.ShakeEase
+                    -10f at 322 using RikosMotion.ShakeEase
+                    5f at 368 using RikosMotion.ShakeEase
+                    -2f at 414 using RikosMotion.ShakeEase
+                    0f at 460 using RikosMotion.ShakeEase
                 },
             )
         }
@@ -211,11 +218,11 @@ fun PinContent(
                             else -> Color.White.copy(alpha = 0.50f)
                         }
 
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .background(colorPunto, CircleShape)
-                                .border(2.5.dp, colorBorde, CircleShape),
+                        PinDot(
+                            lleno = lleno,
+                            colorPunto = colorPunto,
+                            colorBorde = colorBorde,
+                            reducirMovimiento = reducirMovimiento,
                         )
                     }
                 }
@@ -259,6 +266,39 @@ fun PinContent(
             )
         }
     }
+}
+
+@Composable
+private fun PinDot(
+    lleno: Boolean,
+    colorPunto: Color,
+    colorBorde: Color,
+    reducirMovimiento: Boolean,
+) {
+    val escala = remember { Animatable(1f) }
+    LaunchedEffect(lleno, reducirMovimiento) {
+        if (lleno && !reducirMovimiento) {
+            escala.snapTo(0.6f)
+            escala.animateTo(
+                targetValue = 1f,
+                animationSpec = keyframes {
+                    durationMillis = 300
+                    1.2f at 180 using RikosMotion.Ease
+                    1f at 300 using RikosMotion.Ease
+                },
+            )
+        } else {
+            escala.snapTo(1f)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(20.dp)
+            .graphicsLayer { scaleX = escala.value; scaleY = escala.value }
+            .background(colorPunto, CircleShape)
+            .border(2.5.dp, colorBorde, CircleShape),
+    )
 }
 
 /**
@@ -381,6 +421,7 @@ private fun TecladoNumerico(
                 modifier = Modifier
                     .weight(1f)
                     .height(78.dp)
+                    .semantics { contentDescription = "Borrar dígito" }
                     .clickable(
                         enabled = !deshabilitado,
                         role = Role.Button,

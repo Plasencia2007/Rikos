@@ -10,6 +10,9 @@ kotlin {
         namespace = "pe.rikos.app.feature.auth"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+        withHostTest {
+            isReturnDefaultValues = true
+        }
     }
     iosArm64()
     iosSimulatorArm64()

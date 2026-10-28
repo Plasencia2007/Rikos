@@ -109,8 +109,8 @@ fun ConfigurarLocalContent(
                         text = "Conecta este equipo",
                         modifier = Modifier.semantics { heading() },
                         style = type.title1.copy(
-                            fontSize = 36.sp,
-                            lineHeight = 40.sp,
+                            fontSize = 52.sp,
+                            lineHeight = 49.4.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = c.ink,
                         ),

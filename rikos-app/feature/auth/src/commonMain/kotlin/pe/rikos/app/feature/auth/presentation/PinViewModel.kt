@@ -33,6 +33,17 @@ data class PinState(
     }
 }
 
+internal fun PinState.registrarFallo(error: ErrorAuth): PinState {
+    val nuevosIntentos = (intentosRestantes - 1).coerceAtLeast(0)
+    val errorFinal = if (nuevosIntentos == 0) ErrorAuth.Bloqueado else error
+    return copy(
+        cargando = errorFinal !is ErrorAuth.Bloqueado,
+        error = errorFinal,
+        intentosRestantes = nuevosIntentos,
+        shakeCount = shakeCount + 1,
+    )
+}
+
 class PinViewModel(
     private val localCodigo: String,
     private val iniciarConPin: IniciarConPin,
@@ -67,7 +78,7 @@ class PinViewModel(
 
     fun alSeleccionarMozo(mozo: Mozo) {
         _estado.update {
-            it.copy(mozoSeleccionado = mozo, digitos = "", error = null)
+            if (it.cargando) it else it.copy(mozoSeleccionado = mozo, digitos = "", error = null)
         }
     }
 
@@ -80,20 +91,11 @@ class PinViewModel(
                     alIniciar(r.valor)
                 }
                 is Resultado.Fallo -> {
-                    val nuevosIntentos = (_estado.value.intentosRestantes - 1).coerceAtLeast(0)
-                    val errorFinal = if (nuevosIntentos == 0) ErrorAuth.Bloqueado else r.error
-                    _estado.update {
-                        it.copy(
-                            cargando = false,
-                            error = errorFinal,
-                            intentosRestantes = nuevosIntentos,
-                            shakeCount = it.shakeCount + 1,
-                        )
-                    }
+                    _estado.update { it.registrarFallo(r.error) }
                     // Espera 700 ms (igual que en el diseño) y limpia los dígitos para reintentar
-                    if (errorFinal !is ErrorAuth.Bloqueado) {
+                    if (_estado.value.error !is ErrorAuth.Bloqueado) {
                         delay(700)
-                        _estado.update { it.copy(digitos = "", error = null) }
+                        _estado.update { it.copy(digitos = "", cargando = false, error = null) }
                     }
                 }
             }

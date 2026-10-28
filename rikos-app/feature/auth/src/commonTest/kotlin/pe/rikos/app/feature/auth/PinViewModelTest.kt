@@ -2,14 +2,17 @@ package pe.rikos.app.feature.auth
 
 import kotlinx.coroutines.test.runTest
 import pe.rikos.app.feature.auth.data.FakeAuthRepository
+import pe.rikos.app.feature.auth.domain.ErrorAuth
 import pe.rikos.app.feature.auth.domain.IniciarConPin
 import pe.rikos.app.feature.auth.domain.Mozo
 import pe.rikos.app.feature.auth.domain.Sesion
 import pe.rikos.app.feature.auth.presentation.PinViewModel
+import pe.rikos.app.feature.auth.presentation.PinState
+import pe.rikos.app.feature.auth.presentation.registrarFallo
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class PinViewModelTest {
     private val repo = FakeAuthRepository()
@@ -33,16 +36,13 @@ class PinViewModelTest {
     }
 
     @Test
-    fun pinCorrecto1234IniciaSesion() = runTest {
-        var sesionIniciada: Sesion? = null
-        val vm = PinViewModel("LOCAL1", caso, "Riko's Centro") { sesionIniciada = it }
+    fun intentoFallidoMantieneLaEntradaBloqueadaMientrasMuestraError() {
+        val estado = PinState(digitos = "9999", cargando = true)
 
-        vm.alTocarTecla('1')
-        vm.alTocarTecla('2')
-        vm.alTocarTecla('3')
-        vm.alTocarTecla('4')
+        val resultado = estado.registrarFallo(ErrorAuth.PinIncorrecto)
 
-        assertNotNull(sesionIniciada)
-        assertEquals("01J00000000000000000000001", sesionIniciada?.usuarioId)
+        assertTrue(resultado.cargando)
+        assertEquals("9999", resultado.digitos)
+        assertEquals(ErrorAuth.PinIncorrecto, resultado.error)
     }
 }
