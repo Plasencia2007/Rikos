@@ -234,6 +234,7 @@ button, input, select {
   display: grid;
   grid-template-rows: auto 1fr auto;
 }
+.modal-caja.modal-amplio { width: min(880px, 100%); }
 .modal-encabezado {
   display: flex;
   align-items: center;

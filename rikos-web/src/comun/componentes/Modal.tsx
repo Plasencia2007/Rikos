@@ -7,6 +7,8 @@ interface Props {
   onCerrar: () => void
   children: ReactNode
   pie?: ReactNode
+  /** "amplio" para diálogos con mucho contenido (hasta 880 px de ancho). */
+  ancho?: 'normal' | 'amplio'
 }
 
 /**
@@ -14,7 +16,7 @@ interface Props {
  * "Nuevo": este mismo componente es el que va a abrir la creacion en las
  * treinta pantallas de administracion que siguen.
  */
-export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
+export function Modal({ abierto, titulo, onCerrar, children, pie, ancho = 'normal' }: Props) {
   useEffect(() => {
     if (!abierto) return
     function alEscape(evento: KeyboardEvent) {
@@ -29,7 +31,7 @@ export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
   return createPortal(
     <div className="modal-fondo" onMouseDown={onCerrar}>
       <div
-        className="modal-caja"
+        className={`modal-caja ${ancho === 'amplio' ? 'modal-amplio' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={titulo}

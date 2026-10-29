@@ -225,3 +225,15 @@ bloque propio al final de `pos.css`.
 - Los productos de prueba no tienen foto, así que se ve el fondo con cubiertos. Con foto (subida en la carta) se ve la
   imagen.
 
+## Diálogo del menú del día (2026-10-29)
+
+- Pedido del usuario: «más ancho y que se vea mejor».
+- `Modal` acepta `ancho="amplio"` (hasta 880 px). Lo usa `DialogoMenu`, que se rehízo:
+  - Arriba, el precio y cuántas partes faltan elegir («1 de 2 elegidas»).
+  - Cada parte con opciones es un paso numerado («1 Elige la entrada», «2 Elige el segundo»), lado a lado.
+  - Las opciones son tarjetas con ícono y marca. El número del paso pasa a ✓ al elegir.
+  - Lo de una sola opción va en «Incluye» (refresco, postre) y la nota para cocina es un área de texto con ejemplo.
+  - El botón dice «Agregar al pedido · S/ 12.00».
+- La lógica no cambió: las mismas validaciones y la misma llamada.
+- Verificado a 1440 px en el navegador (abrir, elegir la entrada, cerrar sin agregar). `tsc` y `eslint` sin errores.
+
