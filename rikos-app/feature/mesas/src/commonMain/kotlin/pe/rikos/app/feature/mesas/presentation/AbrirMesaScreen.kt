@@ -843,7 +843,7 @@ private fun ComentarioField(
             if (valor.isEmpty()) {
                 BasicText(
                     text = "Ej. cumpleaños, alergia al maní",
-                    style = TextStyle(
+                    style = type.callout.copy(
                         color = colors.ink3,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Normal,
@@ -853,7 +853,7 @@ private fun ComentarioField(
             BasicTextField(
                 value = valor,
                 onValueChange = alCambiar,
-                textStyle = TextStyle(
+                textStyle = type.callout.copy(
                     color = colors.ink,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,

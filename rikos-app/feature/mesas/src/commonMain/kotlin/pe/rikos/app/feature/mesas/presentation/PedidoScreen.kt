@@ -6,6 +6,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,6 +62,7 @@ import pe.rikos.app.feature.mesas.domain.LineaPedido
 import pe.rikos.app.feature.mesas.domain.Mesa
 import pe.rikos.app.feature.mesas.domain.PedidoMesa
 import pe.rikos.app.feature.mesas.domain.crearPedidoInicialMesa5
+import pe.rikos.app.feature.mesas.domain.obtenerCartaInicial
 
 /**
  * M07 · Pedido con mapa de asientos.
@@ -102,6 +105,7 @@ fun PedidoScreen(
     }
 
     val asientoActivo = pedido.asientoActivo ?: pedido.asientos.first()
+    var asientoCartaActivo by remember { mutableStateOf<AsientoPersona?>(null) }
 
     Box(
         modifier = modifier
@@ -225,20 +229,7 @@ fun PedidoScreen(
                 personaEtiqueta = asientoActivo.etiqueta,
                 onClick = {
                     alAgregarPlato(asientoActivo.id)
-                    // Para demostración interactiva rápida, añade un ítem si está vacío
-                    val nuevaLinea = LineaPedido(
-                        id = "ln-${System.currentTimeMillis()}",
-                        cantidad = 1,
-                        nombre = "Limonada frozen",
-                        observacion = "Baja en azúcar",
-                        precioUnitario = Dinero(600),
-                        estado = EstadoLineaPedido.POR_ENVIAR,
-                    )
-                    pedido = pedido.copy(
-                        asientos = pedido.asientos.map { a ->
-                            if (a.id == asientoActivo.id) a.copy(lineas = a.lineas + nuevaLinea) else a
-                        },
-                    )
+                    asientoCartaActivo = asientoActivo
                 },
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -265,6 +256,50 @@ fun PedidoScreen(
             },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+
+        // 7. Pantalla M08: Agregar con un toque (Carta)
+        AnimatedVisibility(
+            visible = asientoCartaActivo != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val asientoParaCarta = asientoCartaActivo ?: asientoActivo
+            val cartaCompleta = remember { obtenerCartaInicial() }
+            CartaScreen(
+                mesaNumero = pedido.mesaNumero,
+                asientoEtiqueta = asientoParaCarta.etiqueta,
+                enLinea = enLinea,
+                cantidadesIniciales = emptyMap(),
+                alVolver = { asientoCartaActivo = null },
+                alConfirmarPlatos = { seleccionados ->
+                    val nuevasLineas = seleccionados.mapNotNull { (nombre, cant) ->
+                        val producto = cartaCompleta.find { it.nombre == nombre }
+                        if (producto != null && cant > 0) {
+                            LineaPedido(
+                                id = "ln-${System.currentTimeMillis()}-${producto.id}",
+                                cantidad = cant,
+                                nombre = producto.nombre,
+                                observacion = null,
+                                precioUnitario = producto.precio,
+                                estado = EstadoLineaPedido.POR_ENVIAR,
+                            )
+                        } else null
+                    }
+                    if (nuevasLineas.isNotEmpty()) {
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asientoParaCarta.id) {
+                                    a.copy(lineas = a.lineas + nuevasLineas)
+                                } else a
+                            },
+                        )
+                    }
+                    asientoCartaActivo = null
+                },
+                alBuscarEnCarta = { /* M08b */ },
+                alVerOpcionesMenu = { /* Opciones */ },
+            )
+        }
     }
 }
 
