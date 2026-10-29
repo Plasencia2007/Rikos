@@ -106,6 +106,7 @@ fun PedidoScreen(
 
     val asientoActivo = pedido.asientoActivo ?: pedido.asientos.first()
     var asientoCartaActivo by remember { mutableStateOf<AsientoPersona?>(null) }
+    var buscandoEnCarta by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -296,8 +297,53 @@ fun PedidoScreen(
                     }
                     asientoCartaActivo = null
                 },
-                alBuscarEnCarta = { /* M08b */ },
+                alBuscarEnCarta = { buscandoEnCarta = true },
                 alVerOpcionesMenu = { /* Opciones */ },
+            )
+        }
+
+        // 8. Pantalla M08b: Buscar en la carta
+        AnimatedVisibility(
+            visible = buscandoEnCarta && asientoCartaActivo != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val asientoParaCarta = asientoCartaActivo ?: asientoActivo
+            BuscarCartaScreen(
+                mesaNumero = pedido.mesaNumero,
+                asientoEtiqueta = asientoParaCarta.etiqueta,
+                enLinea = enLinea,
+                alVolver = { buscandoEnCarta = false },
+                alAgregarProducto = { prod ->
+                    val nuevaLinea = LineaPedido(
+                        id = "ln-${System.currentTimeMillis()}-${prod.id}",
+                        cantidad = 1,
+                        nombre = prod.nombre,
+                        observacion = null,
+                        precioUnitario = prod.precio,
+                        estado = EstadoLineaPedido.POR_ENVIAR,
+                    )
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            if (a.id == asientoParaCarta.id) {
+                                a.copy(lineas = a.lineas + nuevaLinea)
+                            } else a
+                        },
+                    )
+                },
+                alDeshacerAgregar = { prod ->
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            if (a.id == asientoParaCarta.id) {
+                                val idx = a.lineas.indexOfLast { it.nombre == prod.nombre }
+                                if (idx >= 0) {
+                                    a.copy(lineas = a.lineas.filterIndexed { i, _ -> i != idx })
+                                } else a
+                            } else a
+                        },
+                    )
+                },
+                alAgregarProductoLibre = { /* M09 */ },
             )
         }
     }
