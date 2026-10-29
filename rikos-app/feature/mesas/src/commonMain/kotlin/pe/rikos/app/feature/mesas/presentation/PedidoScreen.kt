@@ -60,6 +60,7 @@ import pe.rikos.app.feature.mesas.domain.AsientoPersona
 import pe.rikos.app.feature.mesas.domain.EstadoLineaPedido
 import pe.rikos.app.feature.mesas.domain.LineaPedido
 import pe.rikos.app.feature.mesas.domain.MenuDiaConfig
+import pe.rikos.app.feature.mesas.domain.Pensionista
 import pe.rikos.app.feature.mesas.domain.ProductoLibre
 import pe.rikos.app.feature.mesas.domain.Mesa
 import pe.rikos.app.feature.mesas.domain.PedidoMesa
@@ -111,6 +112,7 @@ fun PedidoScreen(
     var buscandoEnCarta by remember { mutableStateOf(false) }
     var configurandoMenuDia by remember { mutableStateOf(false) }
     var agregandoProductoLibre by remember { mutableStateOf(false) }
+    var vinculandoPensionista by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -157,13 +159,7 @@ fun PedidoScreen(
                     )
                 },
                 alVincularPensionista = {
-                    val actual = pedido.asientoActivo
-                    if (actual != null) {
-                        val actualizado = actual.copy(esPensionista = !actual.esPensionista)
-                        pedido = pedido.copy(
-                            asientos = pedido.asientos.map { if (it.id == actual.id) actualizado else it },
-                        )
-                    }
+                    vinculandoPensionista = true
                 },
                 modifier = Modifier.padding(horizontal = 14.dp),
             )
@@ -195,6 +191,7 @@ fun PedidoScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(colors.purpleSoft)
+                                .clickable { vinculandoPensionista = true }
                                 .padding(horizontal = 9.dp, vertical = 3.dp),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -418,6 +415,32 @@ fun PedidoScreen(
                     agregandoProductoLibre = false
                     buscandoEnCarta = false
                     asientoCartaActivo = null
+                },
+            )
+        }
+
+        // 11. Pantalla M10: Pensionista en un asiento
+        AnimatedVisibility(
+            visible = vinculandoPensionista,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val asiento = pedido.asientoActivo ?: pedido.asientos.first()
+            PensionistaScreen(
+                asientoEtiqueta = asiento.etiqueta,
+                mesaNumero = pedido.mesaNumero,
+                enLinea = enLinea,
+                alVolver = { vinculandoPensionista = false },
+                alVincular = { pensionista ->
+                    val actualizado = asiento.copy(
+                        nombrePersona = pensionista.nombre,
+                        esPensionista = true,
+                        subtituloPersonalizado = "Cubre su pensión",
+                    )
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { if (it.id == asiento.id) actualizado else it },
+                    )
+                    vinculandoPensionista = false
                 },
             )
         }
