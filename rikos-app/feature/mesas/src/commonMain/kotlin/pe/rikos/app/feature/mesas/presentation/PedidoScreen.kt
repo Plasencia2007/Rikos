@@ -60,6 +60,7 @@ import pe.rikos.app.feature.mesas.domain.AsientoPersona
 import pe.rikos.app.feature.mesas.domain.EstadoLineaPedido
 import pe.rikos.app.feature.mesas.domain.LineaPedido
 import pe.rikos.app.feature.mesas.domain.MenuDiaConfig
+import pe.rikos.app.feature.mesas.domain.ProductoLibre
 import pe.rikos.app.feature.mesas.domain.Mesa
 import pe.rikos.app.feature.mesas.domain.PedidoMesa
 import pe.rikos.app.feature.mesas.domain.crearPedidoInicialMesa5
@@ -109,6 +110,7 @@ fun PedidoScreen(
     var asientoCartaActivo by remember { mutableStateOf<AsientoPersona?>(null) }
     var buscandoEnCarta by remember { mutableStateOf(false) }
     var configurandoMenuDia by remember { mutableStateOf(false) }
+    var agregandoProductoLibre by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -345,7 +347,7 @@ fun PedidoScreen(
                         },
                     )
                 },
-                alAgregarProductoLibre = { /* M09 */ },
+                alAgregarProductoLibre = { agregandoProductoLibre = true },
             )
         }
 
@@ -380,6 +382,41 @@ fun PedidoScreen(
                         },
                     )
                     configurandoMenuDia = false
+                    asientoCartaActivo = null
+                },
+            )
+        }
+
+        // 10. Pantalla M08c: Producto libre
+        AnimatedVisibility(
+            visible = agregandoProductoLibre && asientoCartaActivo != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val asientoParaCarta = asientoCartaActivo ?: asientoActivo
+            ProductoLibreScreen(
+                mesaNumero = pedido.mesaNumero,
+                asientoEtiqueta = asientoParaCarta.etiqueta,
+                enLinea = enLinea,
+                alVolver = { agregandoProductoLibre = false },
+                alConfirmarProductoLibre = { prodLibre ->
+                    val nuevaLinea = LineaPedido(
+                        id = "ln-${System.currentTimeMillis()}-libre",
+                        cantidad = 1,
+                        nombre = prodLibre.nombre,
+                        observacion = prodLibre.formatearObservacion(),
+                        precioUnitario = prodLibre.precio,
+                        estado = EstadoLineaPedido.POR_ENVIAR,
+                    )
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            if (a.id == asientoParaCarta.id) {
+                                a.copy(lineas = a.lineas + nuevaLinea)
+                            } else a
+                        },
+                    )
+                    agregandoProductoLibre = false
+                    buscandoEnCarta = false
                     asientoCartaActivo = null
                 },
             )
