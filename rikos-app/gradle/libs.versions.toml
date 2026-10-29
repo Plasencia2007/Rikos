@@ -3,7 +3,7 @@
 [versions]
 kotlin = "2.4.21"                  # el plugin de Compose usa la misma versión
 composeMultiplatform = "1.11.1"
-agp = "9.3.1"                      # rango compatible con Kotlin 2.4.x: 8.5.2 a 9.3.1
+agp = "9.3.3"                      # rango compatible con Kotlin 2.4.x: 8.5.2 a 9.3.1
 coroutines = "1.10.2"
 lifecycle = "2.11.0-beta01"
 activityCompose = "1.11.0"

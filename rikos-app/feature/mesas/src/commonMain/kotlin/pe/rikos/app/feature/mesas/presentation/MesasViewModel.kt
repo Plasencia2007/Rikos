@@ -29,6 +29,7 @@ data class MesasState(
     val mesaVistazo: Mesa? = null,
     val mostrarAvisos: Boolean = false,
     val mesaAbrir: Mesa? = null,
+    val mesaPedido: Mesa? = null,
 ) {
     val mesasFiltradas: List<Mesa>
         get() = mesas.filter { it.salonId == salonActivoId }
@@ -114,5 +115,13 @@ class MesasViewModel(
 
     fun alAbrirMesa(mesa: Mesa?) {
         _estado.update { it.copy(mesaAbrir = mesa) }
+    }
+
+    fun alAbrirPedido(mesa: Mesa) {
+        _estado.update { it.copy(mesaPedido = mesa) }
+    }
+
+    fun alCerrarPedido() {
+        _estado.update { it.copy(mesaPedido = null) }
     }
 }
