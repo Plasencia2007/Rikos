@@ -26,12 +26,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * US-028: agrega una linea a la persona de un pedido. El precio lo decide el motor (CalculadorDePrecioDeLinea);
  * el mozo solo trae un precio en el "extra libre" (3.11), que queda marcado como manual y en la bitacora. Las
- * reglas de cada tipo de linea estan en la especificacion (3.4 y 3.5) y en el plan.
+ * reglas de cada tipo de linea estan en la especificacion (3.4 y 3.5) y en el plan. Lo mismo otra vez para la misma
+ * persona (mismo producto o mismo menu con las mismas opciones, sin nota y al mismo precio) no abre otra linea: sube la
+ * cantidad de la que aun esta por enviar (2026-10-29).
  */
 @Service
 public class AgregarLinea {
@@ -184,6 +188,11 @@ public class AgregarLinea {
             return Resultado.fracaso(((Resultado.Fracaso<?, ErrorPedido>) precio).error());
         }
         PrecioDeLinea p = precio.valorOLanza();
+        DetallePedido igual = s.id() == null ? lineaIgual(persona, s.tipo(), productoId, observacion, p, filas) : null;
+        if (igual != null) {
+            igual.cambiar(igual.getCantidad() + s.cantidad(), igual.getObservacion());
+            return Resultado.exito(lineas.save(igual));
+        }
         DetallePedido linea = lineas.save(new DetallePedido(idLinea, persona.getId(), s.tipo().codigo(), productoId,
                 descripcion, s.cantidad(), observacion, p.precio(), p.taperUnitario(), p.tarifaOrigen(), p.planId(),
                 p.segundoDelDia(), actorId));
@@ -194,6 +203,37 @@ public class AgregarLinea {
                             s.cantidad(), "nombre", "Pedido " + pedido.getNumero()));
         }
         return Resultado.exito(linea);
+    }
+
+    /**
+     * La linea por enviar de la persona que es identica a la que se quiere agregar, o null. Solo la carta y el menu de un
+     * cliente normal: el extra libre lleva un precio a mano, y el menu o la comida del plan de un pensionista van uno
+     * por linea (para contar el segundo consumo del dia). Con nota, o a otro precio (cambio la carta o el plan), va
+     * aparte. Un menu solo es igual si tiene exactamente las mismas opciones elegidas.
+     */
+    private DetallePedido lineaIgual(CuentaPersona persona, TipoDeLinea tipo, String productoId, String observacion,
+                                     PrecioDeLinea p, List<DetallePedidoComponente> filas) {
+        boolean deMenu = tipo == TipoDeLinea.MENU_NORMAL || tipo == TipoDeLinea.MENU_EXTRA;
+        if ((tipo != TipoDeLinea.PRODUCTO && !deMenu) || observacion != null || p.segundoDelDia()
+                || (deMenu && persona.getPensionistaId() != null)) {
+            return null;
+        }
+        List<DetallePedido> candidatas = lineas.findByCuentaPersonaIdInOrderByCreadoEn(List.of(persona.getId())).stream()
+                .filter(l -> "pendiente".equals(l.getEstado()) && tipo.codigo().equals(l.getTipoLinea())
+                        && Objects.equals(productoId, l.getProductoId()) && l.getObservacion() == null
+                        && l.getPrecioUnitario() == p.precio() && l.getTaperUnitario() == p.taperUnitario()
+                        && Objects.equals(p.tarifaOrigen(), l.getTarifaOrigen()))
+                .toList();
+        if (candidatas.isEmpty() || !deMenu) {
+            return candidatas.isEmpty() ? null : candidatas.get(0);
+        }
+        Set<String> elegidas = filas.stream().map(DetallePedidoComponente::getOpcionMenuId).collect(Collectors.toSet());
+        Map<String, Set<String>> opcionesPorLinea = componentes
+                .findByDetallePedidoIdIn(candidatas.stream().map(DetallePedido::getId).toList()).stream()
+                .collect(Collectors.groupingBy(DetallePedidoComponente::getDetallePedidoId,
+                        Collectors.mapping(DetallePedidoComponente::getOpcionMenuId, Collectors.toSet())));
+        return candidatas.stream().filter(l -> elegidas.equals(opcionesPorLinea.getOrDefault(l.getId(), Set.of())))
+                .findFirst().orElse(null);
     }
 
     /**

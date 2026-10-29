@@ -1084,3 +1084,55 @@ body:has(.pos-raiz) .modal-fondo { z-index: 1300; }
 .ped5 .ped6-cabecera .ped3-orden-titulo h2 { font-size: 20px; white-space: nowrap; }
 .ped5 .ped6-cabecera .ped3-orden-titulo { min-width: 0; }
 .ped5 .ped6-cabecera .ped3-circulo { width: 50px; height: 50px; }
+
+/* ===== Ajustes 2026-10-29 (tablet y celular): línea del pedido compacta, comensales parejos ===== */
+/* Línea: foto | nombre y detalle | precio, y debajo el estado con las acciones a todo el ancho del texto. */
+.ped6-linea {
+  grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: 'foto texto precio' 'foto pie pie';
+  row-gap: 8px; column-gap: 12px; align-items: start;
+}
+.ped6-linea .ped6-foto { grid-area: foto; width: 56px; height: 56px; }
+.ped6-linea .ped6-linea-texto { grid-area: texto; }
+.ped6-linea .ped6-precio { grid-area: precio; padding-top: 1px; }
+.ped6-linea-pie { grid-area: pie; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ped6-linea-pie .ped6-estado { margin-top: 0; white-space: nowrap; }
+.ped6-linea-texto strong { line-height: 1.25; }
+.ped6-detalle {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+
+/* Comensales: la lista va en su propio contenedor */
+.ped5-comensales-lista { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; overflow-x: auto; padding: 3px 2px 5px; scrollbar-width: thin; }
+.ped5-comensales-lista > * { flex-shrink: 0; }
+.ped5 .ped5-comensales .ped2-persona span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.ped5 .ped5-comensales .ped2-persona strong { white-space: nowrap; }
+.ped5-tipo { font-style: normal; font-weight: 700; color: #1d4ed8; }
+.ped5 .ped2-persona .ped5-persona-icono.pensionista { color: #1d4ed8; }
+
+@media (max-width: 900px) {
+  /* Una sola fila que se desliza, todas del mismo alto; "Añadir" al final. */
+  .ped5 .ped5-comensales { display: grid; gap: 8px; }
+  .ped5-comensales-lista {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none;
+  }
+  .ped5-comensales-lista::-webkit-scrollbar { display: none; }
+  .ped5-comensales-lista > * { flex-shrink: 0; }
+  .ped5 .ped5-comensales .ped2-persona span { max-width: 132px; }
+  .ped5 .ped5-comensales .ped2-persona.ped2-persona-nueva { padding: 0 14px; }
+  /* Datos del pedido: el separador queda al final de la línea, no al comienzo de la siguiente. */
+  .ped5-datos span + span::before { content: none; }
+  .ped5-datos span:not(:last-child)::after { content: '·'; margin: 0 6px; color: #94a3b8; }
+  .ped6-linea { grid-template-columns: 48px minmax(0, 1fr) auto; padding: 12px 10px; }
+  .ped6-linea .ped6-foto { width: 48px; height: 48px; border-radius: 10px; }
+  .ped6-linea-texto strong { font-size: 15px; }
+  .ped6-cantidad button { width: 34px; height: 34px; }
+  .ped6-cantidad span { height: 34px; min-width: 30px; }
+}
+@media (max-width: 900px) {
+  .ped6-cabecera .ped4-cerrar { grid-row: 1; grid-column: 3; }
+}
+@media (max-width: 900px) {
+  /* Cerrar el cajón: solo la X, redonda, para no tapar el título. */
+  .ped6-cabecera .ped6-cerrar { width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; align-self: start; }
+  .ped6-cabecera .ped3-orden-titulo h2 { font-size: 19px; overflow: hidden; text-overflow: ellipsis; }
+}

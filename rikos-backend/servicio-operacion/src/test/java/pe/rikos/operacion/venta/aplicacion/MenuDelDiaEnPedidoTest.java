@@ -273,4 +273,36 @@ class MenuDelDiaEnPedidoTest extends PedidosBase {
                 new ComponenteElegido(null, opcionSeco.getId()))), ADMIN_SEMBRADO_ID)))
                 .isEqualTo(ErrorPedido.OPCION_INVALIDA);
     }
+
+    @Test
+    void el_mismo_menu_con_las_mismas_opciones_suma_cantidad_y_con_otra_opcion_va_aparte() {
+        var conSeco = List.of(new ComponenteElegido("segundo", opcionSeco.getId()));
+        DetallePedido primero = agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL, conSeco), ADMIN_SEMBRADO_ID)
+                .valorOLanza();
+
+        DetallePedido igual = agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL, conSeco), ADMIN_SEMBRADO_ID)
+                .valorOLanza();
+        DetallePedido otro = agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL,
+                List.of(new ComponenteElegido("segundo", opcionEstofado.getId()))), ADMIN_SEMBRADO_ID).valorOLanza();
+
+        assertThat(igual.getId()).isEqualTo(primero.getId());
+        assertThat(igual.getCantidad()).isEqualTo(2);
+        assertThat(otro.getId()).isNotEqualTo(primero.getId());
+        assertThat(otro.getCantidad()).isEqualTo(1);
+    }
+
+    @Test
+    void el_menu_de_un_pensionista_no_se_junta_porque_va_uno_por_linea() {
+        Pensionista luis = nuevoPensionista(plan, "Juntar");
+        asignarPensionista.ejecutar(pedido.getId(), persona, luis.getId(), ADMIN_SEMBRADO_ID).valorOLanza();
+        var conSeco = List.of(new ComponenteElegido("segundo", opcionSeco.getId()));
+
+        DetallePedido primero = agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL, conSeco), ADMIN_SEMBRADO_ID)
+                .valorOLanza();
+        DetallePedido segundo = agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL, conSeco), ADMIN_SEMBRADO_ID)
+                .valorOLanza();
+
+        assertThat(segundo.getId()).isNotEqualTo(primero.getId());
+        assertThat(segundo.getCantidad()).isEqualTo(1);
+    }
 }

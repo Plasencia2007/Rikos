@@ -302,11 +302,67 @@ todavía no había recalculo: se dejó para la entrega 4 (US-029 CA5). Esa entre
 - `VincularPreTicketTest`: la prueba que esperaba el rechazo ahora comprueba que vincula y que la carta conserva su
   precio.
 - Siguen pasando `PersonasDelPedidoTest`, `RecalculoAlTrasladarTest` y `VincularPreTicketTest`.
-- Suite completa: 817 pruebas, 9 fallan, todas ajenas a este cambio y ya existentes:
-  - `ArquitecturaDeModulosTest`: el ciclo conocido.
-  - `PensionistaTest` y `PensionistasAccesoPorRolTest`: esperan un PIN de 4 dígitos y desde el sprint 8 es de 6.
-  - `KioscoControllerTest`: le falta el limitador de solicitudes.
+- Suite completa: 817 pruebas, 9 fallan.
+  - 8 ya existían y son ajenas a este cambio:
+    - `ArquitecturaDeModulosTest`: el ciclo conocido.
+    - `PensionistaTest` y `PensionistasAccesoPorRolTest`: esperan un PIN de 4 dígitos y desde el sprint 8 es de 6.
+    - `KioscoControllerTest`: le falta el limitador de solicitudes.
+  - **La novena sí era de este cambio** y se pasó por alto al leer la lista:
+    `LineasDelPedidoTest.no_se_asigna_un_pensionista_a_una_persona_que_ya_tiene_lineas`, que esperaba la regla vieja.
+    Se corrigió en el cambio siguiente (juntar líneas iguales).
 - En el POS, pedido 0001 de la mesa 4: se agregó un menú del día a la Persona 3 (S/ 12.00) y se la identificó como
   Ana Lucia Mendoza (pensionista de prueba). El menú pasó a S/ 10.00 «Precio de su plan». Después se quitó el menú; la
   Persona 3 quedó identificada como Ana Lucia, sin productos.
+
+## Agregar lo mismo otra vez suma la cantidad (2026-10-29)
+
+### Qué se pidió
+
+Al agregar dos veces el mismo producto (dos huevos fritos), salían dos líneas iguales. El usuario quiere una sola línea
+con cantidad 2. Un menú del día con otras opciones sí debe ir en otra línea.
+
+### Qué se construyó
+
+- **`AgregarLinea`:** antes de crear la línea busca una igual en la misma persona (`lineaIgual`). Si la encuentra, le
+  suma la cantidad y devuelve esa línea. Es igual si cumple todo esto:
+  - Está por enviar (pendiente).
+  - Es del mismo tipo y el mismo producto.
+  - No tiene nota, ni la tiene la nueva.
+  - Tiene el mismo precio, táper y origen de tarifa: si cambió el precio de la carta o del plan, va aparte.
+  - Si es un menú, tiene exactamente las mismas opciones elegidas.
+- **No se juntan:**
+  - El extra libre (precio a mano).
+  - El menú y la comida del plan de un pensionista, que van uno por línea para contar el segundo consumo del día.
+  - Lo que ya fue a cocina.
+  - Lo de otra persona.
+  - Una línea con id propio del cliente: así reintentar un pedido sin conexión no suma dos veces.
+- La pantalla no cambió: el servidor devuelve el pedido y el contador muestra la cantidad.
+
+### Cómo se verificó
+
+- `JuntarLineasIgualesTest` (5 pruebas): el mismo producto dos veces da cantidad 2; 2 + 3 da 5; con nota va aparte; lo
+  comandado no se junta; cada persona tiene su línea.
+- `MenuDelDiaEnPedidoTest` (2 pruebas nuevas): el mismo menú con las mismas opciones suma; con otra opción va aparte;
+  el de un pensionista no se junta.
+- Antes de escribir el código, 3 de estas pruebas fallaban (rojo); después pasan.
+- Suite completa: 824 pruebas; fallan solo las 8 que ya fallaban (Modulith, kiosco y PIN de pensionistas).
+- En el POS: dos «Café pasado» a la misma persona quedaron en una línea con cantidad 2 (S/ 8.00). Después se quitaron.
+- De paso: tras recargar, la tarjeta de una persona identificada decía «Pensionista». Ahora usa la etiqueta que deja el
+  servidor (el nombre del pensionista).
+
+## Comensales parejos y línea compacta en celular y tableta (2026-10-29)
+
+- **Pensionista:** su tarjeta de comensal mide lo mismo que las demás. Lleva otro ícono (persona con check, azul), el
+  nombre con «…» si es largo y «S/ 0.00 · Pensionista» en la segunda línea. Antes se repetía el nombre («etiqueta ·
+  nombre») y la insignia la hacía más alta.
+- **Comensales:** van en una sola fila que se desliza, en todas las pantallas; en celular el rótulo va arriba. Antes,
+  con 4 o 5 personas, quedaban en varias filas de tamaños distintos. En los datos del pedido, el «·» queda al final de
+  la línea y no al comienzo de la siguiente.
+- **Línea del pedido:** foto, nombre y detalle, precio; debajo, el estado a la izquierda y el lápiz y la cantidad a la
+  derecha.
+  - Del menú se muestra solo lo que se elige (entrada, segundo); el refresco y el postre incluidos ya no se repiten.
+  - El detalle se corta en 2 líneas.
+  - La línea de un menú bajó de más de 250 px a 124 px en un celular de 390 px.
+- **Cajón en celular:** «Cerrar» es una X redonda en la fila del título, sin tapar «Pedido de la mesa».
+- Verificado a 390 y 1440 px: las 5 tarjetas de comensales en una fila de 46 px y sin desborde de la página.
 

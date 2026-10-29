@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, ArrowLeftRight, ChevronRight, Plus, ShoppingCart, Trash2, User } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ChevronRight, Plus, ShoppingCart, Trash2, User, UserCheck } from 'lucide-react'
 import {
   Aviso,
   Boton,
@@ -368,6 +368,8 @@ export function PantallaPedido({
 
       <div className="ped2-personas ped3-personas ped5-comensales" role="tablist" aria-label="Personas del pedido">
         <span className="ped5-etiqueta">Comensales</span>
+        {/* En celular la lista es una sola fila que se desliza, para que todas las tarjetas midan lo mismo. */}
+        <div className="ped5-comensales-lista">
         {pedido.personas.map((p) => {
           const activa = p.id === persona.id
           const nombre = p.pensionistaId ? nombresDePensionista[p.pensionistaId] : null
@@ -382,10 +384,17 @@ export function PantallaPedido({
                 className={`ped2-persona ${activa ? 'ped2-persona-activa' : ''}`}
                 onClick={() => setPersonaId(p.id)}
               >
-                <User className="ped5-persona-icono" size={20} aria-hidden="true" />
-                <span>{nombre ? `${p.etiqueta} · ${nombre}` : p.etiqueta}</span>
-                <strong>{enSoles(p.total)}</strong>
-                {p.tipoCliente === 'pensionista' && <em className="ped3-insignia-pensionista">Pensionista</em>}
+                {p.tipoCliente === 'pensionista' ? (
+                  <UserCheck className="ped5-persona-icono pensionista" size={20} aria-hidden="true" />
+                ) : (
+                  <User className="ped5-persona-icono" size={20} aria-hidden="true" />
+                )}
+                {/* Identificada, la etiqueta ya es el nombre del pensionista: se muestra una sola vez. */}
+                <span title={nombre ?? p.etiqueta}>{nombre ?? p.etiqueta}</span>
+                <strong>
+                  {enSoles(p.total)}
+                  {p.tipoCliente === 'pensionista' && <em className="ped5-tipo"> · Pensionista</em>}
+                </strong>
               </button>
               {sePuedeQuitar && (
                 <button
@@ -418,6 +427,7 @@ export function PantallaPedido({
           <Plus size={18} aria-hidden="true" />
           Añadir persona
         </button>
+        </div>
       </div>
 
       <div className="ped2-cuerpo">

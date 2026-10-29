@@ -132,7 +132,8 @@ export function OrdenDeLaMesa({
   // Lo que se envía a cocina, contado en unidades (dos cafés en una línea son 2 productos).
   const porEnviar = pedido.personas.reduce((n, p) => n + p.lineas.filter((l) => l.estado === 'pendiente').reduce((m, l) => m + l.cantidad, 0), 0)
   const nombreDe = (p: PersonaDelPedido) =>
-    p.pensionistaId ? (nombresDePensionista[p.pensionistaId] ?? 'Pensionista') : p.etiqueta
+    // Al identificarla, el servidor pone el nombre del pensionista como etiqueta de la persona.
+    p.pensionistaId ? (nombresDePensionista[p.pensionistaId] ?? p.etiqueta) : p.etiqueta
 
   const accion = (fn: () => void) => () => {
     setMenu(null)
@@ -145,8 +146,9 @@ export function OrdenDeLaMesa({
     const puedeAnularla = !cerrado && l.estado === 'comandado' && puedeAnular
     const puedePasarla = !cerrado && puedeReorganizar && !anulada
     const conAcciones = editable || puedeAnularla || puedePasarla
+    // Del menú se muestra lo que se eligió; el refresco y el postre van incluidos y alargan la línea.
     const detalle = [
-      ...l.componentes.map((c) => c.productoNombre),
+      ...l.componentes.filter((c) => c.componente !== 'refresco' && c.componente !== 'postre').map((c) => c.productoNombre),
       l.tarifaOrigen === 'plan' ? 'Precio de su plan' : null,
       l.tarifaOrigen === 'manual' ? 'Precio puesto a mano' : null,
       l.segundoDelDia ? 'Segundo del día' : null,
@@ -170,12 +172,12 @@ export function OrdenDeLaMesa({
               {l.motivoAnulacion ? ` · ${l.motivoAnulacion}` : ''}
             </span>
           )}
+        </div>
+        <strong className="ped6-precio">{enSoles(l.precioUnitario * l.cantidad)}</strong>
+        <div className="ped6-linea-pie">
           <span className={`ped6-estado ${l.estado}`}>
             {l.estado === 'pendiente' ? 'Por enviar' : l.estado === 'comandado' ? 'En cocina' : 'Anulado'}
           </span>
-        </div>
-        <div className="ped6-linea-lado">
-          <strong className="ped6-precio">{enSoles(l.precioUnitario * l.cantidad)}</strong>
           <div className="ped6-controles">
             {conAcciones && (
               <div className="ped6-ancla">
@@ -264,9 +266,8 @@ export function OrdenDeLaMesa({
             Todos
           </button>
         </div>
-        <button type="button" className="ped4-cerrar" onClick={onCerrar}>
-          <X size={16} aria-hidden="true" />
-          Cerrar
+        <button type="button" className="ped4-cerrar ped6-cerrar" aria-label="Cerrar el pedido" onClick={onCerrar}>
+          <X size={20} aria-hidden="true" />
         </button>
       </header>
 
