@@ -59,6 +59,7 @@ import pe.rikos.app.core.designsystem.theme.RikosMotion
 import pe.rikos.app.feature.mesas.domain.AsientoPersona
 import pe.rikos.app.feature.mesas.domain.EstadoLineaPedido
 import pe.rikos.app.feature.mesas.domain.LineaPedido
+import pe.rikos.app.feature.mesas.domain.MenuDiaConfig
 import pe.rikos.app.feature.mesas.domain.Mesa
 import pe.rikos.app.feature.mesas.domain.PedidoMesa
 import pe.rikos.app.feature.mesas.domain.crearPedidoInicialMesa5
@@ -107,6 +108,7 @@ fun PedidoScreen(
     val asientoActivo = pedido.asientoActivo ?: pedido.asientos.first()
     var asientoCartaActivo by remember { mutableStateOf<AsientoPersona?>(null) }
     var buscandoEnCarta by remember { mutableStateOf(false) }
+    var configurandoMenuDia by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -298,7 +300,7 @@ fun PedidoScreen(
                     asientoCartaActivo = null
                 },
                 alBuscarEnCarta = { buscandoEnCarta = true },
-                alVerOpcionesMenu = { /* Opciones */ },
+                alVerOpcionesMenu = { configurandoMenuDia = true },
             )
         }
 
@@ -344,6 +346,42 @@ fun PedidoScreen(
                     )
                 },
                 alAgregarProductoLibre = { /* M09 */ },
+            )
+        }
+
+        // 9. Pantalla M09: Menú del día y extras
+        AnimatedVisibility(
+            visible = configurandoMenuDia && asientoCartaActivo != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val asientoParaCarta = asientoCartaActivo ?: asientoActivo
+            val menuConfig = remember { MenuDiaConfig() }
+            MenuDiaScreen(
+                mesaNumero = pedido.mesaNumero,
+                asientoEtiqueta = asientoParaCarta.etiqueta,
+                enLinea = enLinea,
+                config = menuConfig,
+                alVolver = { configurandoMenuDia = false },
+                alConfirmarMenu = { menuConfigurado ->
+                    val nuevaLinea = LineaPedido(
+                        id = "ln-${System.currentTimeMillis()}-menudia",
+                        cantidad = menuConfigurado.cantidad,
+                        nombre = "Menú del día",
+                        observacion = menuConfigurado.formatearObservacion(),
+                        precioUnitario = menuConfigurado.precioUnitario(menuConfig.precioBase),
+                        estado = EstadoLineaPedido.POR_ENVIAR,
+                    )
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            if (a.id == asientoParaCarta.id) {
+                                a.copy(lineas = a.lineas + nuevaLinea)
+                            } else a
+                        },
+                    )
+                    configurandoMenuDia = false
+                    asientoCartaActivo = null
+                },
             )
         }
     }
