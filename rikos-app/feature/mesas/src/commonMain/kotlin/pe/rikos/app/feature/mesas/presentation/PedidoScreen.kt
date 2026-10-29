@@ -113,6 +113,7 @@ fun PedidoScreen(
     var configurandoMenuDia by remember { mutableStateOf(false) }
     var agregandoProductoLibre by remember { mutableStateOf(false) }
     var vinculandoPensionista by remember { mutableStateOf(false) }
+    var lineaEnEdicion by remember { mutableStateOf<LineaPedido?>(null) }
 
     Box(
         modifier = modifier
@@ -221,6 +222,7 @@ fun PedidoScreen(
             // 4. Tarjeta con las líneas de pedido de la persona (.card + .ln)
             LineasPersonaCard(
                 lineas = asientoActivo.lineas,
+                onLineaClick = { linea -> lineaEnEdicion = linea },
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -443,6 +445,49 @@ fun PedidoScreen(
                     vinculandoPensionista = false
                 },
             )
+        }
+
+        // 12. Pantalla M11: Editar y anular línea
+        AnimatedVisibility(
+            visible = lineaEnEdicion != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val linea = lineaEnEdicion
+            val asiento = pedido.asientoActivo ?: pedido.asientos.first()
+            if (linea != null) {
+                EditarLineaScreen(
+                    linea = linea,
+                    personaNumero = asiento.numero,
+                    mesaNumero = pedido.mesaNumero,
+                    enLinea = enLinea,
+                    alVolver = { lineaEnEdicion = null },
+                    alGuardarCambios = { nuevaCantidad, nuevaObservacion ->
+                        val lineaActualizada = linea.copy(
+                            cantidad = nuevaCantidad,
+                            observacion = nuevaObservacion,
+                        )
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) {
+                                    a.copy(lineas = a.lineas.map { if (it.id == linea.id) lineaActualizada else it })
+                                } else a
+                            },
+                        )
+                        lineaEnEdicion = null
+                    },
+                    alAnularLinea = { _ ->
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) {
+                                    a.copy(lineas = a.lineas.filter { it.id != linea.id })
+                                } else a
+                            },
+                        )
+                        lineaEnEdicion = null
+                    },
+                )
+            }
         }
     }
 }
@@ -922,6 +967,7 @@ private fun BotonAccionLateral(
 @Composable
 private fun LineasPersonaCard(
     lineas: List<LineaPedido>,
+    onLineaClick: (LineaPedido) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = Rikos.colors
@@ -961,7 +1007,7 @@ private fun LineasPersonaCard(
                     )
                 }
 
-                FilaLineaPedido(linea = linea)
+                FilaLineaPedido(linea = linea, onClick = { onLineaClick(linea) })
             }
         }
     }
@@ -973,6 +1019,7 @@ private fun LineasPersonaCard(
 @Composable
 private fun FilaLineaPedido(
     linea: LineaPedido,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = Rikos.colors
@@ -983,6 +1030,7 @@ private fun FilaLineaPedido(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top,
