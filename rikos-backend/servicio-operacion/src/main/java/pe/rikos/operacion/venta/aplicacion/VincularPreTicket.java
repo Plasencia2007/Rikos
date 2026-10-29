@@ -9,32 +9,32 @@ import pe.rikos.operacion.pensionistas.infraestructura.PreTicket;
 import pe.rikos.operacion.pensionistas.infraestructura.PreTicketRepositorio;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
-import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
 import pe.rikos.operacion.venta.infraestructura.Pedido;
 import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
 
 import java.time.OffsetDateTime;
 
 /**
- * US-020: Vincular el pre-ticket emitido en el kiosco al pedido del pensionista en la mesa.
+ * US-020: Vincular el pre-ticket emitido en el kiosco al pedido del pensionista en la mesa. Si la persona ya tiene
+ * productos, se recalculan como al identificarla a mano (RecalculoAlIdentificar).
  */
 @Service
 public class VincularPreTicket {
 
     private final PedidoRepositorio pedidos;
     private final CuentaPersonaRepositorio personas;
-    private final DetallePedidoRepositorio lineas;
     private final PreTicketRepositorio preTickets;
     private final ConsultaPensionistas consultaPensionistas;
+    private final RecalculoAlIdentificar recalculo;
 
     public VincularPreTicket(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas,
-                             DetallePedidoRepositorio lineas, PreTicketRepositorio preTickets,
-                             ConsultaPensionistas consultaPensionistas) {
+                             PreTicketRepositorio preTickets, ConsultaPensionistas consultaPensionistas,
+                             RecalculoAlIdentificar recalculo) {
         this.pedidos = pedidos;
         this.personas = personas;
-        this.lineas = lineas;
         this.preTickets = preTickets;
         this.consultaPensionistas = consultaPensionistas;
+        this.recalculo = recalculo;
     }
 
     @Transactional
@@ -58,10 +58,6 @@ public class VincularPreTicket {
         if (persona == null) {
             return Resultado.fracaso(ErrorPedido.PERSONA_NO_ENCONTRADA);
         }
-        if (lineas.existsByCuentaPersonaId(personaId)) {
-            return Resultado.fracaso(ErrorPedido.PERSONA_CON_LINEAS);
-        }
-
         PreTicket pt = preTickets.findByCodigo(codigo.trim()).orElse(null);
         if (pt == null) {
             return Resultado.fracaso(ErrorPedido.PRE_TICKET_NO_ENCONTRADO);
@@ -96,11 +92,18 @@ public class VincularPreTicket {
             return Resultado.fracaso(ErrorPedido.PENSIONISTA_YA_EN_EL_PEDIDO);
         }
 
+        // Se calcula antes de vincular: si sus productos no pueden ser del pensionista, el pre-ticket queda libre.
+        var preparado = recalculo.preparar(pedidoActual, persona, pensionista.getId());
+        if (!preparado.esExito()) {
+            return Resultado.fracaso(((Resultado.Fracaso<?, ErrorPedido>) preparado).error());
+        }
+
         pt.vincular(actorId);
         preTickets.save(pt);
 
         persona.asignarPensionista(pensionista.getId(), pensionista.nombreCompleto(), pt.getId());
         CuentaPersona guardada = personas.save(persona);
+        recalculo.aplicar(pedidoActual, guardada, preparado.valorOLanza());
 
         return Resultado.exito(guardada);
     }

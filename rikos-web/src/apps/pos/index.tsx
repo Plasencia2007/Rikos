@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { ClipboardList, History, House, LayoutGrid, ReceiptText, Wallet, Zap } from 'lucide-react'
 import { PantallaPin } from '../../features/autenticacion'
 import { resumenDePedidos, type SesionIniciada } from '../../api/cliente'
 import { ProveedorDeAvisos } from '../../comun/componentes'
@@ -16,17 +15,14 @@ import {
 
 const MINUTOS_INACTIVIDAD = Number(import.meta.env.VITE_POS_MINUTOS_INACTIVIDAD ?? 5)
 
-const ENCABEZADOS: Partial<Record<VistaDelPos, { titulo: string; subtitulo: string; Icono: typeof House }>> = {
-  inicio: { titulo: 'Inicio', subtitulo: 'Resumen de este local en tiempo real', Icono: House },
-  mesas: {
-    titulo: 'Mesas',
-    subtitulo: 'Toca una mesa libre para abrirla, o una ocupada para ver su pedido',
-    Icono: LayoutGrid,
-  },
-  rapido: { titulo: 'Pedido rápido', subtitulo: 'Pedidos para llevar, sin mesa', Icono: Zap },
-  ordenes: { titulo: 'Órdenes activas', subtitulo: 'Pedidos en curso de este local', Icono: ClipboardList },
-  historial: { titulo: 'Historial de órdenes', subtitulo: 'Consulta órdenes pasadas', Icono: History },
-  caja: { titulo: 'Caja', subtitulo: 'Tu turno, lo que hay por cobrar y el cierre', Icono: Wallet },
+// El Inicio trae su propio título grande ("Resumen del local"): el cabezal solo muestra la ruta.
+const ENCABEZADOS: Partial<Record<VistaDelPos, { titulo: string; subtitulo: string }>> = {
+  inicio: { titulo: 'Inicio', subtitulo: '' },
+  mesas: { titulo: 'Mesas', subtitulo: '' },
+  rapido: { titulo: 'Pedido rápido', subtitulo: 'Pedidos para llevar, sin mesa' },
+  ordenes: { titulo: 'Órdenes activas', subtitulo: 'Pedidos en curso de este local' },
+  historial: { titulo: 'Historial de órdenes', subtitulo: 'Consulta órdenes pasadas' },
+  caja: { titulo: 'Caja', subtitulo: 'Tu turno, lo que hay por cobrar y el cierre' },
 }
 
 /**
@@ -96,7 +92,7 @@ export default function POS() {
 
   const local = mozoActivo.locales.find((l) => l.id === mozoActivo.localActivoId)?.nombre ?? ''
   const encabezado = pedidoAbierto
-    ? { titulo: pedidoAbierto.titulo, subtitulo: 'Pedido en curso', Icono: ReceiptText }
+    ? { titulo: pedidoAbierto.titulo, subtitulo: 'Pedido en curso' }
     : (ENCABEZADOS[vista] ?? ENCABEZADOS.inicio)!
 
   function irA(siguiente: VistaDelPos) {
@@ -111,7 +107,8 @@ export default function POS() {
         vista={pedidoAbierto ? 'mesas' : vista}
         titulo={encabezado.titulo}
         subtitulo={encabezado.subtitulo}
-        IconoDelTitulo={encabezado.Icono}
+        tituloEnContenido={!pedidoAbierto && vista === 'inicio'}
+        tituloDePantalla={!pedidoAbierto && vista === 'mesas'}
         mozo={mozoActivo.nombreUsuario}
         local={local}
         colapsada={colapsada || pedidoAbierto !== null}
@@ -126,6 +123,7 @@ export default function POS() {
             token={mozoActivo.token}
             pedidoId={pedidoAbierto.id}
             titulo={pedidoAbierto.titulo}
+            nombreLocal={local}
             onVolver={() => setPedidoAbierto(null)}
             onCobrar={(id) => {
               setPedidoAbierto(null)

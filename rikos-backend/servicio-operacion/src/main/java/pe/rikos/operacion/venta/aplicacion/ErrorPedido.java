@@ -19,7 +19,7 @@ public enum ErrorPedido {
     PENSIONISTA_NO_ENCONTRADO,
     PENSIONISTA_INACTIVO,
     PENSIONISTA_YA_EN_EL_PEDIDO,
-    /** Asignar un pensionista, o quitar a la persona, cuando ya tiene lineas. */
+    /** Quitar a una persona que ya tiene lineas (identificar a un pensionista con lineas ahora las recalcula). */
     PERSONA_CON_LINEAS,
     PERSONA_NO_ES_PENSIONISTA,
     PRODUCTO_NO_ENCONTRADO,

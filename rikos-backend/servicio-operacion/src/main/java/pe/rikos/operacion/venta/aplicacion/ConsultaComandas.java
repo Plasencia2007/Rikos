@@ -107,11 +107,15 @@ public class ConsultaComandas {
             if (linea == null) {
                 continue;
             }
-            List<String> elegidos = filas.stream().filter(f -> f.getDetallePedidoId().equals(linea.getId()))
-                    .map(f -> nombres.get(f.getProductoId())).toList();
+            // En el orden del menu (entrada, segundo, guarnicion, refresco, postre), no en el que salen de la base.
+            List<ComponenteDetallado> partes = filas.stream()
+                    .filter(f -> f.getDetallePedidoId().equals(linea.getId()))
+                    .sorted(java.util.Comparator.comparingInt(f -> ordenDelComponente(f.getComponente())))
+                    .map(f -> new ComponenteDetallado(f.getComponente(), nombres.get(f.getProductoId()))).toList();
+            List<String> elegidos = partes.stream().map(ComponenteDetallado::productoNombre).toList();
             porEtiqueta.computeIfAbsent(d.getEtiquetaPersona(), e -> new ArrayList<>())
                     .add(new LineaDeComanda(d.getCantidad(), nombreDe(linea, nombres), elegidos,
-                            linea.getObservacion()));
+                            linea.getObservacion(), partes));
         }
         List<PersonaDeComanda> resultado = porEtiqueta.entrySet().stream()
                 .sorted(java.util.Comparator.comparingInt(e -> {
@@ -134,5 +138,12 @@ public class ConsultaComandas {
             case "extra_libre" -> linea.getDescripcion();
             default -> nombres.get(linea.getProductoId());
         };
+    }
+
+    private static final List<String> ORDEN_DE_COMPONENTES = List.of("entrada", "segundo", "guarnicion", "refresco", "postre");
+
+    private static int ordenDelComponente(String componente) {
+        int i = ORDEN_DE_COMPONENTES.indexOf(componente);
+        return i < 0 ? ORDEN_DE_COMPONENTES.size() : i;
     }
 }

@@ -659,7 +659,7 @@ export function DialogoFormularioCompra({
               padding: '0.625rem 1.25rem',
               border: 'none',
               borderRadius: '6px',
-              backgroundColor: '#059669',
+              backgroundColor: '#2563EB',
               color: '#fff',
               fontWeight: 600,
               cursor: 'pointer',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronRight, ClipboardList, Clock, ShoppingCart, Trash2, User, Users, Utensils } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ChevronRight, Plus, ShoppingCart, Trash2, User, UserCheck } from 'lucide-react'
 import {
   Aviso,
   Boton,
@@ -20,15 +20,18 @@ import {
   listarMesas,
   modificarLineaDelPedido,
   moverPedidoDeMesa,
+  obtenerComanda,
   obtenerPedido,
   ofertaDelPedido,
   permisosPropios,
   quitarLineaDelPedido,
   quitarPersonaDelPedido,
+  registrarImpresionDeComanda,
   separarMesa,
   terminarPedido,
   trasladarLineasDelPedido,
   unirMesa,
+  type ComandaDetalle,
   type ComandaResumen,
   type DatosDeLinea,
   type LineaDelPedido,
@@ -50,6 +53,7 @@ import { DialogoPasarA } from './DialogoPasarA'
 import { DialogoPensionista } from './DialogoPensionista'
 import { DialogoUnirMesa } from './DialogoUnirMesa'
 import { VistaComanda } from './VistaComanda'
+import { DialogoTicket, TicketComanda, TicketPrecuenta } from './TicketDelPedido'
 
 /**
  * US-028: el pedido de una mesa (o para llevar), en pantalla partida (diseno aprobado, ver
@@ -59,11 +63,8 @@ import { VistaComanda } from './VistaComanda'
  * abren su dialogo porque tienen opciones; un producto de la carta se agrega directo.
  */
 
-function horaDe(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const fecha = new Date(iso)
-  return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
-}
+/** "Mesa 4" se muestra "Mesa 04", como en el mapa; un nombre propio o "Mesa 4 + Mesa 5" quedan igual. */
+const conNumeroDeDosCifras = (titulo: string) => titulo.replace(/^Mesa (\d)$/, 'Mesa 0$1')
 
 const SERVICIO: Record<string, string> = { desayuno: 'Desayuno', almuerzo: 'Almuerzo', cena: 'Cena' }
 type Dialogo =
@@ -86,10 +87,13 @@ export function PantallaPedido({
   titulo,
   onVolver,
   onCobrar,
+  nombreLocal = '',
 }: {
   token: string
   pedidoId: string
   titulo: string
+  /** Para la cabecera de la pre-cuenta. */
+  nombreLocal?: string
   onVolver: () => void
   /** Lleva a la Caja a cobrar este pedido (solo se ofrece a quien tiene caja.crear). */
   onCobrar?: (pedidoId: string) => void
@@ -104,6 +108,12 @@ export function PantallaPedido({
   const [trabajando, setTrabajando] = useState(false)
   const [comandas, setComandas] = useState<ComandaResumen[]>([])
   const [comandaAbierta, setComandaAbierta] = useState<string | null>(null)
+  // El ticket en pantalla (pre-cuenta o comanda); imprimir = se abrio con el boton sin ojo.
+  const [ticket, setTicket] = useState<
+    | { tipo: 'precuenta'; imprimir: boolean }
+    | { tipo: 'comanda'; comanda: ComandaDetalle; copia: boolean; imprimir: boolean }
+    | null
+  >(null)
   const [puedeAnular, setPuedeAnular] = useState(false)
   const [puedeCobrar, setPuedeCobrar] = useState(false)
   const [puedeReorganizar, setPuedeReorganizar] = useState(false)
@@ -198,6 +208,59 @@ export function PantallaPedido({
     } finally {
       setTrabajando(false)
     }
+  }
+
+  /** La ultima comanda enviada de este pedido, con su detalle, o null si todavia no se envio nada. */
+  async function ultimaComanda(lista: ComandaResumen[] = comandas): Promise<ComandaDetalle | null> {
+    if (lista.length === 0) return null
+    const ultima = lista.reduce((a, b) => (b.numero > a.numero ? b : a))
+    return obtenerComanda(token, ultima.id)
+  }
+
+  async function verComanda() {
+    try {
+      const c = await ultimaComanda()
+      if (!c) return mostrar('Todavía no se ha enviado nada a cocina.')
+      setTicket({ tipo: 'comanda', comanda: c, copia: c.impresiones >= 1, imprimir: false })
+    } catch (e) {
+      setAviso(mensajeDePedido(e, 'No se pudo cargar la comanda.'))
+    }
+  }
+
+  /**
+   * "Comanda" (adenda 2026-10-29): con productos nuevos, los envia a cocina e imprime esa comanda; sin nada nuevo,
+   * reimprime la ultima. Cada impresion se registra antes: desde la segunda sale con COPIA (RN-063).
+   */
+  async function imprimirComanda() {
+    if (trabajando) return
+    setTrabajando(true)
+    setAviso('')
+    try {
+      let lista = comandas
+      if (itemsNuevos > 0) {
+        await comandarPedido(token, pedidoId)
+        const [p, nuevas] = await Promise.all([obtenerPedido(token, pedidoId), listarComandasDelPedido(token, pedidoId)])
+        setPedido(p)
+        setComandas(nuevas)
+        lista = nuevas
+      }
+      const c = await ultimaComanda(lista)
+      if (!c) return mostrar('Agrega productos para enviar una comanda a cocina.')
+      const registro = await registrarImpresionDeComanda(token, c.id)
+      setTicket({ tipo: 'comanda', comanda: { ...c, impresiones: registro.impresiones }, copia: registro.copia, imprimir: true })
+    } catch (e) {
+      setAviso(mensajeDePedido(e, 'No se pudo enviar ni imprimir la comanda. Inténtalo de nuevo.'))
+      cargar()
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  /** Desde la vista previa de la comanda, "Imprimir" tambien registra la impresion (y pone COPIA si corresponde). */
+  async function registrarImpresionDelTicket() {
+    if (ticket?.tipo !== 'comanda') return
+    const registro = await registrarImpresionDeComanda(token, ticket.comanda.id)
+    setTicket({ ...ticket, copia: registro.copia, comanda: { ...ticket.comanda, impresiones: registro.impresiones } })
   }
 
   function agregarLinea(datos: Omit<DatosDeLinea, 'personaId'>) {
@@ -314,50 +377,39 @@ export function PantallaPedido({
         : null
 
   return (
-    <section className="ped2 ped3">
-      <header className="ped2-barra ped3-barra">
-        <Boton variante="secundario" onClick={onVolver}>
-          ← Mesas
-        </Boton>
-        <div className="ped2-resumen">
-          <strong className="ped2-titulo">{tituloActual}</strong>
-          <ul className="ped2-datos" aria-label="Resumen del pedido">
-            <li>
-              <ClipboardList className="ped4-ico" size={18} aria-hidden="true" />
-              Pedido {pedido.numero}
-            </li>
-            <li>
-              <Utensils className="ped4-ico" size={18} aria-hidden="true" />
-              {SERVICIO[pedido.servicio]}
-            </li>
-            <li>
-              <Users className="ped4-ico" size={18} aria-hidden="true" />
-              {pedido.personas.length} {pedido.personas.length === 1 ? 'comensal' : 'comensales'}
-            </li>
-            {pedido.abiertoEn && (
-              <li>
-                <Clock className="ped4-ico" size={18} aria-hidden="true" />
-                Desde {horaDe(pedido.abiertoEn)}
-              </li>
-            )}
-            {pedido.mozoNombre && (
-              <li>
-                <User className="ped4-ico" size={18} aria-hidden="true" />
-                Mozo: {pedido.mozoNombre}
-              </li>
-            )}
-            {pedido.nombreCliente && (
-              <li>
-                <User className="ped4-ico" size={18} aria-hidden="true" />
-                Cliente: {pedido.nombreCliente}
-              </li>
-            )}
-          </ul>
+    <section className="ped2 ped3 ped5">
+      <header className="ped2-barra ped3-barra ped5-cabecera">
+        <div className="ped5-titulo">
+          <button type="button" className="ped5-volver" onClick={onVolver}>
+            <ArrowLeft size={18} aria-hidden="true" />
+            {pedido.canal === 'mesa' ? 'Volver a mesas' : 'Volver'}
+          </button>
+          <div className="ped5-nombre">
+            <h1 className="ped2-titulo">{conNumeroDeDosCifras(tituloActual)}</h1>
+            <span className={`ped5-estado ${cerrado ? 'ped5-estado-cerrado' : ''}`}>
+              <i aria-hidden="true" />
+              {cerrado ? 'Cerrado' : 'En atención'}
+            </span>
+          </div>
+          <p className="ped5-datos" aria-label="Resumen del pedido">
+            {[
+              `Pedido #${pedido.numero}`,
+              SERVICIO[pedido.servicio],
+              `${pedido.personas.length} ${pedido.personas.length === 1 ? 'comensal' : 'comensales'}`,
+              pedido.mozoNombre ? `Mozo: ${pedido.mozoNombre}` : null,
+              pedido.nombreCliente ? `Cliente: ${pedido.nombreCliente}` : null,
+            ]
+              .filter(Boolean)
+              .map((dato) => (
+                <span key={dato}>{dato}</span>
+              ))}
+          </p>
         </div>
         {puedeMoverMesa && (
-          <Boton variante="secundario" onClick={() => setDialogo({ tipo: 'mover' })}>
+          <button type="button" className="ped5-boton-borde" onClick={() => setDialogo({ tipo: 'mover' })}>
+            <ArrowLeftRight size={18} aria-hidden="true" />
             Cambiar mesa
-          </Boton>
+          </button>
         )}
         {puedeMoverMesa && unidas.length > 0 && (
           <div className="ped3-separar">
@@ -380,7 +432,10 @@ export function PantallaPedido({
         <Aviso>Este pedido es para llevar pero todavía no se definió el precio del táper: no se está cobrando.</Aviso>
       )}
 
-      <div className="ped2-personas ped3-personas" role="tablist" aria-label="Personas del pedido">
+      <div className="ped2-personas ped3-personas ped5-comensales" role="tablist" aria-label="Personas del pedido">
+        <span className="ped5-etiqueta">Comensales</span>
+        {/* En celular la lista es una sola fila que se desliza, para que todas las tarjetas midan lo mismo. */}
+        <div className="ped5-comensales-lista">
         {pedido.personas.map((p) => {
           const activa = p.id === persona.id
           const nombre = p.pensionistaId ? nombresDePensionista[p.pensionistaId] : null
@@ -395,12 +450,17 @@ export function PantallaPedido({
                 className={`ped2-persona ${activa ? 'ped2-persona-activa' : ''}`}
                 onClick={() => setPersonaId(p.id)}
               >
-                <span>
-                  <User className="ped4-ico" size={15} aria-hidden="true" />
-                  {nombre ? `${p.etiqueta} · ${nombre}` : p.etiqueta}
-                </span>
-                <strong>{enSoles(p.total)}</strong>
-                {p.tipoCliente === 'pensionista' && <em className="ped3-insignia-pensionista">Pensionista</em>}
+                {p.tipoCliente === 'pensionista' ? (
+                  <UserCheck className="ped5-persona-icono pensionista" size={20} aria-hidden="true" />
+                ) : (
+                  <User className="ped5-persona-icono" size={20} aria-hidden="true" />
+                )}
+                {/* Identificada, la etiqueta ya es el nombre del pensionista: se muestra una sola vez. */}
+                <span title={nombre ?? p.etiqueta}>{nombre ?? p.etiqueta}</span>
+                <strong>
+                  {enSoles(p.total)}
+                  {p.tipoCliente === 'pensionista' && <em className="ped5-tipo"> · Pensionista</em>}
+                </strong>
               </button>
               {sePuedeQuitar && (
                 <button
@@ -430,8 +490,10 @@ export function PantallaPedido({
             )
           }
         >
-          + Persona
+          <Plus size={18} aria-hidden="true" />
+          Añadir persona
         </button>
+        </div>
       </div>
 
       <div className="ped2-cuerpo">
@@ -470,6 +532,7 @@ export function PantallaPedido({
 
         <OrdenDeLaMesa
           pedido={pedido}
+          titulo={conNumeroDeDosCifras(tituloActual)}
           filtroId={persona.id}
           nombresDePensionista={nombresDePensionista}
           fotos={fotos}
@@ -480,6 +543,7 @@ export function PantallaPedido({
           itemsNuevos={itemsNuevos}
           abierta={cajonAbierto}
           onCerrar={() => setCajonAbierto(false)}
+          onElegirPersona={setPersonaId}
           onCantidad={(l, cantidad) =>
             ejecutar(modificarLineaDelPedido(token, pedidoId, l.id, { cantidad, observacion: l.observacion }))
           }
@@ -497,6 +561,16 @@ export function PantallaPedido({
           onTerminar={() => setDialogo({ tipo: 'terminar' })}
           onComandar={() => comandar(itemsNuevos)}
           onCobrar={onCobrar && puedeCobrar ? () => onCobrar(pedidoId) : undefined}
+          caja={
+            puedeCobrar
+              ? {
+                  onVerPrecuenta: () => setTicket({ tipo: 'precuenta', imprimir: false }),
+                  onPrecuenta: () => setTicket({ tipo: 'precuenta', imprimir: true }),
+                  onVerComanda: () => void verComanda(),
+                  onComanda: () => void imprimirComanda(),
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -519,6 +593,23 @@ export function PantallaPedido({
         <ChevronRight size={20} aria-hidden="true" />
       </button>
 
+      {ticket && (
+        <DialogoTicket
+          titulo={ticket.tipo === 'precuenta' ? 'Pre-cuenta' : `Comanda ${ticket.comanda.numero}`}
+          imprimirAlAbrir={ticket.imprimir}
+          onImprimir={ticket.tipo === 'comanda' ? registrarImpresionDelTicket : undefined}
+          onCerrar={() => {
+            setTicket(null)
+            void listarComandasDelPedido(token, pedidoId).then(setComandas).catch(() => undefined)
+          }}
+        >
+          {ticket.tipo === 'precuenta' ? (
+            <TicketPrecuenta pedido={pedido} titulo={conNumeroDeDosCifras(tituloActual)} local={nombreLocal} />
+          ) : (
+            <TicketComanda comanda={ticket.comanda} copia={ticket.copia} />
+          )}
+        </DialogoTicket>
+      )}
       {comandaAbierta && (
         <VistaComanda
           token={token}

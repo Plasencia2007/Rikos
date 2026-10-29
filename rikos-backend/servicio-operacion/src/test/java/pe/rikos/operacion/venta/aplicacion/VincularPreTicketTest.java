@@ -183,15 +183,16 @@ class VincularPreTicketTest extends PedidosBase {
     }
 
     @Test
-    void falla_si_persona_ya_tiene_lineas() {
+    void vincula_aunque_la_persona_ya_tenga_productos_y_la_carta_conserva_su_precio() {
         var prod = productoDeCarta("Gaseosa", 600L);
-        agregarLinea.ejecutar(new SolicitudDeLinea(null, pedido.getId(), primeraPersona, TipoDeLinea.PRODUCTO, prod.getId(),
-                1, null, java.util.List.of(), null, null), ADMIN_SEMBRADO_ID).valorOLanza();
+        var gaseosa = agregarLinea.ejecutar(new SolicitudDeLinea(null, pedido.getId(), primeraPersona, TipoDeLinea.PRODUCTO,
+                prod.getId(), 1, null, java.util.List.of(), null, null), ADMIN_SEMBRADO_ID).valorOLanza();
 
         PreTicket pt = emitirPreTicket(pensionista.getId(), localA, "almuerzo", OffsetDateTime.now().plusHours(2));
 
         var res = vincularPreTicket.ejecutar(pedido.getId(), primeraPersona, pt.getCodigo(), ADMIN_SEMBRADO_ID);
-        assertThat(error(res)).isEqualTo(ErrorPedido.PERSONA_CON_LINEAS);
+        assertThat(res.valorOLanza().getPensionistaId()).isEqualTo(pensionista.getId());
+        assertThat(gaseosa.getPrecioUnitario()).isEqualTo(600L);
     }
 
     @Test

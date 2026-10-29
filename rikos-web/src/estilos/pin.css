@@ -1,0 +1,151 @@
+/* Tableta bloqueada del POS (PantallaPin.tsx, diseño 2026-10-29): foto del restaurante con el mensaje a la izquierda y
+   la tarjeta "Desbloquear terminal" a la derecha. En celular y tableta vertical solo la tarjeta, con la marca arriba. */
+.pin2 { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); background: #f5f8ff; color: #0f172a; }
+
+/* Izquierda: la foto */
+.pin2-foto {
+  position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; padding: 44px 56px 36px;
+  color: #fff; background:
+    linear-gradient(90deg, rgba(6, 10, 24, 0.82) 0%, rgba(6, 10, 24, 0.55) 45%, rgba(6, 10, 24, 0.12) 80%),
+    linear-gradient(180deg, rgba(6, 10, 24, 0.55) 0%, rgba(6, 10, 24, 0) 30%, rgba(6, 10, 24, 0) 62%, rgba(6, 10, 24, 0.7) 100%),
+    url('/imagenes/pos/pin-fondo.webp') 62% center / cover no-repeat;
+  overflow: hidden;
+}
+.pin2-protegida { align-self: flex-end; display: inline-flex; align-items: center; gap: 10px; font-size: 15.5px; color: rgba(255, 255, 255, 0.92); }
+
+/* Derecha: el acceso */
+.pin2-acceso { position: relative; display: grid; place-items: center; padding: 96px 32px 72px; }
+.pin2-terminal { position: absolute; top: 28px; right: 36px; display: flex; align-items: center; gap: 12px; color: #526079; }
+.pin2-terminal span { display: grid; line-height: 1.25; }
+.pin2-terminal strong { font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #334155; }
+.pin2-terminal small { font-size: 13.5px; }
+.pin2-marca-movil { display: none; }
+.pin2-tarjeta {
+  width: min(520px, 100%); box-sizing: border-box; display: grid; justify-items: center; gap: 6px; padding: 32px 40px 34px; border-radius: 22px;
+  background: #fff; border: 1px solid #e4e9f2; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+.pin2-candado { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: #e4edff; color: #2563eb; margin-bottom: 8px; }
+.pin2-tarjeta h2 { margin: 0; font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+.pin2-ayuda { margin: 0 0 14px; font-size: 16px; color: #526079; }
+.pin2-casillas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%; margin-bottom: 20px; }
+.pin2-casilla {
+  height: 66px; border-radius: 14px; border: 1.5px solid #dce2ec; background: #fff; display: grid; place-items: center;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.pin2-casilla i { width: 16px; height: 16px; border-radius: 50%; background: #2563eb; }
+.pin2-casilla.actual { border: 2px solid #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+.pin2-casilla.error { border-color: #f3b4b4; }
+.pin2-teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: 100%; }
+.pin2-tecla {
+  height: 68px; border-radius: 14px; border: 1.5px solid #e4e9f2; background: #fff; font: inherit; font-size: 26px; font-weight: 700; color: #0f172a;
+  display: grid; place-items: center; cursor: pointer; touch-action: manipulation; transition: background 100ms ease, transform 80ms ease;
+}
+.pin2-tecla:hover:not(:disabled) { background: #f5f8ff; border-color: #c7d6f5; }
+.pin2-tecla:active:not(:disabled) { transform: scale(0.97); background: #eff4ff; }
+.pin2-tecla.suave { background: #f5f7fb; font-size: 17px; }
+.pin2-tecla:disabled { opacity: 0.55; cursor: not-allowed; }
+.pin2-desbloquear {
+  width: 100%; min-height: 64px; margin-top: 18px; border: 0; border-radius: 14px; background: #2563eb; color: #fff; font: inherit; font-size: 18px;
+  font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
+}
+.pin2-desbloquear:hover:not(:disabled) { background: #1d4ed8; }
+.pin2-desbloquear:disabled { background: #8fb0f5; box-shadow: none; cursor: not-allowed; }
+.pin2-error { margin: 10px 0 0; font-size: 14.5px; font-weight: 600; color: #b42318; text-align: center; }
+.pin2-pie {
+  position: absolute; left: 32px; right: 36px; bottom: 26px; display: flex; align-items: center; justify-content: center; gap: 24px;
+  font-size: 15px; color: #526079;
+}
+.pin2-pie > span:first-child { display: inline-flex; align-items: center; gap: 10px; }
+.pin2-sistema { position: absolute; right: 0; display: inline-flex; align-items: center; gap: 8px; }
+.pin2-sistema i { width: 11px; height: 11px; border-radius: 50%; background: #22c55e; }
+.pin2-sistema.caido i { background: #dc2626; }
+
+/* Tableta horizontal chica */
+@media (max-width: 1180px) {
+  .pin2-foto { padding: 36px 36px 28px; }
+  .pin2-tarjeta { padding: 28px 30px; }
+  .pin2-pie { flex-direction: column; gap: 8px; }
+  .pin2-sistema { position: static; }
+}
+
+/* Celular y tableta vertical: solo la tarjeta */
+@media (max-width: 900px) {
+  .pin2 { grid-template-columns: 1fr; }
+  .pin2-foto { display: none; }
+  .pin2-acceso { padding: 28px 16px 24px; align-content: start; gap: 18px; place-items: start center; }
+  .pin2-terminal { display: none; }
+  .pin2-marca-movil { display: grid; justify-items: center; gap: 6px; }
+  .pin2-marca-movil span { font-size: 13px; letter-spacing: 0.04em; color: #526079; }
+  .pin2-tarjeta { padding: 24px 18px 22px; border-radius: 20px; }
+  .pin2-candado { width: 60px; height: 60px; }
+  .pin2-tarjeta h2 { font-size: 23px; }
+  .pin2-casilla { height: 56px; }
+  .pin2-casillas, .pin2-teclado { gap: 10px; }
+  .pin2-tecla { height: 60px; font-size: 24px; }
+  .pin2-desbloquear { min-height: 56px; }
+  .pin2-pie { position: static; flex-direction: column; gap: 10px; font-size: 13.5px; text-align: center; }
+}
+
+/* Web (>= 901 px): la pantalla no se desplaza. Ocupa el alto exacto y los tamaños siguen el alto disponible, asi cabe
+   tambien en laptops de 720-800 px de alto. */
+@media (min-width: 901px) {
+  .pin2 { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  .pin2-foto { padding: clamp(24px, 4.5vh, 44px) clamp(32px, 3.6vw, 56px) clamp(20px, 3.6vh, 36px); }
+  .pin2-acceso {
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto; place-items: initial; gap: clamp(8px, 1.6vh, 16px);
+    padding: clamp(14px, 2.6vh, 26px) 36px clamp(14px, 2.6vh, 24px); overflow: hidden;
+  }
+  .pin2-terminal { position: static; justify-self: end; }
+  .pin2-tarjeta {
+    align-self: center; justify-self: center; gap: clamp(2px, 0.6vh, 6px);
+    padding: clamp(18px, 3.4vh, 32px) 40px clamp(18px, 3.4vh, 34px);
+  }
+  .pin2-candado { width: clamp(52px, 8vh, 76px); height: clamp(52px, 8vh, 76px); margin-bottom: clamp(2px, 0.8vh, 8px); }
+  .pin2-candado svg { width: clamp(20px, 2.8vh, 26px); height: clamp(20px, 2.8vh, 26px); }
+  .pin2-tarjeta h2 { font-size: clamp(22px, 3vh, 28px); }
+  .pin2-ayuda { margin-bottom: clamp(6px, 1.4vh, 14px); }
+  .pin2-casillas { gap: clamp(10px, 1.5vh, 14px); margin-bottom: clamp(10px, 2vh, 20px); }
+  .pin2-casilla { height: clamp(46px, 6.8vh, 66px); }
+  .pin2-teclado { gap: clamp(8px, 1.4vh, 14px); }
+  .pin2-tecla { height: clamp(46px, 7vh, 68px); font-size: clamp(21px, 2.8vh, 26px); }
+  .pin2-desbloquear { min-height: clamp(48px, 6.6vh, 64px); margin-top: clamp(10px, 1.8vh, 18px); }
+  .pin2-pie { position: static; }
+  .pin2-sistema { position: absolute; right: 36px; }
+}
+@media (min-width: 901px) and (max-width: 1180px) {
+  .pin2-sistema { position: static; }
+}
+
+/* El logo de RIKO'S sobre la foto: fondo transparente, con un halo claro para que el rojo se lea sobre lo oscuro. */
+.pin2-logo {
+  width: auto; height: auto; object-fit: contain;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.35)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+}
+.pin2-marca-movil { justify-items: center; }
+.pin2-logo-movil { width: auto; height: auto; object-fit: contain; }
+
+/* Mensaje de la foto (2026-10-29): centrado en el alto, el titular en Plus Jakarta Sans (la segunda linea en el
+   dorado del logo) y los datos del local y la hora en un panel de vidrio. */
+.pin2-mensaje { display: grid; gap: clamp(14px, 2.2vh, 22px); justify-items: start; margin: auto 0; max-width: 560px; }
+.pin2-mensaje h1 {
+  margin: 0; display: grid; font-family: 'Plus Jakarta Sans Variable', var(--fuente-familia); font-size: clamp(34px, 3.5vw, 62px);
+  font-weight: 800; letter-spacing: -0.035em; line-height: 1.04; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+.pin2-mensaje h1 em {
+  font-style: normal; background: linear-gradient(90deg, #fcd34d, #f59e0b); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.pin2-mensaje p {
+  margin: 0; font-size: clamp(16px, 1.35vw, 20px); line-height: 1.5; color: rgba(255, 255, 255, 0.82); max-width: 42ch;
+}
+.pin2-datos {
+  display: grid; grid-template-columns: auto auto; margin: clamp(4px, 1vh, 10px) 0 0; border-radius: 16px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(10px);
+}
+.pin2-datos > div { display: grid; gap: 4px; padding: 12px 20px; }
+.pin2-datos > div + div { border-left: 1px solid rgba(255, 255, 255, 0.16); }
+.pin2-datos dt { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+.pin2-datos dd { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #fff; }
+.pin2-datos dd svg { color: #fcd34d; }
+.pin2-tarjeta h2 { font-family: 'Plus Jakarta Sans Variable', var(--fuente-familia); letter-spacing: -0.02em; }
+

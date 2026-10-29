@@ -1297,6 +1297,8 @@ export interface LineaDeComanda {
   nombre: string
   componentes: string[]
   observacion: string | null
+  /** Los componentes con lo que es cada uno (entrada, segundo...), en el orden del menú. */
+  partes?: ComponenteDelPedido[]
 }
 
 export interface PersonaDeComanda {

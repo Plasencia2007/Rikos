@@ -11,6 +11,8 @@ import './estilos/motivos.css'
 import './estilos/salones.css'
 import './estilos/mapa.css'
 import './estilos/pos.css'
+import './estilos/pin.css'
+import '@fontsource-variable/plus-jakarta-sans'
 
 createRoot(document.getElementById('raiz')!).render(
   <StrictMode>

@@ -11,6 +11,7 @@
     "generar-tipos": "openapi-typescript http://localhost:8081/api/v3/api-docs -o src/api/generado/esquema.d.ts"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@types/leaflet": "^1.9.22",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.48.0",

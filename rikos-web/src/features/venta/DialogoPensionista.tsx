@@ -90,8 +90,12 @@ export function DialogoPensionista({
         setErrorTicket('La cuenta del pensionista está desactivada.')
       } else if (err.includes('PENSIONISTA_YA_EN_EL_PEDIDO')) {
         setErrorTicket('Este pensionista ya está asignado a otra persona en esta mesa.')
-      } else if (err.includes('PERSONA_CON_LINEAS')) {
-        setErrorTicket('No se puede asignar un pensionista a una persona con platos ya agregados.')
+      } else if (err.includes('CANTIDAD_INVALIDA')) {
+        setErrorTicket('Esta persona tiene un menú con cantidad mayor a 1: déjalo en 1 antes de vincular.')
+      } else if (err.includes('PLAN_SIN_PRECIO')) {
+        setErrorTicket('El plan de este pensionista no tiene precio para esta comida: avísale al administrador.')
+      } else if (err.includes('LINEA_COBRADA')) {
+        setErrorTicket('Esta persona ya tiene algo cobrado: no se puede cambiar.')
       } else {
         setErrorTicket('No se pudo vincular el pre-ticket. Verifica el código e intenta otra vez.')
       }

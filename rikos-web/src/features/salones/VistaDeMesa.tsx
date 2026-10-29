@@ -42,7 +42,7 @@ export function VistaDeMesa({ forma, etiqueta, sillas, ancho, alto, seleccionada
   const [wf, hf] = medidasDeForma(forma)
   const w = ancho ?? wf
   const h = alto ?? hf
-  const colorSilla = seleccionada ? '#2B7A68' : '#B9C3C0'
+  const colorSilla = seleccionada ? '#2563eb' : '#B9C3C0'
   return (
     <div className={`sal-mesa ${seleccionada ? 'seleccionada' : ''} ${inactiva ? 'inactiva' : ''}`} style={{ width: w, height: h, ...style }} {...resto}>
       {posicionesDeSillas(forma, w, h, sillas).map((s, i) => (

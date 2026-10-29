@@ -1,5 +1,22 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Combine, Info, LayoutGrid, List, Lock, Maximize, Minus, Plus, User } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import {
+  ArrowRight,
+  Armchair,
+  Check,
+  Combine,
+  Info,
+  LayoutGrid,
+  Link2,
+  List,
+  Lock,
+  Maximize,
+  Minus,
+  Plus,
+  Search,
+  User,
+  X,
+} from 'lucide-react'
 import {
   Aviso,
   Boton,
@@ -30,7 +47,8 @@ import {
 } from '../../api/cliente'
 import { mensajeDePedido } from './mensajes'
 import { tiempoTranscurrido } from '../../comun/formato/tiempo'
-import { posicionesDeSillas } from '../salones'
+import { DecoradoDeSala } from './DecoradoDeSala'
+import { useRanuraDelCabezal } from '../../comun/hooks/ranuraDelCabezal'
 
 /**
  * US-027: el mapa de mesas del POS. Muestra las mesas ACTIVAS del local del
@@ -126,6 +144,25 @@ async function cerrarPedidoVacio(token: string, mesaId: string) {
 }
 
 const nombreDeMesa = (m: Mesa) => m.nombre || `Mesa ${m.numero}`
+/** En el plano y la lista: "01", "T1"; con nombre propio, el nombre. */
+const numeroCorto = (m: Mesa) => (/^\d+$/.test(m.numero) ? m.numero.padStart(2, '0') : m.numero)
+const etiquetaCorta = (m: Mesa) => m.nombre || numeroCorto(m)
+const nombreLargo = (m: Mesa) => m.nombre || `Mesa ${numeroCorto(m)}`
+const personas = (n: number) => `${n} ${n === 1 ? 'persona' : 'personas'}`
+
+/** La vista "Lista" (una tabla) solo se ofrece con pantalla ancha. */
+const ANCHO_PARA_LISTA = 1180
+function useConPanel() {
+  const consulta = `(min-width: ${ANCHO_PARA_LISTA}px)`
+  const [conPanel, setConPanel] = useState(() => window.matchMedia(consulta).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(consulta)
+    const cambiar = () => setConPanel(mq.matches)
+    mq.addEventListener('change', cambiar)
+    return () => mq.removeEventListener('change', cambiar)
+  }, [consulta])
+  return conPanel
+}
 
 /** Las mesas que nunca se ubicaron en el plano se acomodan en una cuadrícula para que no queden apiladas. */
 function ubicar(mesas: Mesa[]): { mesa: Mesa; x: number; y: number }[] {
@@ -177,8 +214,41 @@ function agrupar(sueltas: { mesa: Mesa; x: number; y: number }[]): MesaUbicada[]
 const SIN_SALON = '__sin_salon__'
 /** Por debajo de este ancho (px) el mapa se muestra como lista de mesas y no como plano. */
 const ANCHO_MINIMO_PLANO = 640
+
+/**
+ * Las sillas alrededor de una mesa del plano, como píldoras: una en cada cabecera desde 3 personas y el resto repartido
+ * arriba y abajo. Hay tantas sillas como personas (hasta 12).
+ */
+function sillasDelPlano(w: number, h: number, personas: number) {
+  const n = Math.max(0, Math.min(personas, 12))
+  // Todo se mide contra el lado corto de la mesa, para que una mesa chica tenga sillas chicas.
+  const lado = Math.min(w, h)
+  const grosor = Math.max(8, Math.min(13, lado * 0.15))
+  const separacion = Math.max(3, Math.min(6, lado * 0.07))
+  const cabeceras = n >= 3 ? 2 : 0
+  const arriba = Math.ceil((n - cabeceras) / 2)
+  const abajo = n - cabeceras - arriba
+  const sillas: { x: number; y: number; w: number; h: number }[] = []
+  const fila = (cantidad: number, y: number) => {
+    if (cantidad === 0) return
+    const largo = Math.min(lado * 0.43, (w - 8) / cantidad - 8)
+    for (let k = 0; k < cantidad; k++) sillas.push({ x: (w / (cantidad + 1)) * (k + 1) - largo / 2, y, w: largo, h: grosor })
+  }
+  fila(arriba, -grosor - separacion)
+  fila(abajo, h + separacion)
+  if (cabeceras) {
+    const largo = lado * 0.43
+    sillas.push({ x: -grosor - separacion, y: h / 2 - largo / 2, w: grosor, h: largo })
+    sillas.push({ x: w + separacion, y: h / 2 - largo / 2, w: grosor, h: largo })
+  }
+  return sillas
+}
 /** Espacio (px del lienzo) alrededor de las mesas al encuadrar el plano. */
-const MARGEN_DEL_PLANO = 70
+const MARGEN_DEL_PLANO = 40
+/** Las mesas se agrandan hasta llenar el ancho, como mucho a este tamaño. */
+const ESCALA_MAXIMA = 1.5
+/** Paredes y relleno del piso (px de pantalla, ambos lados) que no ocupa el lienzo. */
+const BORDE_DEL_PISO = 120
 
 /** El plano del salón a escala: cabe en el ancho disponible (sin encogerse de más; si no cabe, se desliza). */
 type EstadoDeUnion = 'normal' | 'principal' | 'seleccionada' | 'atenuada'
@@ -190,6 +260,8 @@ function PlanoDelSalon({
   zoom = 1,
   estadoUnir,
   uniones,
+  vista = 'plano',
+  coincide,
 }: {
   salon: Pick<Salon, 'anchoPlano' | 'altoPlano' | 'colorPiso'>
   mesas: Mesa[]
@@ -200,10 +272,13 @@ function PlanoDelSalon({
   estadoUnir?: (m: Mesa) => EstadoDeUnion
   /** Mesa principal y las que se le unen, para dibujar la línea entre ellas. */
   uniones?: { principal: string; secundarias: string[] }
+  /** En pantalla angosta "lista" muestra filas; en ancha la lista la dibuja ListaDeMesas. */
+  vista?: 'plano' | 'lista'
+  /** Búsqueda: las mesas que no coinciden se atenúan. */
+  coincide?: (m: Mesa) => boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [disponible, setDisponible] = useState(0)
-  const [vista, setVista] = useState<'plano' | 'lista'>('plano')
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
@@ -229,9 +304,10 @@ function PlanoDelSalon({
     }
   }, [ubicadas, salon.anchoPlano, salon.altoPlano])
   const colocadas = useMemo(() => ubicadas.map((u) => ({ ...u, x: u.x - caja.x, y: u.y - caja.y })), [ubicadas, caja])
-  const escala = (disponible > 0 ? Math.min(1, (disponible - 4) / caja.w) : 1) * zoom
+  const escala = (disponible > 0 ? Math.min(ESCALA_MAXIMA, (disponible - BORDE_DEL_PISO) / caja.w) : 1) * zoom
   // En pantallas angostas el plano a escala no se lee ni se toca bien: se pasa a una lista de mesas.
-  const compacto = disponible > 0 && disponible < ANCHO_MINIMO_PLANO
+  const compacto = vista === 'lista' || (disponible > 0 && disponible < ANCHO_MINIMO_PLANO)
+  const filtrada = (m: Mesa) => (coincide && !coincide(m) ? 'mapa-filtrada' : '')
   if (compacto) {
     const datosDe = (m: Mesa, unidas: Mesa[]) => {
       const enUso = m.estado === 'ocupada' || m.estado === 'pendiente_cierre'
@@ -250,18 +326,8 @@ function PlanoDelSalon({
     const enLista = [...ubicadas].sort((a, b) => prioridad(a.mesa) - prioridad(b.mesa))
     return (
       <div ref={ref} className="mapa-envoltura">
-        <div className="mapa-vistas" role="group" aria-label="Vista de las mesas">
-          <button type="button" aria-pressed={vista === 'plano'} onClick={() => setVista('plano')}>
-            <LayoutGrid size={17} strokeWidth={1.9} aria-hidden="true" />
-            Plano
-          </button>
-          <button type="button" aria-pressed={vista === 'lista'} onClick={() => setVista('lista')}>
-            <List size={17} strokeWidth={1.9} aria-hidden="true" />
-            Lista
-          </button>
-        </div>
         {vista === 'plano' ? (
-          <div className="mapa-compacto-plano" style={{ backgroundColor: salon.colorPiso }}>
+          <div className="mapa-compacto-plano">
             {enOrden.map(({ mesa: m, unidas }) => {
               const d = datosDe(m, unidas)
               const sub = d.fusion
@@ -277,7 +343,7 @@ function PlanoDelSalon({
                 <button
                   key={m.id}
                   type="button"
-                  className={`mapa-circulo mapa-${d.fusion ? 'unida' : m.estado} ${d.fusion ? 'mapa-circulo-unida' : ''} ${m.forma === 'cuadrada' || m.forma === 'rectangular' ? 'mapa-circulo-cuadrada' : ''} ${claseDeUnir(m)}`}
+                  className={`mapa-circulo mapa-${d.fusion ? 'unida' : m.estado} ${d.fusion ? 'mapa-circulo-unida' : ''} ${m.forma === 'cuadrada' || m.forma === 'rectangular' ? 'mapa-circulo-cuadrada' : ''} ${claseDeUnir(m)} ${filtrada(m)}`}
                   onClick={() => onElegir(m)}
                   aria-label={`${d.nombre}, ${ETIQUETA[m.estado]}${d.tiempo ? `, hace ${d.tiempo}` : ''}`}
                 >
@@ -306,7 +372,7 @@ function PlanoDelSalon({
                 <li key={m.id}>
                   <button
                     type="button"
-                    className={`mapa-fila ${claseDeUnir(m)}`}
+                    className={`mapa-fila ${claseDeUnir(m)} ${filtrada(m)}`}
                     onClick={() => onElegir(m)}
                     aria-label={`${d.nombre}, ${ETIQUETA[m.estado]}${d.tiempo ? `, hace ${d.tiempo}` : ''}`}
                   >
@@ -347,9 +413,9 @@ function PlanoDelSalon({
         className="mapa-plano"
         style={{
           ['--alto-contenido' as string]: `${caja.h * escala}px`,
-          backgroundColor: salon.colorPiso,
         }}
       >
+        <DecoradoDeSala />
         <div className="mapa-escalado" style={{ width: caja.w * escala, height: caja.h * escala }}>
           <div
             className="mapa-lienzo"
@@ -365,10 +431,31 @@ function PlanoDelSalon({
                   const a = colocadas.find((u) => u.mesa.id === uniones.principal)
                   const b = colocadas.find((u) => u.mesa.id === id)
                   if (!a || !b) return null
-                  return <line key={id} x1={a.x + a.w / 2} y1={a.y + a.h / 2} x2={b.x + b.w / 2} y2={b.y + b.h / 2} />
+                  const [ax, ay, bx, by] = [a.x + a.w / 2, a.y + a.h / 2, b.x + b.w / 2, b.y + b.h / 2]
+                  return (
+                    <g key={id}>
+                      <line x1={ax} y1={ay} x2={bx} y2={by} />
+                      <circle className="mapa-enlace" cx={(ax + bx) / 2} cy={(ay + by) / 2} r={15} />
+                    </g>
+                  )
                 })}
               </svg>
             )}
+            {uniones?.secundarias.map((id) => {
+              const a = colocadas.find((u) => u.mesa.id === uniones.principal)
+              const b = colocadas.find((u) => u.mesa.id === id)
+              if (!a || !b) return null
+              return (
+                <span
+                  key={id}
+                  className="mapa-enlace-icono"
+                  style={{ left: (a.x + a.w / 2 + b.x + b.w / 2) / 2, top: (a.y + a.h / 2 + b.y + b.h / 2) / 2 }}
+                  aria-hidden="true"
+                >
+                  <Link2 size={16} strokeWidth={2.2} />
+                </span>
+              )
+            })}
             {colocadas.map(({ mesa: m, x, y, w: ancho, h: alto, unidas }) => {
               const enUso = m.estado === 'ocupada' || m.estado === 'pendiente_cierre'
               const tomando = m.estado === 'libre' && !!m.tomandoPedido
@@ -376,65 +463,131 @@ function PlanoDelSalon({
               const fusion = unidas.length > 0
               const capacidad = (m.capacidad ?? 4) + unidas.reduce((suma, u) => suma + (u.capacidad ?? 4), 0)
               const nombre = fusion ? `${nombreDeMesa(m)} +${unidas.length}` : nombreDeMesa(m)
-              const sillas = posicionesDeSillas(fusion ? 'rectangular' : m.forma, ancho, alto, capacidad)
-              const colorSilla = {
-                libre: '#9bd0c3',
-                ocupada: '#eba8a0',
-                pendiente_cierre: '#e9cb8c',
-                bloqueada: '#c9d2cf',
-                unida: '#b5c6da',
-              }[fusion ? 'unida' : m.estado]
+              const sillas = sillasDelPlano(ancho, alto, capacidad)
+              const unir = estadoUnir?.(m)
+              const marcada = unir === 'principal' || unir === 'seleccionada'
               return (
                 <button
                   key={m.id}
                   type="button"
-                  className={`mapa-mesa mapa-${fusion ? 'unida' : m.estado} ${m.forma === 'redonda' ? 'redonda' : ''} ${fusion ? 'fusionada' : ''} ${estadoUnir ? `unir-${estadoUnir(m)}` : ''}`}
-                  style={{ left: x, top: y, width: ancho, height: alto }}
+                  className={`mapa-mesa mapa-${fusion ? 'unida' : m.estado} ${m.forma === 'redonda' ? 'redonda' : ''} ${fusion ? 'fusionada' : ''} ${tomando ? 'tomando' : ''} ${unir ? `unir-${unir}` : ''} ${filtrada(m)}`}
+                  style={{ left: x, top: y, width: ancho, height: alto, ['--lado' as string]: `${Math.min(ancho, alto)}px` }}
                   onClick={() => onElegir(m)}
+                  aria-pressed={marcada || undefined}
                   aria-label={`${nombre}, ${fusion ? `Unida (${unidas.length + 1} mesas)` : ETIQUETA[m.estado]}${tiempo ? `, hace ${tiempo}` : ''}`}
                 >
                   {sillas.map((s, i) => (
-                    <span
-                      key={i}
-                      className="mapa-silla"
-                      style={{
-                        left: s.x,
-                        top: s.y,
-                        width: s.horizontal ? 24 : 9,
-                        height: s.horizontal ? 9 : 24,
-                        background: colorSilla,
-                      }}
-                    />
+                    <span key={i} className="mapa-silla" style={{ left: s.x, top: s.y, width: s.w, height: s.h }} />
                   ))}
                   <span className="mapa-cuerpo">
-                    <b>{nombre}</b>
-                    {m.estado === 'bloqueada' ? (
-                      <span>
-                        <Lock size={11} strokeWidth={2} aria-hidden="true" />
-                        {m.motivoBloqueo ?? ''}
-                      </span>
-                    ) : tomando ? (
-                      <span>Tomando · {tiempo}</span>
-                    ) : tiempo ? (
-                      <span>{tiempo}</span>
-                    ) : fusion ? (
-                      <span>{capacidad} sillas</span>
-                    ) : m.estado === 'libre' && m.capacidad != null ? (
-                      <span>{m.capacidad} sillas</span>
-                    ) : m.estado !== 'libre' ? (
-                      <span>{ETIQUETA[m.estado]}</span>
-                    ) : null}
+                    <b>{fusion ? `${etiquetaCorta(m)} +${unidas.length}` : etiquetaCorta(m)}</b>
+                    <small>{tiempo ? `hace ${tiempo}` : personas(capacidad)}</small>
+                    {marcada ? (
+                      <em className="mapa-cuerpo-unir">{unir === 'principal' ? 'Principal' : 'Seleccionada'}</em>
+                    ) : m.estado === 'bloqueada' ? (
+                      <em className="mapa-cuerpo-estado" title={m.motivoBloqueo ?? undefined}>
+                        <Lock size={10} strokeWidth={2.2} aria-hidden="true" />
+                        Bloqueada
+                      </em>
+                    ) : (
+                      <em className="mapa-cuerpo-estado">
+                        <i aria-hidden="true" />
+                        {fusion ? 'Unida' : tomando ? 'Tomando' : ETIQUETA[m.estado]}
+                      </em>
+                    )}
                   </span>
                   {m.vip && <span className="mapa-vip">VIP</span>}
-                  {tomando && <span className="mapa-tomando">Tomando pedido</span>}
-                  {estadoUnir?.(m) === 'principal' && <span className="mapa-etiqueta-unir principal">Principal</span>}
-                  {estadoUnir?.(m) === 'seleccionada' && <span className="mapa-etiqueta-unir">Se une</span>}
+                  {marcada && (
+                    <span className="mapa-check" aria-hidden="true">
+                      <Check size={13} strokeWidth={3} />
+                    </span>
+                  )}
                 </button>
               )
             })}
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Vista "Lista" en pantalla ancha: una tabla con el estado, el tiempo y la acción de cada mesa. */
+function ListaDeMesas({
+  mesas,
+  coincide,
+  puedeAbrir,
+  onAccionar,
+}: {
+  mesas: Mesa[]
+  coincide?: (m: Mesa) => boolean
+  puedeAbrir: boolean
+  onAccionar: (m: Mesa) => void
+}) {
+  const filas = agrupar(ubicar(mesas))
+    .sort((a, b) => Math.round(a.y / 100) - Math.round(b.y / 100) || a.x - b.x)
+    .filter((u) => !coincide || coincide(u.mesa))
+  return (
+    <div className="mapa-lista">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Mesa</th>
+            <th scope="col">Capacidad</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Tiempo</th>
+            <th scope="col">
+              <span className="mapa-solo-lector">Acción</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {filas.map(({ mesa: m, unidas }) => {
+            const fusion = unidas.length > 0
+            const tomando = m.estado === 'libre' && !!m.tomandoPedido
+            const enUso = m.estado === 'ocupada' || m.estado === 'pendiente_cierre'
+            const tiempo = enUso || tomando ? tiempoTranscurrido(m.abiertaEn) : ''
+            const capacidad = (m.capacidad ?? 4) + unidas.reduce((s, u) => s + (u.capacidad ?? 4), 0)
+            const abre = m.estado === 'libre' && !tomando && !fusion && puedeAbrir
+            const estado = tomando ? 'tomando' : fusion ? 'unida' : m.estado
+            return (
+              <tr key={m.id} onClick={() => onAccionar(m)}>
+                <th scope="row">
+                  <span className="mapa-lista-mesa">
+                    <Armchair size={20} strokeWidth={1.7} aria-hidden="true" />
+                    {fusion ? `${nombreLargo(m)} +${unidas.length}` : nombreLargo(m)}
+                    {m.vip && <i className="mapa-vip">VIP</i>}
+                  </span>
+                </th>
+                <td>{personas(capacidad)}</td>
+                <td>
+                  <span className={`mapa-estado-pastilla mapa-${estado}`}>
+                    <i aria-hidden="true" />
+                    {tomando ? 'Tomando' : fusion ? 'Unida' : ETIQUETA[m.estado]}
+                  </span>
+                </td>
+                <td>{tiempo || '—'}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="mapa-lista-accion"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAccionar(m)
+                    }}
+                  >
+                    {abre ? 'Abrir' : 'Ver'}
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      <p className="mapa-lista-pie">
+        {filas.length} {filas.length === 1 ? 'mesa' : 'mesas'} {coincide ? 'encontradas' : 'en este salón'}
+      </p>
     </div>
   )
 }
@@ -457,7 +610,12 @@ export function MapaDeMesas({
   const [zoom, setZoom] = useState(1)
   const [modoUnir, setModoUnir] = useState<{ principal: string | null; secundarias: string[] } | null>(null)
   const [dialogoUnir, setDialogoUnir] = useState(false)
+  const [vista, setVista] = useState<'plano' | 'lista'>('plano')
+  const [busqueda, setBusqueda] = useState('')
+  const conPanel = useConPanel()
   const avisos = useAvisos()
+  // En el POS el título va en el cabezal, y aquí solo se desplaza el panel del salón.
+  const ranura = useRanuraDelCabezal()
 
   const cargar = useCallback(
     (silencioso = false) => {
@@ -532,19 +690,24 @@ export function MapaDeMesas({
     return (modoUnir.principal ? puedeUnirse(m) : puedeSerPrincipal(m)) ? 'normal' : 'atenuada'
   }
 
+  /** Abrir la mesa (libre) o su detalle (en uso, bloqueada): los mismos diálogos de siempre. */
+  function accionar(m: Mesa) {
+    setVerDetalle(false)
+    const unidas = (mesas ?? []).filter((x) => x.mesaPrincipalId === m.id)
+    if (unidas.length > 0 && onAbrirPedido) {
+      // Una mesa ya formada (unida) lleva directo a su pedido, titulado con todas las mesas: "Terraza 4 + Terraza 10".
+      const titulo = [m, ...unidas].map(nombreDeMesa).join(' + ')
+      obtenerPedidoDeMesa(token, m.id)
+        .then((p) => onAbrirPedido(p.id, titulo))
+        .catch(() => setSeleccionada(m))
+      return
+    }
+    setSeleccionada(m)
+  }
+
   function alElegirMesa(m: Mesa) {
     if (!modoUnir) {
-      setVerDetalle(false)
-      const unidas = (mesas ?? []).filter((x) => x.mesaPrincipalId === m.id)
-      if (unidas.length > 0 && onAbrirPedido) {
-        // Una mesa ya formada (unida) lleva directo a su pedido, titulado con todas las mesas: "Terraza 4 + Terraza 10".
-        const titulo = [m, ...unidas].map(nombreDeMesa).join(' + ')
-        obtenerPedidoDeMesa(token, m.id)
-          .then((p) => onAbrirPedido(p.id, titulo))
-          .catch(() => setSeleccionada(m))
-        return
-      }
-      setSeleccionada(m)
+      accionar(m)
       return
     }
     if (m.id === modoUnir.principal) {
@@ -581,155 +744,217 @@ export function MapaDeMesas({
   const porCobrar = actual.mesas.filter((m) => m.estado === 'pendiente_cierre').length
   const bloqueadas = actual.mesas.filter((m) => m.estado === 'bloqueada').length
   const parte = (n: number) => `${(n / actual.mesas.length) * 100}%`
+  const texto = busqueda.trim().toLowerCase()
+  const coincide = texto
+    ? (m: Mesa) => [etiquetaCorta(m), nombreLargo(m), m.numero].some((t) => t.toLowerCase().includes(texto))
+    : undefined
+  const conLista = conPanel && vista === 'lista'
+  const subtitulo = modoUnir
+    ? 'Selecciona en el plano las mesas que deseas unir.'
+    : vista === 'lista'
+      ? 'Consulta el estado y abre una mesa para iniciar la atención.'
+      : 'Selecciona una mesa para iniciar la atención.'
+  const elegidasParaUnir = modoUnir ? [modoUnir.principal, ...modoUnir.secundarias].filter((x): x is string => !!x) : []
+  const titulo = (
+    <div className="mapa-titulo">
+      <h1>Gestión de mesas</h1>
+      <p>{subtitulo}</p>
+    </div>
+  )
 
   return (
-    <section className="mapa-mesas">
+    <section className={`mapa-mesas ${ranura ? 'mapa-mesas-fija' : ''}`}>
       {error && <Aviso tono="error">{error}</Aviso>}
+      {ranura ? createPortal(titulo, ranura) : titulo}
+
       <div className="mapa-barra">
-        {pestanas.length > 1 ? (
-          <div className="mapa-pestanas" role="tablist" aria-label="Salones">
-            {pestanas.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="tab"
-                aria-selected={p.id === actual.id}
-                className={`mapa-pestana ${p.id === actual.id ? 'elegida' : ''}`}
-                onClick={() => {
-                  setSalonElegido(p.id)
-                  setModoUnir(null)
-                }}
-              >
-                <LayoutGrid size={16} strokeWidth={1.9} aria-hidden="true" />
-                {p.nombre} <span>({p.mesas.length})</span>
-              </button>
-            ))}
+        <div className="mapa-pestanas" role="tablist" aria-label="Salones">
+          {pestanas.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="tab"
+              aria-selected={p.id === actual.id}
+              className={`mapa-pestana ${p.id === actual.id ? 'elegida' : ''}`}
+              onClick={() => {
+                setSalonElegido(p.id)
+                setModoUnir(null)
+              }}
+            >
+              <LayoutGrid size={18} strokeWidth={1.9} aria-hidden="true" />
+              {p.nombre}
+              <span className="mapa-pestana-cuenta">{p.mesas.length}</span>
+            </button>
+          ))}
+        </div>
+        <label className="mapa-buscar">
+          <Search size={18} strokeWidth={1.9} aria-hidden="true" />
+          <input
+            id="mapa-buscar"
+            type="search"
+            placeholder="Buscar mesa…"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            aria-label="Buscar mesa"
+          />
+        </label>
+        {!modoUnir && (
+          <div className="mapa-vistas" role="group" aria-label="Vista de las mesas">
+            <button type="button" aria-pressed={vista === 'plano'} onClick={() => setVista('plano')}>
+              <LayoutGrid size={18} strokeWidth={1.9} aria-hidden="true" />
+              Plano
+            </button>
+            <button type="button" aria-pressed={vista === 'lista'} onClick={() => setVista('lista')}>
+              <List size={18} strokeWidth={1.9} aria-hidden="true" />
+              Lista
+            </button>
           </div>
-        ) : (
-          <span />
         )}
-        <div className="mapa-barra-acciones">
-          {puedeReorganizar && (
+        {puedeReorganizar &&
+          (modoUnir ? (
+            <div className="mapa-acciones-union">
+              <button type="button" className="mapa-boton-unir cancelar" onClick={() => setModoUnir(null)}>
+                <X size={18} strokeWidth={2} aria-hidden="true" />
+                Cancelar unión
+              </button>
+              <button
+                type="button"
+                className="mapa-boton-unir fusionar"
+                disabled={!modoUnir.principal || modoUnir.secundarias.length === 0}
+                onClick={() => setDialogoUnir(true)}
+              >
+                <Link2 size={18} strokeWidth={2} aria-hidden="true" />
+                {elegidasParaUnir.length >= 2 ? `Fusionar ${elegidasParaUnir.length} mesas` : 'Fusionar'}
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
-              className={`mapa-boton-unir ${modoUnir ? 'activo' : ''}`}
-              aria-pressed={modoUnir !== null}
-              onClick={() => setModoUnir(modoUnir ? null : { principal: null, secundarias: [] })}
+              className="mapa-boton-unir"
+              onClick={() => {
+                setModoUnir({ principal: null, secundarias: [] })
+                setVista('plano')
+              }}
             >
-              <Combine size={17} strokeWidth={1.9} aria-hidden="true" />
+              <Combine size={18} strokeWidth={1.9} aria-hidden="true" />
               Unir mesas
             </button>
-          )}
-        </div>
+          ))}
       </div>
-      <div className="mapa-tarjeta">
-        <div className="mapa-cabecera">
-          <div>
-            <strong>{actual.nombre}</strong>
-            {actual.salon.descripcion && <p>{actual.salon.descripcion}</p>}
-          </div>
-          <div className="mapa-cifras" aria-label="Resumen del salón">
-            <span>
-              <i className="mapa-punto mapa-ocupada" aria-hidden="true" />
-              <b>{ocupadas}</b> de {actual.mesas.length} ocupadas <em className="mapa-porcentaje">{porcentaje}%</em>
-            </span>
-            <span className="mapa-cifras-separador" aria-hidden="true" />
-            <span>
-              <i className="mapa-punto mapa-libre" aria-hidden="true" />
-              <b>{libres}</b> {libres === 1 ? 'libre' : 'libres'}
-            </span>
-          </div>
-          <div className="mapa-barra-estado" aria-hidden="true">
-            <span style={{ width: parte(ocupadas - porCobrar), background: '#c0392b' }} />
-            <span style={{ width: parte(porCobrar), background: '#b7791f' }} />
-            <span style={{ width: parte(bloqueadas), background: '#7b8985' }} />
-          </div>
-          <div className="mapa-zoom">
-            <button type="button" className="mapa-ajustar" onClick={() => setZoom(1)}>
-              <Maximize size={16} strokeWidth={1.8} aria-hidden="true" />
-              Ajustar vista
-            </button>
-            <span className="mapa-zoom-control">
-              <button
-                type="button"
-                aria-label="Alejar"
-                onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))}
-              >
-                <Minus size={16} aria-hidden="true" />
-              </button>
-              <span aria-live="polite">{Math.round(zoom * 100)}%</span>
-              <button
-                type="button"
-                aria-label="Acercar"
-                onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}
-              >
-                <Plus size={16} aria-hidden="true" />
-              </button>
-            </span>
-          </div>
-        </div>
-        {modoUnir && (
-          <div className="mapa-guia-unir" role="status">
-            <Combine size={18} aria-hidden="true" />
-            <div>
-              <strong>Unir mesas</strong>
-              <span>
-                {modoUnir.principal
-                  ? '2. Toca las mesas libres que se le unen (las ocupadas o con pedido abierto no se pueden unir).'
-                  : '1. Toca la mesa principal (la que conserva el pedido).'}
+
+      <div className="mapa-cuerpo-pantalla">
+        <div className="mapa-tarjeta">
+          <div className="mapa-cabecera">
+            {modoUnir ? (
+              <div className="mapa-modo-union" role="status">
+                <Link2 size={20} strokeWidth={2} aria-hidden="true" />
+                <strong>Modo unión activo</strong>
+                <span>
+                  {elegidasParaUnir.length === 0
+                    ? 'Toca la primera mesa: es la principal y conserva el pedido.'
+                    : elegidasParaUnir.length === 1
+                      ? 'Ahora toca las mesas libres que se le unen.'
+                    : `${elegidasParaUnir.length} ${elegidasParaUnir.length === 1 ? 'mesa seleccionada' : 'mesas seleccionadas'}`}
+                </span>
+              </div>
+            ) : (
+              <div>
+                <h2>{actual.nombre}</h2>
+                {actual.salon.descripcion && <p>{actual.salon.descripcion}</p>}
+              </div>
+            )}
+            <div className="mapa-cifras" aria-label="Resumen del salón">
+              <span className="mapa-cifra">
+                <i className="mapa-punto mapa-libre" aria-hidden="true" />
+                {libres} {libres === 1 ? 'libre' : 'libres'}
+              </span>
+              <span className="mapa-cifra">
+                <i className="mapa-punto mapa-ocupada" aria-hidden="true" />
+                {ocupadas} {ocupadas === 1 ? 'ocupada' : 'ocupadas'}
+              </span>
+              <span className="mapa-cifra">
+                <b>{porcentaje}%</b> ocupación
               </span>
             </div>
+            <div className="mapa-barra-estado" aria-hidden="true">
+              <span style={{ width: parte(ocupadas - porCobrar), background: '#c0392b' }} />
+              <span style={{ width: parte(porCobrar), background: '#b7791f' }} />
+              <span style={{ width: parte(bloqueadas), background: '#6b7a92' }} />
+            </div>
           </div>
-        )}
-        <PlanoDelSalon
-          salon={actual.salon}
-          mesas={actual.mesas}
-          onElegir={alElegirMesa}
-          zoom={zoom}
-          estadoUnir={modoUnir ? estadoUnir : undefined}
-          uniones={
-            modoUnir?.principal ? { principal: modoUnir.principal, secundarias: modoUnir.secundarias } : undefined
-          }
-        />
-        {modoUnir ? (
-          <div className="mapa-pie-unir">
-            <p>
-              <b>Principal:</b>{' '}
-              {modoUnir.principal ? nombreDeMesa(mesas.find((m) => m.id === modoUnir.principal)!) : '—'}
-              {' · '}
-              <b>Se unen:</b>{' '}
-              {modoUnir.secundarias.length === 0
-                ? '—'
-                : modoUnir.secundarias.map((id) => nombreDeMesa(mesas.find((m) => m.id === id)!)).join(', ')}
-            </p>
-            <Boton variante="secundario" onClick={() => setModoUnir(null)}>
-              Cancelar
-            </Boton>
-            <Boton
-              disabled={!modoUnir.principal || modoUnir.secundarias.length === 0}
-              onClick={() => setDialogoUnir(true)}
-            >
-              Unir {modoUnir.secundarias.length + 1} mesas
-            </Boton>
-          </div>
-        ) : (
-          <ul className="mapa-leyenda" aria-label="Leyenda">
-            {ORDEN_DE_ESTADOS.map((e) => (
-              <li key={e}>
-                <i className={`mapa-tinta mapa-${e}`} aria-hidden="true" />
-                {ETIQUETA[e]}
-              </li>
-            ))}
-            <li>
-              <i className="mapa-tinta mapa-tomandomarca" aria-hidden="true" />
-              Tomando pedido
-            </li>
-            <li>
-              <i className="mapa-tinta mapa-vipmarca" aria-hidden="true" />
-              Mesa VIP
-            </li>
-          </ul>
-        )}
+          {conLista ? (
+            <ListaDeMesas
+              mesas={actual.mesas}
+              coincide={coincide}
+              puedeAbrir={!!onAbrirPedido}
+              onAccionar={accionar}
+            />
+          ) : (
+            <div className="mapa-plano-marco">
+              <PlanoDelSalon
+                salon={actual.salon}
+                mesas={actual.mesas}
+                onElegir={alElegirMesa}
+                zoom={zoom}
+                vista={vista}
+                coincide={coincide}
+                estadoUnir={modoUnir ? estadoUnir : undefined}
+                uniones={
+                  modoUnir?.principal ? { principal: modoUnir.principal, secundarias: modoUnir.secundarias } : undefined
+                }
+              />
+              {vista === 'plano' && (
+                <>
+                  <span className="mapa-zoom mapa-zoom-control">
+                    <button
+                      type="button"
+                      aria-label="Alejar"
+                      onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)))}
+                    >
+                      <Minus size={18} aria-hidden="true" />
+                    </button>
+                    <span aria-live="polite">{Math.round(zoom * 100)}%</span>
+                    <button
+                      type="button"
+                      aria-label="Acercar"
+                      onClick={() => setZoom((z) => Math.min(1.6, +(z + 0.1).toFixed(2)))}
+                    >
+                      <Plus size={18} aria-hidden="true" />
+                    </button>
+                  </span>
+                  <button
+                    type="button"
+                    className="mapa-ajustar mapa-ajustar-flotante"
+                    aria-label="Ajustar vista"
+                    title="Ajustar vista"
+                    onClick={() => setZoom(1)}
+                  >
+                    <Maximize size={18} strokeWidth={1.9} aria-hidden="true" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          {!conLista && (
+              <ul className="mapa-leyenda" aria-label="Leyenda">
+                {ORDEN_DE_ESTADOS.map((e) => (
+                  <li key={e}>
+                    <i className={`mapa-tinta mapa-${e}`} aria-hidden="true" />
+                    {ETIQUETA[e]}
+                  </li>
+                ))}
+                <li>
+                  <i className="mapa-tinta mapa-tomandomarca" aria-hidden="true" />
+                  Tomando pedido
+                </li>
+                <li>
+                  <i className="mapa-tinta mapa-vipmarca" aria-hidden="true" />
+                  Mesa VIP
+                </li>
+              </ul>
+          )}
+        </div>
+
       </div>
 
       {dialogoUnir && modoUnir?.principal && (
@@ -797,9 +1022,9 @@ export function MapaDeMesas({
 }
 
 /**
- * "Unir mesas": confirma la unión. La primera mesa elegida es la principal. Si la principal está libre y estamos en el
- * POS, se abre su pedido con el total de comensales y el cliente (como al abrir una mesa); si ya tiene pedido, solo se
- * unen las mesas a él.
+ * "Fusionar": confirma la unión. La primera mesa elegida es la principal. Si la principal está libre y estamos en el
+ * POS, se abre su pedido con el total de comensales (por defecto, la suma de las capacidades) y el cliente; si ya tiene
+ * pedido, solo se unen las mesas a él. Al terminar se queda en el mapa: el pedido se toma tocando la mesa fusionada.
  */
 function DialogoUnirMesas({
   token,
@@ -852,9 +1077,8 @@ function DialogoUnirMesas({
         await unirMesa(token, m.id, principal.id)
         hechas.push(m)
       }
-      avisos.mostrar(secundarias.length === 1 ? 'Mesa unida' : `${secundarias.length} mesas unidas`)
+      avisos.mostrar(`${todas.map(nombreDeMesa).join(' + ')} fusionadas`)
       onHecho()
-      if (pedidoId && onAbrirPedido) onAbrirPedido(pedidoId, nombreDeMesa(principal))
     } catch (e) {
       for (const m of hechas) await separarMesa(token, m.id).catch(() => undefined)
       if (pedidoId) await terminarPedido(token, pedidoId).catch(() => undefined)
@@ -868,7 +1092,7 @@ function DialogoUnirMesas({
   return (
     <Modal
       abierto
-      titulo="Unir mesas"
+      titulo={todas.map(nombreDeMesa).join(' + ')}
       onCerrar={onCerrar}
       pie={
         <>
@@ -876,7 +1100,7 @@ function DialogoUnirMesas({
             Cancelar
           </Boton>
           <Boton cargando={trabajando} onClick={unir}>
-            Unir
+            Fusionar
           </Boton>
         </>
       }

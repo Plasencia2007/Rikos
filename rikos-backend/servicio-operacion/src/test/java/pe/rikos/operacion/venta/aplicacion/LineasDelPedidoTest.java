@@ -254,12 +254,14 @@ class LineasDelPedidoTest extends PedidosBase {
     // ---- Personas con lineas (pruebas movidas desde PersonasDelPedidoTest) ---------------------------------
 
     @Test
-    void no_se_asigna_un_pensionista_a_una_persona_que_ya_tiene_lineas() {
+    void se_asigna_un_pensionista_aunque_la_persona_ya_tenga_lineas_y_la_carta_conserva_su_precio() {
+        // Antes se rechazaba (PERSONA_CON_LINEAS); desde DT-070 se recalcula (ver RecalculoAlIdentificarPensionistaTest).
         Pensionista luis = nuevoPensionista(plan, "Quispe");
-        agregarLinea.ejecutar(carta(productoDeCarta("Chicha", 500L).getId(), 1), ADMIN_SEMBRADO_ID).valorOLanza();
+        var chicha = agregarLinea.ejecutar(carta(productoDeCarta("Chicha", 500L).getId(), 1), ADMIN_SEMBRADO_ID)
+                .valorOLanza();
 
-        assertThat(error(asignarPensionista.ejecutar(pedido.getId(), persona, luis.getId(), ADMIN_SEMBRADO_ID)))
-                .isEqualTo(ErrorPedido.PERSONA_CON_LINEAS);
+        assertThat(asignarPensionista.ejecutar(pedido.getId(), persona, luis.getId(), ADMIN_SEMBRADO_ID).esExito()).isTrue();
+        assertThat(chicha.getPrecioUnitario()).isEqualTo(500L);
     }
 
     @Test

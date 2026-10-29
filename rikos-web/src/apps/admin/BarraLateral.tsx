@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
+  LogoDelRestaurante,
   IconoInicio,
   IconoCajaRegistradora,
   IconoCubiertos,
@@ -303,10 +304,7 @@ export function BarraLateral({ abierta, onCerrar }: { abierta: boolean; onCerrar
             <span className="panel-lateral-marca-corta" aria-hidden="true">
               R
             </span>
-            <div className="panel-lateral-marca-texto">
-              <span className="panel-lateral-marca-nombre">Riko's</span>
-              <span className="panel-lateral-marca-subtitulo">Restaurante</span>
-            </div>
+            <LogoDelRestaurante className="panel-lateral-marca-texto" />
           </div>
           <button
             type="button"

@@ -370,7 +370,7 @@ export function PantallaUsuarioFormulario() {
                   checked={formulario.rolesIds.includes(rol.id)}
                   onChange={() => alternarSeleccion('rolesIds', rol.id)}
                 />
-                <span className="usuario-rol-punto" style={{ background: rol.color ?? '#2b7a68' }} aria-hidden="true" />
+                <span className="usuario-rol-punto" style={{ background: rol.color ?? '#2563eb' }} aria-hidden="true" />
                 <span className="usuario-opcion-etiqueta">{rol.nombre}</span>
               </label>
             ))}

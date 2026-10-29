@@ -88,6 +88,28 @@ el 5432 suele estar ocupado por una instalación previa de Postgres en Windows. 
 alguna vez ves el error *«password authentication failed»*, casi siempre no es la
 contraseña: es que te estás conectando al Postgres equivocado.
 
+### Sin Docker (si Docker consume mucha RAM)
+
+Se puede usar el PostgreSQL instalado en Windows (puerto 5432). RabbitMQ y Mailpit no
+hacen falta todavía: el código solo tiene la dependencia, no envía ni escucha mensajes.
+
+Una sola vez, con el usuario administrador de tu Postgres, crea el usuario y las bases:
+
+```bash
+"/c/Program Files/PostgreSQL/18/bin/psql.exe" -U postgres -h localhost -p 5432 -c "CREATE ROLE rikos LOGIN PASSWORD 'rikos';" -c "CREATE DATABASE rikos_operacion OWNER rikos;" -c "CREATE DATABASE rikos_facturacion OWNER rikos;"
+```
+
+Después, cada vez: `rikos-backend\levantar-sin-docker.bat` abre `servicio-operacion` y el
+gateway en sus ventanas (con `operacion` como argumento, solo levanta ese servicio en la
+misma ventana). El script apunta los servicios al 5432 con la variable `DB_URL`; el
+código no cambia. Las bases empiezan vacías: Flyway crea las tablas al primer arranque.
+
+El script activa el perfil `demo`, que carga **datos de prueba** inventados: mozos `mozo1` y
+`mozo2` (PIN 1111 y 2222), `cajero1`, `cocina1` y `adminlocal` (contraseña `demo123`), mesas,
+platos, recetas, stock, pensionistas (PIN de kiosco 111111, 222222 y 333333) y el menú de la
+semana. Son distintos de los datos del sistema que crean las migraciones. Detalle en
+`rikos-backend/doc/historias/datos-de-prueba.md`.
+
 ---
 
 ## 5. Levantar el backend

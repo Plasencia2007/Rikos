@@ -7,6 +7,11 @@ interface Props {
   onCerrar: () => void
   children: ReactNode
   pie?: ReactNode
+  /** "amplio" para diálogos con mucho contenido (hasta 880 px de ancho). */
+  ancho?: 'normal' | 'amplio'
+  /** Línea chica bajo el título y un ícono en un cuadro a su izquierda (opcionales). */
+  subtitulo?: string
+  icono?: ReactNode
 }
 
 /**
@@ -14,7 +19,7 @@ interface Props {
  * "Nuevo": este mismo componente es el que va a abrir la creacion en las
  * treinta pantallas de administracion que siguen.
  */
-export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
+export function Modal({ abierto, titulo, onCerrar, children, pie, ancho = 'normal', subtitulo, icono }: Props) {
   useEffect(() => {
     if (!abierto) return
     function alEscape(evento: KeyboardEvent) {
@@ -29,14 +34,24 @@ export function Modal({ abierto, titulo, onCerrar, children, pie }: Props) {
   return createPortal(
     <div className="modal-fondo" onMouseDown={onCerrar}>
       <div
-        className="modal-caja"
+        className={`modal-caja ${ancho === 'amplio' ? 'modal-amplio' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
         onMouseDown={(evento) => evento.stopPropagation()}
       >
         <header className="modal-encabezado">
-          <h2>{titulo}</h2>
+          {icono || subtitulo ? (
+            <div className="modal-titulo-con-icono">
+              {icono && <span className="modal-icono">{icono}</span>}
+              <div>
+                <h2>{titulo}</h2>
+                {subtitulo && <p className="modal-subtitulo">{subtitulo}</p>}
+              </div>
+            </div>
+          ) : (
+            <h2>{titulo}</h2>
+          )}
           <button type="button" className="modal-cerrar" onClick={onCerrar} aria-label="Cerrar">
             ×
           </button>

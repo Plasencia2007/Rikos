@@ -65,3 +65,36 @@ servicios (gateway, servicio-operacion, servicio-facturacion) + frontend.
 - Para trabajo nuevo (feature o proyecto desde cero dentro de RIKOS), especificar
   primero con el método spec-driven antes de escribir código -- ver
   `docs/METODO-spec-driven.md`.
+
+## Cómo trabajamos (áreas y ramas)
+
+**Al empezar cualquier tarea, pregunta primero si es de la app o de la web.**
+
+| Área | Qué incluye | Carpetas | Sprints Scrum |
+|---|---|---|---|
+| App | App móvil Kotlin Multiplatform | Solo `rikos-app/` | No. No se registra en la hoja «Gestión Scrum» |
+| Web | Frontend web, backend y el resto del repo | `rikos-web/`, `rikos-backend/`, `docs/` y la raíz | Sí. Se registra en la hoja «Gestión Scrum» |
+
+- La app no entra en los sprints, pero su funcionalidad y su diseño siguen las mismas
+  historias del backlog. El cruce está en `rikos-app/docs/03-pantallas-vs-backlog.md`.
+- Un cambio de la app nunca toca nada fuera de `rikos-app/`. Un cambio de la web nunca toca
+  `rikos-app/`. Si una tarea necesita las dos áreas, se hace en dos pasos, cada uno en su rama.
+- Las reglas propias de la app están en `rikos-app/docs/00-git-y-alcance.md`.
+
+### Ramas
+
+- Cada integrante tiene una rama por área: `app/<nombre>` y `web/<nombre>`
+  (William: `app/jhonsons` y `web/jhonsons`; Andrey trabaja la app en `app/desarrollo-movil`).
+- La rama de integración es **`develop`**. Nadie trabaja directo en `develop` ni en `main`.
+- Antes de empezar a trabajar: `git pull origin develop` estando en tu rama.
+- Pasar a `develop`, solo cuando el integrante lo pida («ya acabé, pásalo a develop»):
+  1. Trae `develop` a la rama, resuelve los conflictos y corre las pruebas del área.
+  2. Revisa que el diff solo tenga archivos de esa área.
+  3. Únelo a `develop` y haz push. Si el repo usa pull requests, abre uno hacia `develop`.
+  4. Recuerda que el resto del equipo debe traer `develop` a su propia rama
+     (`git pull origin develop` estando en su rama).
+- `develop` pasa a `main` solo cuando el equipo termina todo y lo pide explícitamente.
+- Nunca hagas commit ni push sin que el integrante lo pida.
+
+Todo lo de sprints, tablero, bitácora e incidencias (solo web) se rige por
+`docs/SEGUIMIENTO-SCRUM.md`.
