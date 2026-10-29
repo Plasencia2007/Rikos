@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react'
-import { LayoutGrid, List, Plus, Search, UtensilsCrossed } from 'lucide-react'
-import { Boton, EstadoVacio } from '../../comun/componentes'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ConciergeBell, LayoutGrid, Leaf, List, Plus, Search, Star, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { EstadoVacio } from '../../comun/componentes'
 import { enSoles } from '../../comun/formato/dinero'
 import type { OfertaDelDia, ProductoOfrecido } from '../../api/cliente'
 
 type Pestana = 'todo' | 'entrada' | 'segundo' | 'extra'
 type Modo = 'mosaico' | 'lista'
 
-const PESTANAS: { id: Pestana; titulo: string }[] = [
-  { id: 'todo', titulo: 'Todo' },
-  { id: 'entrada', titulo: 'Entrada' },
-  { id: 'segundo', titulo: 'Segundo' },
-  { id: 'extra', titulo: 'Extra' },
+const PESTANAS: { id: Pestana; titulo: string; Icono: LucideIcon }[] = [
+  { id: 'todo', titulo: 'Todo', Icono: LayoutGrid },
+  { id: 'entrada', titulo: 'Entrada', Icono: Leaf },
+  { id: 'segundo', titulo: 'Segundo', Icono: ConciergeBell },
+  { id: 'extra', titulo: 'Extra', Icono: Star },
 ]
 
 const COMPONENTE: Record<string, string> = {
@@ -34,8 +34,8 @@ interface Item {
 }
 
 /**
- * El catalogo del pedido (diseno aprobado): buscador arriba, pestanas Todo / Entrada / Segundo / Extra y cambio entre
- * mosaico y lista. "Todo" trae primero las tarjetas del menu del dia y del menu extra (solo si hay menu confirmado
+ * El catalogo del pedido (diseno 2026-10-28): buscador (Ctrl + K) con el cambio entre mosaico y lista, pestanas Todo /
+ * Entrada / Segundo / Extra con icono y tarjetas con foto y un boton redondo para agregar. "Todo" trae primero las tarjetas del menu del dia y del menu extra (solo si hay menu confirmado
  * hoy, abren su dialogo con opciones), la comida del plan del pensionista y luego todos los productos; Entrada, Segundo
  * y Extra filtran por el `grupo` que calcula el servidor desde la categoria raiz; el "Extra" libre (precio manual, queda
  * marcado y auditado) es una tarjeta dentro de Extra. Un producto de la carta se agrega directo.
@@ -66,6 +66,19 @@ export function CatalogoDelPedido({
   const [pestana, setPestana] = useState<Pestana>('todo')
   const [modo, setModo] = useState<Modo>('mosaico')
   const [busqueda, setBusqueda] = useState('')
+  const buscador = useRef<HTMLInputElement>(null)
+
+  // Ctrl + K (o Cmd + K) lleva al buscador desde cualquier parte de la pantalla.
+  useEffect(() => {
+    const atajo = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        buscador.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', atajo)
+    return () => window.removeEventListener('keydown', atajo)
+  }, [])
 
   const resumenDelMenu = (cual: 'normal' | 'extra') =>
     (cual === 'extra' ? oferta.extra : oferta.normal).map((c) => COMPONENTE[c.componente] ?? c.componente).join(' · ')
@@ -136,35 +149,22 @@ export function CatalogoDelPedido({
   }, [items, busqueda])
 
   return (
-    <div className="ped3-catalogo">
-      <label className="ped3-buscador">
-        <Search size={18} aria-hidden="true" />
-        <input
-          type="search"
-          placeholder="Buscar productos…"
-          aria-label="Buscar productos"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </label>
-
-      <div className="ped3-barra-catalogo">
-        <div className="ped3-pestanas" role="tablist" aria-label="Catálogo">
-          {PESTANAS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              role="tab"
-              aria-selected={pestana === p.id}
-              className={`ped3-pestana ${pestana === p.id ? 'ped3-pestana-activa' : ''}`}
-              onClick={() => setPestana(p.id)}
-            >
-              {p.titulo}
-            </button>
-          ))}
-        </div>
-        <h3 className="ped4-productos">Productos</h3>
-        <div className="ped3-modos" role="group" aria-label="Vista del catálogo">
+    <div className="ped3-catalogo ped5-catalogo">
+      <div className="ped5-busqueda">
+        <label className="ped3-buscador ped5-buscador">
+          <Search size={20} aria-hidden="true" />
+          <input
+            ref={buscador}
+            type="search"
+            placeholder="Buscar producto por nombre…"
+            aria-label="Buscar productos"
+            aria-keyshortcuts="Control+K"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <kbd>Ctrl + K</kbd>
+        </label>
+        <div className="ped3-modos ped5-modos" role="group" aria-label="Vista del catálogo">
           <button
             type="button"
             className={`ped3-modo ${modo === 'mosaico' ? 'ped3-modo-activo' : ''}`}
@@ -172,7 +172,7 @@ export function CatalogoDelPedido({
             aria-label="Mosaico"
             onClick={() => setModo('mosaico')}
           >
-            <LayoutGrid size={18} aria-hidden="true" />
+            <LayoutGrid size={20} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -181,10 +181,28 @@ export function CatalogoDelPedido({
             aria-label="Lista"
             onClick={() => setModo('lista')}
           >
-            <List size={18} aria-hidden="true" />
+            <List size={20} aria-hidden="true" />
           </button>
         </div>
       </div>
+
+      <div className="ped3-pestanas ped5-chips" role="tablist" aria-label="Catálogo">
+        {PESTANAS.map(({ id, titulo, Icono }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={pestana === id}
+            className={`ped3-pestana ${pestana === id ? 'ped3-pestana-activa' : ''}`}
+            onClick={() => setPestana(id)}
+          >
+            <Icono size={19} strokeWidth={1.8} aria-hidden="true" />
+            {titulo}
+          </button>
+        ))}
+      </div>
+
+      <h3 className="ped5-catalogo-titulo">Catálogo</h3>
 
       {pestana === 'todo' && !oferta.hayMenu && servicio === 'almuerzo' && !busqueda && (
         <p className="cta-nota ped4-aviso-menu">Hoy no hay menú programado: se pide de la carta.</p>
@@ -200,27 +218,29 @@ export function CatalogoDelPedido({
           }
         />
       ) : (
-        <ul className={modo === 'mosaico' ? 'ped2-rejilla ped3-rejilla' : 'ped3-lista'} aria-label="Productos">
+        <ul className={modo === 'mosaico' ? 'ped2-rejilla ped3-rejilla ped5-rejilla' : 'ped3-lista ped5-lista'} aria-label="Productos">
           {visibles.map((i) => (
-            <li key={i.clave} className={modo === 'mosaico' ? 'ped3-tarjeta' : 'ped3-fila'}>
+            <li key={i.clave} className={modo === 'mosaico' ? 'ped3-tarjeta ped5-tarjeta' : 'ped3-fila ped5-fila'}>
               <div className="ped3-imagen" aria-hidden="true">
-                {i.imagen ? <img src={i.imagen} alt="" loading="lazy" /> : <UtensilsCrossed size={modo === 'mosaico' ? 30 : 20} />}
+                {i.imagen ? <img src={i.imagen} alt="" loading="lazy" /> : <UtensilsCrossed size={modo === 'mosaico' ? 34 : 20} strokeWidth={1.6} />}
               </div>
-              <div className="ped3-texto">
-                <strong>{i.titulo}</strong>
-                {i.subtitulo && <span className="ped3-subtitulo">{i.subtitulo}</span>}
-                {i.nota && <span className="ped3-subtitulo">{i.nota}</span>}
-              </div>
-              <div className="ped3-pie">
-                {i.precio && <strong className="ped3-precio">{i.precio}</strong>}
-                <Boton
-                  tamano="tactil"
+              <div className="ped5-tarjeta-cuerpo">
+                <div className="ped3-texto">
+                  <strong title={i.titulo}>{i.titulo}</strong>
+                  {(i.subtitulo || i.nota) && (
+                    <span className="ped3-subtitulo">{[i.subtitulo, i.nota].filter(Boolean).join(' · ')}</span>
+                  )}
+                  {i.precio && <strong className="ped3-precio">{i.precio}</strong>}
+                </div>
+                <button
+                  type="button"
+                  className="ped5-agregar"
                   aria-label={`Agregar ${i.titulo}`}
                   disabled={bloqueado || trabajando}
                   onClick={i.onAgregar}
                 >
-                  <Plus size={16} aria-hidden="true" /> Agregar
-                </Boton>
+                  <Plus size={22} strokeWidth={2.4} aria-hidden="true" />
+                </button>
               </div>
             </li>
           ))}

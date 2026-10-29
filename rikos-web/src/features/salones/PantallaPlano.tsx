@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronLeft, Info, Lock, LockOpen, RotateCcw, Save, Square, Circle, RectangleHorizontal } from 'lucide-react'
+import { ChevronLeft, Info, Lock, LockOpen, Minus, Plus, RotateCcw, Save, Square, Circle, RectangleHorizontal, X } from 'lucide-react'
 import { useSesion } from '../../comun/sesion/SesionContexto'
 import { Aviso, Boton, EstadoCargando, EstadoError, IconoReactivar, Interruptor, Modal, ModalDeConfirmacion } from '../../comun/componentes'
 import {
@@ -58,9 +58,20 @@ const desdeMesa = (m: Mesa, indice: number): MesaEnEdicion => ({
 
 let contadorNuevas = 0
 
+/** Lo mínimo que puede medir una mesa (px del plano) al cambiarle el tamaño. */
+const TAMANO_MINIMO = 40
+/** Tamaños rápidos: múltiplos del tamaño de fábrica de cada forma. */
+const TAMANOS_RAPIDOS = [
+  { etiqueta: 'Chica', factor: 0.8 },
+  { etiqueta: 'Mediana', factor: 1 },
+  { etiqueta: 'Grande', factor: 1.25 },
+]
+
 /**
- * Editor de plano visual de un salón: las mesas sobre el lienzo del salón. Con "Mover mesas" activo se
- * arrastran; un clic en una mesa abre sus propiedades. Nada se guarda hasta "Guardar plano".
+ * Editor de plano visual de un salón: las mesas sobre el lienzo del salón. Sin "Mover mesas", un clic en una mesa abre
+ * sus propiedades. Con "Mover mesas" activo, un clic la elige, se arrastra y su esquina cambia el tamaño (doble clic abre
+ * las propiedades). La barra de tamaño de la mesa elegida tiene tamaños rápidos e iguala todas las mesas a su tamaño.
+ * Nada se guarda hasta "Guardar plano".
  */
 export function PantallaPlano() {
   const { salonId } = useParams<{ salonId: string }>()
@@ -145,11 +156,60 @@ export function PantallaPlano() {
   function alSoltar(m: MesaEnEdicion) {
     const a = arrastre.current
     arrastre.current = null
-    // Un clic (sin arrastrar) abre las propiedades de la mesa.
-    if (a && !a.movido) {
-      setErroresModal('')
-      setEditando(mesas.find((x) => x.id === m.id) ?? m)
-    }
+    // Un clic (sin arrastrar) abre las propiedades de la mesa; con "Mover mesas" solo la elige.
+    if (a && !a.movido && !moviendo) abrirPropiedades(m)
+  }
+
+  function abrirPropiedades(m: MesaEnEdicion) {
+    setErroresModal('')
+    setEditando(mesas.find((x) => x.id === m.id) ?? m)
+  }
+
+  // ---- tamaño
+  /** La mesa con otro tamaño, sin achicarse de más ni salirse del plano. Redondas y cuadradas quedan parejas. */
+  function conTamano(m: MesaEnEdicion, ancho: number, alto: number): MesaEnEdicion {
+    if (!salon) return m
+    const pareja = m.forma !== 'rectangular'
+    let w = Math.max(TAMANO_MINIMO, Math.round(pareja ? Math.max(ancho, alto) : ancho))
+    let h = Math.max(TAMANO_MINIMO, Math.round(pareja ? w : alto))
+    w = Math.min(w, salon.anchoPlano - m.x)
+    h = Math.min(h, salon.altoPlano - m.y)
+    if (pareja) w = h = Math.min(w, h)
+    return { ...m, ancho: w, alto: h }
+  }
+
+  function cambiarTamano(id: string, ancho: number, alto: number) {
+    setMesas((a) => a.map((m) => (m.id === id ? conTamano(m, ancho, alto) : m)))
+  }
+
+  /**
+   * El tamaño que toma una mesa al igualarla con el modelo: el mismo ancho y alto. Una redonda o cuadrada copiada de una
+   * rectangular toma su lado corto, para quedar pareja sin crecer de más.
+   */
+  function igualadaA(m: MesaEnEdicion, modelo: MesaEnEdicion): MesaEnEdicion {
+    const lado = Math.min(modelo.ancho, modelo.alto)
+    return m.forma !== 'rectangular' && modelo.forma === 'rectangular' ? conTamano(m, lado, lado) : conTamano(m, modelo.ancho, modelo.alto)
+  }
+
+  /** Iguala al tamaño de la mesa elegida todas las mesas activas del salón. */
+  function igualarTodas(modelo: MesaEnEdicion) {
+    setMesas((a) => a.map((m) => (m.activo && m.id !== modelo.id ? igualadaA(m, modelo) : m)))
+    setMensaje(`Todas las mesas con ${modelo.ancho}×${modelo.alto} px`)
+  }
+
+  const estirando = useRef<{ id: string; inicioX: number; inicioY: number; ancho: number; alto: number } | null>(null)
+
+  function alPresionarTirador(e: React.PointerEvent, m: MesaEnEdicion) {
+    e.stopPropagation()
+    estirando.current = { id: m.id, inicioX: e.clientX, inicioY: e.clientY, ancho: m.ancho, alto: m.alto }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  function alEstirar(e: React.PointerEvent) {
+    const t = estirando.current
+    if (!t) return
+    e.stopPropagation()
+    cambiarTamano(t.id, t.ancho + e.clientX - t.inicioX, t.alto + e.clientY - t.inicioY)
   }
 
   function anadir(forma: FormaDeMesa) {
@@ -262,6 +322,14 @@ export function PantallaPlano() {
 
   const volver = () => navigate(`/admin/configuracion/salones/${salon.id}`)
   const activas = mesas.filter((m) => m.activo)
+  const elegida = activas.find((m) => m.id === seleccionada) ?? null
+  const otras = elegida ? activas.filter((m) => m.id !== elegida.id) : []
+  const igualadas =
+    !elegida ||
+    otras.every((m) => {
+      const igual = igualadaA(m, elegida)
+      return igual.ancho === m.ancho && igual.alto === m.alto
+    })
 
   return (
     <div className="plano-pagina">
@@ -299,7 +367,10 @@ export function PantallaPlano() {
             onPointerDown={(e) => e.target === e.currentTarget && setSeleccionada(null)}
           >
             <div className="plano-pista">
-              <Info size={15} aria-hidden="true" /> Haz clic en una mesa para ver sus propiedades · Activa «Mover mesas» para arrastrarlas
+              <Info size={15} aria-hidden="true" />
+              {moviendo
+                ? 'Arrastra una mesa para moverla · Arrastra su esquina para cambiar el tamaño · Doble clic: propiedades'
+                : 'Haz clic en una mesa para ver sus propiedades · Activa «Mover mesas» para moverlas y cambiar su tamaño'}
             </div>
             {mesas.filter((m) => m.activo).map((m) => (
               <VistaDeMesa
@@ -313,24 +384,81 @@ export function PantallaPlano() {
                 style={{ position: 'absolute', left: m.x, top: m.y, cursor: moviendo ? 'grab' : 'pointer', touchAction: 'none' }}
                 onPointerDown={(e) => alPresionar(e, m)}
                 onPointerUp={() => alSoltar(m)}
+                onDoubleClick={() => moviendo && abrirPropiedades(m)}
               />
             ))}
+            {moviendo && elegida && (
+              <span
+                className={`plano-tirador ${elegida.forma}`}
+                style={{ left: elegida.x + elegida.ancho, top: elegida.y + elegida.alto }}
+                title="Arrastra para cambiar el tamaño"
+                onPointerDown={(e) => alPresionarTirador(e, elegida)}
+                onPointerMove={alEstirar}
+                onPointerUp={() => (estirando.current = null)}
+              />
+            )}
           </div>
         </div>
 
-        <div className="plano-herramientas" role="toolbar" aria-label="Añadir mesa">
-          <span>AÑADIR MESA</span>
-          {[
-            { f: 'cuadrada' as const, t: 'Cuadrada', I: Square },
-            { f: 'redonda' as const, t: 'Redonda', I: Circle },
-            { f: 'rectangular' as const, t: 'Rectangular', I: RectangleHorizontal },
-          ].map(({ f, t, I }) => (
-            <button key={f} type="button" onClick={() => anadir(f)}>
-              <I size={26} strokeWidth={1.5} aria-hidden="true" />
-              {t}
+        {elegida ? (
+          <div className="plano-herramientas plano-tamano" role="toolbar" aria-label={`Tamaño de la mesa ${elegida.numero}`}>
+            <span>MESA {elegida.nombre.trim() || elegida.numero}</span>
+            <div className="plano-medida">
+              <button type="button" aria-label="Achicar" onClick={() => cambiarTamano(elegida.id, elegida.ancho * 0.9, elegida.alto * 0.9)}>
+                <Minus size={18} aria-hidden="true" />
+              </button>
+              <strong>
+                {elegida.ancho} × {elegida.alto}
+              </strong>
+              <button type="button" aria-label="Agrandar" onClick={() => cambiarTamano(elegida.id, elegida.ancho * 1.1, elegida.alto * 1.1)}>
+                <Plus size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="plano-rapidos" role="group" aria-label="Tamaños rápidos">
+              {TAMANOS_RAPIDOS.map(({ etiqueta, factor }) => {
+                const [w, h] = medidasDeForma(elegida.forma)
+                const ancho = Math.round(w * factor)
+                const alto = Math.round(h * factor)
+                return (
+                  <button
+                    key={etiqueta}
+                    type="button"
+                    aria-pressed={elegida.ancho === ancho && elegida.alto === alto}
+                    onClick={() => cambiarTamano(elegida.id, ancho, alto)}
+                  >
+                    {etiqueta}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              type="button"
+              className="plano-igualar"
+              disabled={otras.length === 0 || igualadas}
+              title="Pone este tamaño a todas las mesas del salón"
+              onClick={() => igualarTodas(elegida)}
+            >
+              {otras.length === 0 ? 'No hay otras mesas' : `Igualar las ${otras.length + 1} mesas`}
             </button>
-          ))}
-        </div>
+            <button type="button" className="plano-tamano-cerrar" aria-label="Soltar la mesa" onClick={() => setSeleccionada(null)}>
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          <div className="plano-herramientas" role="toolbar" aria-label="Añadir mesa">
+            <span>AÑADIR MESA</span>
+            {[
+              { f: 'cuadrada' as const, t: 'Cuadrada', I: Square },
+              { f: 'redonda' as const, t: 'Redonda', I: Circle },
+              { f: 'rectangular' as const, t: 'Rectangular', I: RectangleHorizontal },
+            ].map(({ f, t, I }) => (
+              <button key={f} type="button" onClick={() => anadir(f)}>
+                <I size={26} strokeWidth={1.5} aria-hidden="true" />
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {mensaje && (

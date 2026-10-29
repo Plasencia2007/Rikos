@@ -1,16 +1,29 @@
-import { ArrowLeftRight, Ban, Send, StickyNote, Trash2, Utensils, UtensilsCrossed, Wallet, X } from 'lucide-react'
-import { Boton, Insignia } from '../../comun/componentes'
+import { ArrowLeftRight, ArrowRight, Ban, StickyNote, Trash2, User, Utensils, UtensilsCrossed, Wallet, X } from 'lucide-react'
+import { Insignia } from '../../comun/componentes'
 import { enSoles } from '../../comun/formato/dinero'
 import type { LineaDelPedido, Pedido, PersonaDelPedido } from '../../api/cliente'
 import { nombreDeLinea, siglaDePersona } from './OrdenDeLaPersona'
-
-const SERVICIO: Record<string, string> = { desayuno: 'Desayuno', almuerzo: 'Almuerzo', cena: 'Cena' }
 
 /** Una comida del plan o un menu de un pensionista se pide de a una por linea. */
 function cantidadFija(l: LineaDelPedido, persona: PersonaDelPedido): boolean {
   return (
     persona.tipoCliente === 'pensionista' &&
     ['menu_normal', 'menu_extra', 'plan_desayuno', 'plan_cena'].includes(l.tipoLinea)
+  )
+}
+
+/** Dibujo del pedido vacío: una boleta con cubiertos. */
+function PedidoVacio() {
+  return (
+    <svg className="ped5-vacio-dibujo" viewBox="0 0 120 110" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M38 14 h40 a4 4 0 0 1 4 4 v62 l-6 -4 -6 4 -6 -4 -6 4 -6 -4 -6 4 -6 -4 -6 4 v-62 a4 4 0 0 1 4 -4 z" fill="#fff" />
+        <path d="M46 30 h28 M46 41 h28 M46 52 h18" />
+        <circle cx="80" cy="78" r="15" fill="#fff" />
+        <path d="M76 71 v6 a2 2 0 0 0 4 0 v-6 M78 77 v9 M85 71 v15 M85 71 c3 2 3 7 0 8" />
+        <path d="M24 34 l-7 -4 M22 48 h-8 M24 62 l-7 4 M96 34 l7 -4 M98 48 h8" />
+      </g>
+    </svg>
   )
 }
 
@@ -23,6 +36,7 @@ function cantidadFija(l: LineaDelPedido, persona: PersonaDelPedido): boolean {
  */
 export function OrdenDeLaMesa({
   pedido,
+  titulo,
   filtroId,
   nombresDePensionista,
   fotos,
@@ -44,6 +58,8 @@ export function OrdenDeLaMesa({
   onCobrar,
 }: {
   pedido: Pedido
+  /** El nombre de la mesa ("Mesa 04") o del pedido para llevar, para la cabecera. */
+  titulo: string
   /** La persona elegida arriba: solo para su bloque de pensionista; la lista siempre es de toda la mesa. */
   filtroId: string | null
   nombresDePensionista: Record<string, string>
@@ -71,7 +87,6 @@ export function OrdenDeLaMesa({
   const filtrada = pedido.personas.find((p) => p.id === filtroId) ?? null
   const visibles = pedido.personas.flatMap((p) => p.lineas.map((l) => ({ l, p })))
   const vigentes = visibles.filter(({ l }) => l.estado !== 'anulado').length
-  const totalVigentes = pedido.personas.reduce((n, p) => n + p.lineas.filter((l) => l.estado !== 'anulado').length, 0)
   const nombreDelPensionista = filtrada?.pensionistaId ? (nombresDePensionista[filtrada.pensionistaId] ?? null) : null
 
   // Hay productos pedidos si alguna linea no esta anulada.
@@ -89,8 +104,7 @@ export function OrdenDeLaMesa({
         <div className="ped3-orden-titulo">
           <h2>Orden de la mesa</h2>
           <span className="cta-nota">
-            Pedido {pedido.numero} · {SERVICIO[pedido.servicio]} · {pedido.personas.length}{' '}
-            {pedido.personas.length === 1 ? 'persona' : 'personas'}
+            {titulo} · Pedido #{pedido.numero}
           </span>
         </div>
         <div className="ped3-orden-cuenta">
@@ -108,6 +122,9 @@ export function OrdenDeLaMesa({
         <div
           className={`ped3-pensionista ${filtrada.tipoCliente === 'pensionista' ? 'ped3-pensionista-verificado' : ''}`}
         >
+          <span className="ped5-avatar" aria-hidden="true">
+            <User size={22} />
+          </span>
           {filtrada.tipoCliente === 'pensionista' ? (
             <>
               <div>
@@ -127,9 +144,9 @@ export function OrdenDeLaMesa({
                 <span className="cta-nota">Sin identificar</span>
               </div>
               {!cerrado && filtrada.lineas.length === 0 && (
-                <Boton variante="secundario" onClick={() => onIdentificar(filtrada.id)}>
+                <button type="button" className="ped5-identificar" onClick={() => onIdentificar(filtrada.id)}>
                   Identificar pensionista
-                </Boton>
+                </button>
               )}
             </>
           )}
@@ -141,10 +158,14 @@ export function OrdenDeLaMesa({
         aria-label={filtrada ? `Productos de ${filtrada.etiqueta}` : 'Productos de la mesa'}
       >
         {visibles.length === 0 && (
-          <li className="ped-vacio">
-            {filtrada
-              ? `Todavía no hay nada para ${filtrada.etiqueta}. Agrega un producto del catálogo.`
-              : 'Todavía no hay nada en la mesa. Elige una persona y agrega un producto del catálogo.'}
+          <li className="ped5-vacio">
+            <PedidoVacio />
+            <strong>Tu pedido está vacío</strong>
+            <span>
+              {filtrada
+                ? `Selecciona un producto para agregarlo a ${filtrada.etiqueta}.`
+                : 'Elige una persona y selecciona un producto del catálogo.'}
+            </span>
           </li>
         )}
         {visibles.map(({ l, p }) => {
@@ -269,12 +290,10 @@ export function OrdenDeLaMesa({
         })}
       </ul>
 
-      <footer className="ped2-orden-pie">
+      <footer className="ped2-orden-pie ped5-pie">
         <dl className="ped2-totales">
           <div>
-            <dt>
-              Subtotal · {totalVigentes} {totalVigentes === 1 ? 'ítem' : 'ítems'}
-            </dt>
+            <dt>Subtotal</dt>
             <dd>{enSoles(pedido.subtotal)}</dd>
           </div>
           {pedido.taper > 0 && (
@@ -288,27 +307,39 @@ export function OrdenDeLaMesa({
             <dd aria-label="Total del pedido">{enSoles(pedido.total)}</dd>
           </div>
         </dl>
-        {!cerrado && itemsNuevos > 0 && (
-          <p className="ped4-aviso-comanda">Se enviarán los productos nuevos de todas las personas</p>
-        )}
-        {/* "Terminar pedido" solo mientras no se pidio nada (o todo se anulo): con productos hay que comandarlos y cobrarlos. */}
-        {!cerrado && puedeReorganizar && !hayProductos && (
-          <button type="button" className="ped3-enlace ped3-terminar" onClick={onTerminar}>
-            Terminar pedido
+        {!cerrado && onCobrar && pedido.personas.some((p) => p.lineas.some((l) => l.estado === 'comandado')) && (
+          <button type="button" className={itemsNuevos > 0 ? 'ped5-secundario' : 'ped5-principal'} onClick={onCobrar}>
+            <Wallet size={20} aria-hidden="true" />
+            Cobrar
           </button>
         )}
-        {!cerrado && onCobrar && pedido.personas.some((p) => p.lineas.some((l) => l.estado === 'comandado')) && (
-          <Boton variante="secundario" className="ped2-comandar" onClick={onCobrar}>
-            <Wallet size={18} aria-hidden="true" />
-            Cobrar
-          </Boton>
+        {/* La accion principal manda a cocina lo nuevo de TODA la mesa; sin nada nuevo queda apagada. */}
+        {!cerrado && (itemsNuevos > 0 || !hayProductos) && (
+          <button
+            type="button"
+            className="ped5-principal"
+            disabled={itemsNuevos === 0 || trabajando}
+            aria-busy={trabajando || undefined}
+            onClick={onComandar}
+          >
+            {itemsNuevos > 0 ? `Comandar ${itemsNuevos} ${itemsNuevos === 1 ? 'ítem nuevo' : 'ítems nuevos'}` : 'Comandar pedido'}
+            <ArrowRight size={20} aria-hidden="true" />
+          </button>
         )}
-        {/* "Comandar" aparece solo cuando hay productos nuevos sin enviar a cocina. */}
-        {!cerrado && itemsNuevos > 0 && (
-          <Boton className="ped2-comandar" cargando={trabajando} onClick={onComandar}>
-            <Send size={18} aria-hidden="true" />
-            {`Comandar ${itemsNuevos} ${itemsNuevos === 1 ? 'ítem nuevo' : 'ítems nuevos'}`}
-          </Boton>
+        {!cerrado && (
+          <p className="ped5-ayuda">
+            {itemsNuevos > 0
+              ? 'Se enviarán a cocina los productos nuevos de todas las personas'
+              : hayProductos
+                ? 'Todo está en cocina'
+                : 'Agrega productos para continuar'}
+          </p>
+        )}
+        {/* "Terminar pedido" (cerrar sin cobrar) solo mientras no se pidio nada (o todo se anulo). */}
+        {!cerrado && puedeReorganizar && !hayProductos && (
+          <button type="button" className="ped3-enlace ped3-terminar" onClick={onTerminar}>
+            Terminar pedido sin productos
+          </button>
         )}
       </footer>
     </aside>

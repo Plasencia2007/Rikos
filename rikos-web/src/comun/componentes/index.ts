@@ -21,6 +21,7 @@ export { EstadoError } from './EstadoError'
 export { TecladoNumerico } from './TecladoNumerico'
 export { EntradaNumerica } from './EntradaNumerica'
 export { Tabs } from './Tabs'
+export { LogoDelRestaurante, LOGO_PREDETERMINADO, MEDIDAS_DEL_LOGO } from './LogoDelRestaurante'
 export type { Pestana } from './Tabs'
 export {
   IconoBorrar,

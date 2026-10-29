@@ -4,23 +4,25 @@
  * un color o una medida propia, todo sale de aqui.
  */
 :root {
-  /* ---- Color de marca: verde (2026-09-28, antes terracota #9a4315) ---- */
-  --color-marca: #2b7a68;
-  --color-marca-oscura: #1f5e50;   /* estado presionado */
-  --color-marca-clara: #e3f1ec;    /* fondos suaves sobre marca (circulos de iconos) */
-  --color-marca-suave: #eef6f3;
+  /* ---- Color de marca: "Azul caja" (2026-10-28; antes verde #2b7a68, antes terracota #9a4315).
+     Guia visual: https://claude.ai/artifact/QNYzGR5JomChNdrmAdLfY1. El verde queda solo para "libre / exito". ---- */
+  --color-marca: #2563eb;
+  --color-marca-oscura: #1d4ed8;   /* estado presionado */
+  --color-marca-clara: #eff4ff;    /* fondos suaves sobre marca (circulos de iconos) */
+  --color-marca-suave: #f5f8ff;
+  --color-marca-tinta: #1e3a8a;    /* texto sobre marca-clara */
 
-  /* ---- Barra lateral del panel (fondo oscuro, propio de /admin) ---- */
-  --color-lateral-fondo: #0f2724;
-  --color-lateral-texto: #d5dedb;
-  --color-lateral-texto-tenue: #8fa39e;
-  --color-lateral-subtexto: #b8c6c2;
-  --color-lateral-chevron: #8fa39e;
-  --color-lateral-item-hover: rgba(255, 255, 255, 0.05);
-  --color-lateral-borde-tenue: rgba(255, 255, 255, 0.08);
-  --color-lateral-activo-bg: #1d3a35;
-  --color-lateral-activo-acento: #3fa58c;
-  --color-lateral-flyout: #163531;
+  /* ---- Barras laterales (panel y POS): celeste suave; el ítem activo resalta en blanco ---- */
+  --color-lateral-fondo: #eaf3fd;
+  --color-lateral-texto: #334155;
+  --color-lateral-texto-tenue: #8592a8;
+  --color-lateral-subtexto: #526079;
+  --color-lateral-chevron: #8592a8;
+  --color-lateral-item-hover: #dbeafb;
+  --color-lateral-borde-tenue: #d2e2f5;
+  --color-lateral-activo-bg: #ffffff;
+  --color-lateral-activo-acento: #2563eb;
+  --color-lateral-flyout: #ffffff;
 
 
   /* ---- Usos de un producto (vendible / insumo / subreceta) ----
@@ -37,17 +39,17 @@
   --color-uso-subreceta-barra: #8b5cf6;
 
   /* ---- Superficies ---- */
-  --color-fondo-pagina: #f5f7f6;
+  --color-fondo-pagina: #f5f7fb;
   --color-fondo-tarjeta: #ffffff;
-  --color-fondo-hover: #f7faf9;
-  --color-borde: #e6eae9;
-  --color-borde-fuerte: #cfd8d5;
-  --color-separador: #eef1f0;
+  --color-fondo-hover: #f8fafd;
+  --color-borde: #e4e9f2;
+  --color-borde-fuerte: #cbd3e1;
+  --color-separador: #eef1f6;
 
   /* ---- Texto ---- */
-  --color-texto-principal: #1b2b28;
-  --color-texto-secundario: #56655f;
-  --color-texto-deshabilitado: #8a9893;
+  --color-texto-principal: #0f172a;
+  --color-texto-secundario: #526079;
+  --color-texto-deshabilitado: #8592a8;
   --color-texto-sobre-marca: #ffffff;
 
   /* ---- Estados semanticos (exito, aviso, error, informacion) ----
@@ -111,8 +113,8 @@
   --radio-2xl: 16px;
 
   /* ---- Sombras: la interfaz es plana, sombras muy sutiles ---- */
-  --sombra-sm: 0 1px 3px rgba(15, 39, 36, 0.04);
-  --sombra-md: 0 12px 40px rgba(15, 39, 36, 0.12);
+  --sombra-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+  --sombra-md: 0 12px 40px rgba(15, 23, 42, 0.12);
 
   /* ---- Densidad tactil ----
      --toque: POS y kiosco, se opera de pie con una mano.

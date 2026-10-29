@@ -144,7 +144,7 @@ export function PantallaCompras(props: Props) {
             onClick={() => setModalNuevoAbierto(true)}
             style={{
               padding: '0.625rem 1.25rem',
-              backgroundColor: '#059669',
+              backgroundColor: '#2563EB',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
@@ -341,7 +341,7 @@ export function PantallaCompras(props: Props) {
                             onClick={() => handleConfirmar(c.id)}
                             style={{
                               padding: '0.35rem 0.75rem',
-                              backgroundColor: '#059669',
+                              backgroundColor: '#2563EB',
                               color: '#fff',
                               border: 'none',
                               borderRadius: '6px',

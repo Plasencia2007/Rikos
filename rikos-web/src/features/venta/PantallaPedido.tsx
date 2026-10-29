@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ChevronRight, ClipboardList, Clock, ShoppingCart, Trash2, User, Users, Utensils } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, ChevronRight, Plus, ShoppingCart, Trash2, User } from 'lucide-react'
 import {
   Aviso,
   Boton,
@@ -59,11 +59,8 @@ import { VistaComanda } from './VistaComanda'
  * abren su dialogo porque tienen opciones; un producto de la carta se agrega directo.
  */
 
-function horaDe(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const fecha = new Date(iso)
-  return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
-}
+/** "Mesa 4" se muestra "Mesa 04", como en el mapa; un nombre propio o "Mesa 4 + Mesa 5" quedan igual. */
+const conNumeroDeDosCifras = (titulo: string) => titulo.replace(/^Mesa (\d)$/, 'Mesa 0$1')
 
 const SERVICIO: Record<string, string> = { desayuno: 'Desayuno', almuerzo: 'Almuerzo', cena: 'Cena' }
 type Dialogo =
@@ -314,50 +311,39 @@ export function PantallaPedido({
         : null
 
   return (
-    <section className="ped2 ped3">
-      <header className="ped2-barra ped3-barra">
-        <Boton variante="secundario" onClick={onVolver}>
-          ← Mesas
-        </Boton>
-        <div className="ped2-resumen">
-          <strong className="ped2-titulo">{tituloActual}</strong>
-          <ul className="ped2-datos" aria-label="Resumen del pedido">
-            <li>
-              <ClipboardList className="ped4-ico" size={18} aria-hidden="true" />
-              Pedido {pedido.numero}
-            </li>
-            <li>
-              <Utensils className="ped4-ico" size={18} aria-hidden="true" />
-              {SERVICIO[pedido.servicio]}
-            </li>
-            <li>
-              <Users className="ped4-ico" size={18} aria-hidden="true" />
-              {pedido.personas.length} {pedido.personas.length === 1 ? 'comensal' : 'comensales'}
-            </li>
-            {pedido.abiertoEn && (
-              <li>
-                <Clock className="ped4-ico" size={18} aria-hidden="true" />
-                Desde {horaDe(pedido.abiertoEn)}
-              </li>
-            )}
-            {pedido.mozoNombre && (
-              <li>
-                <User className="ped4-ico" size={18} aria-hidden="true" />
-                Mozo: {pedido.mozoNombre}
-              </li>
-            )}
-            {pedido.nombreCliente && (
-              <li>
-                <User className="ped4-ico" size={18} aria-hidden="true" />
-                Cliente: {pedido.nombreCliente}
-              </li>
-            )}
-          </ul>
+    <section className="ped2 ped3 ped5">
+      <header className="ped2-barra ped3-barra ped5-cabecera">
+        <div className="ped5-titulo">
+          <button type="button" className="ped5-volver" onClick={onVolver}>
+            <ArrowLeft size={18} aria-hidden="true" />
+            {pedido.canal === 'mesa' ? 'Volver a mesas' : 'Volver'}
+          </button>
+          <div className="ped5-nombre">
+            <h1 className="ped2-titulo">{conNumeroDeDosCifras(tituloActual)}</h1>
+            <span className={`ped5-estado ${cerrado ? 'ped5-estado-cerrado' : ''}`}>
+              <i aria-hidden="true" />
+              {cerrado ? 'Cerrado' : 'En atención'}
+            </span>
+          </div>
+          <p className="ped5-datos" aria-label="Resumen del pedido">
+            {[
+              `Pedido #${pedido.numero}`,
+              SERVICIO[pedido.servicio],
+              `${pedido.personas.length} ${pedido.personas.length === 1 ? 'comensal' : 'comensales'}`,
+              pedido.mozoNombre ? `Mozo: ${pedido.mozoNombre}` : null,
+              pedido.nombreCliente ? `Cliente: ${pedido.nombreCliente}` : null,
+            ]
+              .filter(Boolean)
+              .map((dato) => (
+                <span key={dato}>{dato}</span>
+              ))}
+          </p>
         </div>
         {puedeMoverMesa && (
-          <Boton variante="secundario" onClick={() => setDialogo({ tipo: 'mover' })}>
+          <button type="button" className="ped5-boton-borde" onClick={() => setDialogo({ tipo: 'mover' })}>
+            <ArrowLeftRight size={18} aria-hidden="true" />
             Cambiar mesa
-          </Boton>
+          </button>
         )}
         {puedeMoverMesa && unidas.length > 0 && (
           <div className="ped3-separar">
@@ -380,7 +366,8 @@ export function PantallaPedido({
         <Aviso>Este pedido es para llevar pero todavía no se definió el precio del táper: no se está cobrando.</Aviso>
       )}
 
-      <div className="ped2-personas ped3-personas" role="tablist" aria-label="Personas del pedido">
+      <div className="ped2-personas ped3-personas ped5-comensales" role="tablist" aria-label="Personas del pedido">
+        <span className="ped5-etiqueta">Comensales</span>
         {pedido.personas.map((p) => {
           const activa = p.id === persona.id
           const nombre = p.pensionistaId ? nombresDePensionista[p.pensionistaId] : null
@@ -395,10 +382,8 @@ export function PantallaPedido({
                 className={`ped2-persona ${activa ? 'ped2-persona-activa' : ''}`}
                 onClick={() => setPersonaId(p.id)}
               >
-                <span>
-                  <User className="ped4-ico" size={15} aria-hidden="true" />
-                  {nombre ? `${p.etiqueta} · ${nombre}` : p.etiqueta}
-                </span>
+                <User className="ped5-persona-icono" size={20} aria-hidden="true" />
+                <span>{nombre ? `${p.etiqueta} · ${nombre}` : p.etiqueta}</span>
                 <strong>{enSoles(p.total)}</strong>
                 {p.tipoCliente === 'pensionista' && <em className="ped3-insignia-pensionista">Pensionista</em>}
               </button>
@@ -430,7 +415,8 @@ export function PantallaPedido({
             )
           }
         >
-          + Persona
+          <Plus size={18} aria-hidden="true" />
+          Añadir persona
         </button>
       </div>
 
@@ -470,6 +456,7 @@ export function PantallaPedido({
 
         <OrdenDeLaMesa
           pedido={pedido}
+          titulo={conNumeroDeDosCifras(tituloActual)}
           filtroId={persona.id}
           nombresDePensionista={nombresDePensionista}
           fotos={fotos}
