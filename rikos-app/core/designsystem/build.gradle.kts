@@ -10,6 +10,7 @@ kotlin {
         namespace = "pe.rikos.app.core.designsystem"
         compileSdk = libs.versions.compileSdk.get().toInt()
         minSdk = libs.versions.minSdk.get().toInt()
+        androidResources.enable = true
     }
     iosArm64()
     iosSimulatorArm64()

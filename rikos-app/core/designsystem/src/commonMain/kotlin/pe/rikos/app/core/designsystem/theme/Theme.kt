@@ -12,7 +12,8 @@ val LocalRikosColors = staticCompositionLocalOf { RikosLight }
 object Rikos {
     val colors: RikosColors
         @Composable @ReadOnlyComposable get() = LocalRikosColors.current
-    val type: RikosType get() = RikosType
+    val type: RikosType
+        @Composable get() = rememberRikosType()
 }
 
 @Composable

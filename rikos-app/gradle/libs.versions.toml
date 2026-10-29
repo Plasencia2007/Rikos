@@ -2,10 +2,10 @@
 # Si Android Studio protesta por una combinación, ajustar AQUÍ y solo aquí.
 [versions]
 kotlin = "2.4.21"                  # el plugin de Compose usa la misma versión
-composeMultiplatform = "1.12.2"
-agp = "9.3.1"                      # rango compatible con Kotlin 2.4.x: 8.5.2 a 9.3.1
+composeMultiplatform = "1.11.1"
+agp = "9.3.3"                      # rango compatible con Kotlin 2.4.x: 8.5.2 a 9.3.1
 coroutines = "1.10.2"
-lifecycle = "2.9.4"                # androidx.lifecycle ya es multiplataforma
+lifecycle = "2.11.0-beta01"
 activityCompose = "1.11.0"
 minSdk = "24"
 compileSdk = "36"
@@ -14,8 +14,8 @@ targetSdk = "36"
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycle" }
-androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }

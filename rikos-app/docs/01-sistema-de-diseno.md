@@ -197,6 +197,7 @@ Corrección aplicada: el avatar ámbar con texto blanco daba 3.19 y se cambió a
 | Etiqueta | `RkTag(tone)` | `RkTag` | porEnviar, enCocina, listo, cuenta, pensionista, anulado, nuevo |
 | Estado de conexión | `RkConn` | `RkConn` | en línea, enviando N, sin conexión |
 | Campo | `RkField` | `RkField` | vacío, enfocado, error |
+| Tarjeta de opción / radio | `RkOptionCard` | `RkOptionCard` | normal, seleccionada, deshabilitada |
 | Interruptor, radio, cantidad | `RkSwitch`, `RkRadio`, `RkStepper` | `Toggle`, `RkRadio`, `RkStepper` | — |
 | Mesa | `MesaCard(estado)` | `MesaCard` | libre, ocupada, por cobrar, listo (pulso), elegida, fuera de servicio |
 | Línea de pedido | `OrderLine` | `OrderLine` | en cocina, por enviar, anulada |
@@ -224,4 +225,4 @@ Rediseñada en el lienzo (versión 26). Reglas:
 ## 7. Pendiente
 
 - Fotos reales de la carta: el diseño usa ilustraciones de plato como espacio reservado. En la app, `ProductCard` debe aceptar una URL de imagen con la ilustración como respaldo.
-- Confirmar la licencia de Plus Jakarta Sans para empaquetarla (es OFL, libre de uso).
+- Plus Jakarta Sans está empaquetada en `core/designsystem/src/commonMain/composeResources/font` (pesos 400–800). Fuente: [Tokotype](https://github.com/tokotype/PlusJakartaSans/tree/master/fonts/ttf); licencia OFL incluida en `composeResources/files/plus_jakarta_sans_license.txt` del mismo módulo.

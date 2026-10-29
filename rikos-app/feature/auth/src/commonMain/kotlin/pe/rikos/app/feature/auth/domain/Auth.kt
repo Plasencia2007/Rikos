@@ -2,6 +2,13 @@ package pe.rikos.app.feature.auth.domain
 
 import pe.rikos.app.core.common.Resultado
 
+/** Datos de mozo para selección rápida en pantalla de PIN (M02). */
+data class Mozo(
+    val id: String,
+    val iniciales: String,
+    val nombre: String,
+)
+
 /** Respuesta de `POST /api/auth/pin` (SesionIniciada). */
 data class Sesion(
     val token: String,

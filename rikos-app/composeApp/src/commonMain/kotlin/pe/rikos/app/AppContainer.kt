@@ -3,6 +3,9 @@ package pe.rikos.app
 import pe.rikos.app.feature.auth.data.FakeAuthRepository
 import pe.rikos.app.feature.auth.domain.AuthRepository
 import pe.rikos.app.feature.auth.domain.IniciarConPin
+import pe.rikos.app.feature.configuracion.data.FakeConfiguracionRepository
+import pe.rikos.app.feature.configuracion.domain.ConfiguracionRepository
+import pe.rikos.app.feature.configuracion.domain.GuardarConfiguracionLocal
 import pe.rikos.app.feature.mesas.data.FakeMesasRepository
 import pe.rikos.app.feature.mesas.domain.MesasRepository
 import pe.rikos.app.feature.mesas.domain.ObtenerMesas
@@ -12,8 +15,11 @@ import pe.rikos.app.feature.mesas.domain.ObtenerMesas
  * Cuando exista el backend conectado, aquí se cambian los Fake por los repositorios de Ktor.
  */
 class AppContainer {
-    /** Código del local. Vendrá de la pantalla M01 «Configurar local» (DT-040). */
-    val localCodigo: String = "LOCAL1"
+    /** Código de local predeterminado de respaldo. */
+    val localCodigo: String = "CENTRO"
+
+    val configuracionRepo: ConfiguracionRepository = FakeConfiguracionRepository()
+    val guardarConfiguracionLocal = GuardarConfiguracionLocal(configuracionRepo)
 
     private val authRepo: AuthRepository = FakeAuthRepository()
     private val mesasRepo: MesasRepository = FakeMesasRepository()
