@@ -1196,3 +1196,41 @@ body:has(.pos-raiz) .modal-fondo { z-index: 1300; }
   .com2-cantidad, .com2-sigla { border: 2px solid #000; }
   .com2-linea { border-color: #000; }
 }
+
+/* ===== Pie del pedido para quien tambien es cajero (adenda 2026-10-29) ===== */
+.ped7-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ped7-ver, .ped7-imprimir {
+  min-height: 48px; padding: 0 10px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ped7-ver { border: 1px solid #e4e9f2; background: #f1f4f9; color: #334155; }
+.ped7-ver:hover:not(:disabled) { background: #e8edf5; }
+.ped7-imprimir { border: 1.5px solid #cbd3e1; background: #fff; color: #0f172a; font-size: 15.5px; }
+.ped7-imprimir:hover:not(:disabled) { border-color: #2563eb; color: #1d4ed8; }
+.ped7-ver:disabled, .ped7-imprimir:disabled { opacity: 0.5; cursor: not-allowed; }
+.ped5-principal.ped7-cobrar { min-height: 56px; }
+
+/* ===== Ticket de 80 mm (TicketDelPedido.tsx): pre-cuenta y comanda ===== */
+.ticket-papel { display: grid; place-items: center; padding: 8px 0; background: #eef1f6; border-radius: 12px; }
+.ticket {
+  width: 300px; max-width: 100%; box-sizing: border-box; padding: 18px 16px 22px; background: #fff; color: #111;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12); font-family: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  font-size: 12.5px; line-height: 1.45;
+}
+.ticket p { margin: 0; }
+.ticket hr { margin: 6px 0; border: 0; border-top: 1px dashed #555; }
+.ticket hr.ticket-doble { border-top: 3px double #333; }
+.ticket-centro { display: grid; justify-items: center; text-align: center; }
+.ticket-marca { font-size: 15px; letter-spacing: 0.06em; }
+.ticket-fila { display: flex; justify-content: space-between; gap: 10px; }
+.ticket-linea { margin-bottom: 4px; }
+.ticket-sub { padding-left: 14px; }
+.ticket-nota { font-weight: 700; }
+.ticket-total { font-size: 14px; }
+.ticket-etiqueta { margin-top: 2px; font-weight: 700; text-decoration: underline; }
+.ticket-copia { text-align: center; font-weight: 800; letter-spacing: 0.3em; border: 2px solid #111; margin-bottom: 8px !important; }
+@media print {
+  .ticket-papel { background: none !important; padding: 0 !important; display: block !important; }
+  .ticket { width: 72mm !important; box-shadow: none !important; padding: 0 !important; font-size: 11.5px; }
+}
+.ped6-cabecera .ped3-orden-titulo h2 { overflow: hidden; text-overflow: ellipsis; }

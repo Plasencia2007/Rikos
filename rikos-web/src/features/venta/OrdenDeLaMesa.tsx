@@ -5,7 +5,10 @@ import {
   Ban,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
   EllipsisVertical,
+  Eye,
+  FileText,
   Minus,
   Plus,
   SquarePen,
@@ -77,6 +80,7 @@ export function OrdenDeLaMesa({
   onTerminar,
   onComandar,
   onCobrar,
+  caja,
 }: {
   pedido: Pedido
   /** El nombre de la mesa ("Mesa 04") o del pedido para llevar, para la cabecera. */
@@ -105,6 +109,11 @@ export function OrdenDeLaMesa({
   onComandar: () => void
   /** Lleva a la Caja con este pedido para cobrarlo; solo si el usuario puede cobrar (caja.crear). */
   onCobrar?: () => void
+  /**
+   * Solo si el usuario tambien es cajero (adenda 2026-10-29): ver e imprimir la pre-cuenta y la comanda, y cobrar,
+   * desde aqui mismo. Sin esto, el pie es el del mozo ("Enviar a cocina").
+   */
+  caja?: { onVerPrecuenta: () => void; onPrecuenta: () => void; onVerComanda: () => void; onComanda: () => void }
 }) {
   const [vista, setVista] = useState<'persona' | 'todos'>('persona')
   const [plegadas, setPlegadas] = useState<string[]>([])
@@ -129,6 +138,8 @@ export function OrdenDeLaMesa({
   const totalProductos = pedido.personas.reduce((n, p) => n + vigentesDe(p).reduce((m, l) => m + l.cantidad, 0), 0)
   const hayProductos = pedido.personas.some((p) => vigentesDe(p).length > 0)
   const hayLineas = pedido.personas.some((p) => p.lineas.length > 0)
+  // Algo ya fue a cocina: hay comanda que ver o reimprimir, y algo que cobrar.
+  const hayComandas = pedido.personas.some((p) => p.lineas.some((l) => l.estado === 'comandado'))
   // Lo que se envía a cocina, contado en unidades (dos cafés en una línea son 2 productos).
   const porEnviar = pedido.personas.reduce((n, p) => n + p.lineas.filter((l) => l.estado === 'pendiente').reduce((m, l) => m + l.cantidad, 0), 0)
   const nombreDe = (p: PersonaDelPedido) =>
@@ -381,14 +392,52 @@ export function OrdenDeLaMesa({
           <span>Total de la mesa</span>
           <strong aria-label="Total del pedido">{enSoles(pedido.total)}</strong>
         </div>
-        {!cerrado && onCobrar && pedido.personas.some((p) => p.lineas.some((l) => l.estado === 'comandado')) && (
+        {!cerrado && caja && (
+          <>
+            <div className="ped7-acciones">
+              <button type="button" className="ped7-ver" disabled={!hayProductos} onClick={caja.onVerPrecuenta}>
+                <Eye size={18} aria-hidden="true" />
+                Prev. Pre-cuenta
+              </button>
+              <button type="button" className="ped7-ver" disabled={!hayComandas} onClick={caja.onVerComanda}>
+                <Eye size={18} aria-hidden="true" />
+                Prev. Comanda
+              </button>
+              <button type="button" className="ped7-imprimir" disabled={!hayProductos} onClick={caja.onPrecuenta}>
+                <FileText size={19} aria-hidden="true" />
+                Pre-cuenta
+              </button>
+              <button
+                type="button"
+                className="ped7-imprimir"
+                disabled={(itemsNuevos === 0 && !hayComandas) || trabajando}
+                onClick={caja.onComanda}
+              >
+                <ClipboardList size={19} aria-hidden="true" />
+                {itemsNuevos > 0 ? `Comanda • ${porEnviar}` : 'Comanda'}
+              </button>
+            </div>
+            <button type="button" className="ped5-principal ped7-cobrar" disabled={!onCobrar || !hayComandas} onClick={onCobrar}>
+              <Wallet size={20} aria-hidden="true" />
+              Cobrar · {enSoles(pedido.total)}
+            </button>
+            <p className="ped5-ayuda">
+              {itemsNuevos > 0
+                ? `«Comanda» envía ${productos(porEnviar)} a cocina y la imprime`
+                : hayComandas
+                  ? 'Cobra lo que ya está en cocina'
+                  : 'Agrega productos para continuar'}
+            </p>
+          </>
+        )}
+        {!cerrado && !caja && onCobrar && hayComandas && (
           <button type="button" className={itemsNuevos > 0 ? 'ped5-secundario' : 'ped5-principal'} onClick={onCobrar}>
             <Wallet size={20} aria-hidden="true" />
             Cobrar
           </button>
         )}
         {/* La accion principal manda a cocina lo nuevo de TODA la mesa; sin nada nuevo queda apagada. */}
-        {!cerrado && (itemsNuevos > 0 || !hayProductos) && (
+        {!cerrado && !caja && (itemsNuevos > 0 || !hayProductos) && (
           <button
             type="button"
             className="ped5-principal"
@@ -400,7 +449,7 @@ export function OrdenDeLaMesa({
             <ArrowRight size={20} aria-hidden="true" />
           </button>
         )}
-        {!cerrado && (
+        {!cerrado && !caja && (
           <p className="ped5-ayuda">
             {itemsNuevos > 0 ? 'Revisa el pedido antes de enviarlo' : hayProductos ? 'Todo está en cocina' : 'Agrega productos para continuar'}
           </p>

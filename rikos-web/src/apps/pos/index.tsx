@@ -123,6 +123,7 @@ export default function POS() {
             token={mozoActivo.token}
             pedidoId={pedidoAbierto.id}
             titulo={pedidoAbierto.titulo}
+            nombreLocal={local}
             onVolver={() => setPedidoAbierto(null)}
             onCobrar={(id) => {
               setPedidoAbierto(null)

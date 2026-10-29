@@ -20,15 +20,18 @@ import {
   listarMesas,
   modificarLineaDelPedido,
   moverPedidoDeMesa,
+  obtenerComanda,
   obtenerPedido,
   ofertaDelPedido,
   permisosPropios,
   quitarLineaDelPedido,
   quitarPersonaDelPedido,
+  registrarImpresionDeComanda,
   separarMesa,
   terminarPedido,
   trasladarLineasDelPedido,
   unirMesa,
+  type ComandaDetalle,
   type ComandaResumen,
   type DatosDeLinea,
   type LineaDelPedido,
@@ -50,6 +53,7 @@ import { DialogoPasarA } from './DialogoPasarA'
 import { DialogoPensionista } from './DialogoPensionista'
 import { DialogoUnirMesa } from './DialogoUnirMesa'
 import { VistaComanda } from './VistaComanda'
+import { DialogoTicket, TicketComanda, TicketPrecuenta } from './TicketDelPedido'
 
 /**
  * US-028: el pedido de una mesa (o para llevar), en pantalla partida (diseno aprobado, ver
@@ -83,10 +87,13 @@ export function PantallaPedido({
   titulo,
   onVolver,
   onCobrar,
+  nombreLocal = '',
 }: {
   token: string
   pedidoId: string
   titulo: string
+  /** Para la cabecera de la pre-cuenta. */
+  nombreLocal?: string
   onVolver: () => void
   /** Lleva a la Caja a cobrar este pedido (solo se ofrece a quien tiene caja.crear). */
   onCobrar?: (pedidoId: string) => void
@@ -101,6 +108,12 @@ export function PantallaPedido({
   const [trabajando, setTrabajando] = useState(false)
   const [comandas, setComandas] = useState<ComandaResumen[]>([])
   const [comandaAbierta, setComandaAbierta] = useState<string | null>(null)
+  // El ticket en pantalla (pre-cuenta o comanda); imprimir = se abrio con el boton sin ojo.
+  const [ticket, setTicket] = useState<
+    | { tipo: 'precuenta'; imprimir: boolean }
+    | { tipo: 'comanda'; comanda: ComandaDetalle; copia: boolean; imprimir: boolean }
+    | null
+  >(null)
   const [puedeAnular, setPuedeAnular] = useState(false)
   const [puedeCobrar, setPuedeCobrar] = useState(false)
   const [puedeReorganizar, setPuedeReorganizar] = useState(false)
@@ -195,6 +208,59 @@ export function PantallaPedido({
     } finally {
       setTrabajando(false)
     }
+  }
+
+  /** La ultima comanda enviada de este pedido, con su detalle, o null si todavia no se envio nada. */
+  async function ultimaComanda(lista: ComandaResumen[] = comandas): Promise<ComandaDetalle | null> {
+    if (lista.length === 0) return null
+    const ultima = lista.reduce((a, b) => (b.numero > a.numero ? b : a))
+    return obtenerComanda(token, ultima.id)
+  }
+
+  async function verComanda() {
+    try {
+      const c = await ultimaComanda()
+      if (!c) return mostrar('Todavía no se ha enviado nada a cocina.')
+      setTicket({ tipo: 'comanda', comanda: c, copia: c.impresiones >= 1, imprimir: false })
+    } catch (e) {
+      setAviso(mensajeDePedido(e, 'No se pudo cargar la comanda.'))
+    }
+  }
+
+  /**
+   * "Comanda" (adenda 2026-10-29): con productos nuevos, los envia a cocina e imprime esa comanda; sin nada nuevo,
+   * reimprime la ultima. Cada impresion se registra antes: desde la segunda sale con COPIA (RN-063).
+   */
+  async function imprimirComanda() {
+    if (trabajando) return
+    setTrabajando(true)
+    setAviso('')
+    try {
+      let lista = comandas
+      if (itemsNuevos > 0) {
+        await comandarPedido(token, pedidoId)
+        const [p, nuevas] = await Promise.all([obtenerPedido(token, pedidoId), listarComandasDelPedido(token, pedidoId)])
+        setPedido(p)
+        setComandas(nuevas)
+        lista = nuevas
+      }
+      const c = await ultimaComanda(lista)
+      if (!c) return mostrar('Agrega productos para enviar una comanda a cocina.')
+      const registro = await registrarImpresionDeComanda(token, c.id)
+      setTicket({ tipo: 'comanda', comanda: { ...c, impresiones: registro.impresiones }, copia: registro.copia, imprimir: true })
+    } catch (e) {
+      setAviso(mensajeDePedido(e, 'No se pudo enviar ni imprimir la comanda. Inténtalo de nuevo.'))
+      cargar()
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  /** Desde la vista previa de la comanda, "Imprimir" tambien registra la impresion (y pone COPIA si corresponde). */
+  async function registrarImpresionDelTicket() {
+    if (ticket?.tipo !== 'comanda') return
+    const registro = await registrarImpresionDeComanda(token, ticket.comanda.id)
+    setTicket({ ...ticket, copia: registro.copia, comanda: { ...ticket.comanda, impresiones: registro.impresiones } })
   }
 
   function agregarLinea(datos: Omit<DatosDeLinea, 'personaId'>) {
@@ -495,6 +561,16 @@ export function PantallaPedido({
           onTerminar={() => setDialogo({ tipo: 'terminar' })}
           onComandar={() => comandar(itemsNuevos)}
           onCobrar={onCobrar && puedeCobrar ? () => onCobrar(pedidoId) : undefined}
+          caja={
+            puedeCobrar
+              ? {
+                  onVerPrecuenta: () => setTicket({ tipo: 'precuenta', imprimir: false }),
+                  onPrecuenta: () => setTicket({ tipo: 'precuenta', imprimir: true }),
+                  onVerComanda: () => void verComanda(),
+                  onComanda: () => void imprimirComanda(),
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -517,6 +593,23 @@ export function PantallaPedido({
         <ChevronRight size={20} aria-hidden="true" />
       </button>
 
+      {ticket && (
+        <DialogoTicket
+          titulo={ticket.tipo === 'precuenta' ? 'Pre-cuenta' : `Comanda ${ticket.comanda.numero}`}
+          imprimirAlAbrir={ticket.imprimir}
+          onImprimir={ticket.tipo === 'comanda' ? registrarImpresionDelTicket : undefined}
+          onCerrar={() => {
+            setTicket(null)
+            void listarComandasDelPedido(token, pedidoId).then(setComandas).catch(() => undefined)
+          }}
+        >
+          {ticket.tipo === 'precuenta' ? (
+            <TicketPrecuenta pedido={pedido} titulo={conNumeroDeDosCifras(tituloActual)} local={nombreLocal} />
+          ) : (
+            <TicketComanda comanda={ticket.comanda} copia={ticket.copia} />
+          )}
+        </DialogoTicket>
+      )}
       {comandaAbierta && (
         <VistaComanda
           token={token}

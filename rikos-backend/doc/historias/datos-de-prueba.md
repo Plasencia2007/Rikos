@@ -33,7 +33,7 @@ Hecho el 2026-10-28. Mejora de herramientas de desarrollo, sin historia del back
 
 ### Qué carga
 
-- **Personal** (contraseña `demo123`): `mozo1` (PIN 1111), `mozo2` (PIN 2222), `cajero1`,
+- **Personal** (contraseña `demo123`): `mozo1` (PIN 1111; también tiene el rol cajero), `mozo2` (PIN 2222), `cajero1`,
   `cocina1`, `adminlocal`, todos en San Isidro.
 - **Salones y mesas**: «Salón principal» con 8 mesas y «Terraza» con 3.
 - **Horarios de servicio**: desayuno 7–10, almuerzo 12–16 y cena 18–21, los 7 días.

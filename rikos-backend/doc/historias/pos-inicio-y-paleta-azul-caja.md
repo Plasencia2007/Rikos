@@ -424,3 +424,38 @@ con cantidad 2. Un menú del día con otras opciones sí debe ir en otra línea.
 - Verificado con la comanda 1 de la mesa 4, a 1440 y 390 px. La impresión real no se probó; solo se revisaron los
   estilos.
 
+## Pre-cuenta, comanda y cobro desde el pedido (2026-10-29)
+
+Especificado en `docs/producto/plan/adenda-2026-10-29-precuenta-y-cobro-en-el-pedido.md`.
+
+### Qué se construyó
+
+- **Rol:** `mozo1` tiene además el rol `cajero`, en los datos de prueba y en la base local.
+- **Pie del pedido para cajeros** (`OrdenDeLaMesa`, prop `caja`; solo con `caja.crear`):
+  - Total.
+  - «Prev. Pre-cuenta» y «Prev. Comanda»: solo para mirar.
+  - «Pre-cuenta»: la abre y la manda a imprimir.
+  - «Comanda»: con productos nuevos los envía a cocina e imprime esa comanda; sin nada nuevo reimprime la última.
+    Registra la impresión, así que desde la segunda sale COPIA.
+  - «Cobrar · S/ total»: va a la Caja, como antes.
+  - Sin ese permiso, el pie del mozo no cambia.
+- **Tickets de 80 mm** (`TicketDelPedido.tsx`, letra de máquina):
+  - Pre-cuenta: RIKO'S y el local, «NO ES COMPROBANTE DE PAGO», pedido, mesa, mozo, fecha, líneas con opciones y
+    notas, táper y total. Lo anulado no sale.
+  - Comanda: número, mesa, mozo, hora, por persona, con las opciones etiquetadas.
+  - Se ven en un diálogo («Vista previa» o «Enviado a la impresora») y al imprimir salen a 72 mm.
+- La pre-cuenta no se guarda ni cambia el pedido. RUC y dirección: pendientes, hasta que exista Mi restaurante.
+
+### Cómo se verificó
+
+- `tsc` y `eslint` sin errores.
+- Como `mozo1` en la mesa 4:
+  - El pie muestra los cinco botones.
+  - La vista previa de la pre-cuenta tiene el contenido correcto («MESA: 04», el menú con sus opciones, total
+    S/ 12.00).
+  - La de la comanda muestra las opciones etiquetadas, con COPIA porque ya estaba impresa 2 veces.
+  - «Pre-cuenta» abrió el ticket y llamó a imprimir una vez (con la impresión simulada).
+- Como `mozo2`, sin el rol de cajero: no aparecen los botones.
+- No se probó «Comanda» de verdad, para no sumar impresiones al pedido; su flujo usa las mismas llamadas que «Enviar
+  a cocina» y que el detalle de comanda.
+
