@@ -88,9 +88,11 @@ class KardexControllerAccesoTest {
         UnidadMedida uni = unidades.findAll().stream().findFirst().orElseGet(() ->
                 unidades.save(new UnidadMedida(Identificador.nuevo().valor(), "kg", "Kilogramos", "masa")));
 
-        producto = productos.findAll().stream().findFirst().orElseGet(() ->
-                productos.save(new Producto(Identificador.nuevo().valor(), "INS-01", "Insumo Test", cat, uni,
-                        false, true, false, null, true, ADMIN_SEMBRADO_ID)));
+        // Un producto propio de la prueba: uno cualquiera de la base puede traer movimientos (por ejemplo, los datos de
+        // prueba del perfil demo) y el kardex ya no tendria solo el de esta prueba.
+        String codigo = "INS-K" + Identificador.nuevo().valor().substring(20);
+        producto = productos.save(new Producto(Identificador.nuevo().valor(), codigo, "Insumo Test " + codigo, cat, uni,
+                false, true, false, null, true, ADMIN_SEMBRADO_ID));
 
         usuarioAdmin = usuarios.findAll().stream().findFirst().orElseThrow();
 
