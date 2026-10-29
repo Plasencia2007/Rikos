@@ -8,6 +8,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -114,6 +116,7 @@ fun PedidoScreen(
     var agregandoProductoLibre by remember { mutableStateOf(false) }
     var vinculandoPensionista by remember { mutableStateOf(false) }
     var lineaEnEdicion by remember { mutableStateOf<LineaPedido?>(null) }
+    var lineaParaAcciones by remember { mutableStateOf<LineaPedido?>(null) }
 
     Box(
         modifier = modifier
@@ -222,7 +225,7 @@ fun PedidoScreen(
             // 4. Tarjeta con las líneas de pedido de la persona (.card + .ln)
             LineasPersonaCard(
                 lineas = asientoActivo.lineas,
-                onLineaClick = { linea -> lineaEnEdicion = linea },
+                onLineaClick = { linea -> lineaParaAcciones = linea },
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -445,6 +448,74 @@ fun PedidoScreen(
                     vinculandoPensionista = false
                 },
             )
+        }
+
+        // 13. Pantalla M11b: Acciones del plato (BottomSheet)
+        AnimatedVisibility(
+            visible = lineaParaAcciones != null,
+            enter = fadeIn(tween(180)) + slideInVertically(initialOffsetY = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)),
+            exit = fadeOut(tween(140)) + slideOutVertically(targetOffsetY = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)),
+        ) {
+            val linea = lineaParaAcciones
+            val asiento = pedido.asientoActivo ?: pedido.asientos.first()
+            if (linea != null) {
+                AccionesPlatoSheet(
+                    linea = linea,
+                    asientoActual = asiento,
+                    todosLosAsientos = pedido.asientos,
+                    alCerrar = { lineaParaAcciones = null },
+                    alRepetir = {
+                        val repetida = linea.copy(id = "ln-${kotlin.random.Random.nextInt(1000, 9999)}")
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) a.copy(lineas = a.lineas + repetida) else a
+                            },
+                        )
+                        lineaParaAcciones = null
+                    },
+                    alEditarNota = {
+                        val l = linea
+                        lineaParaAcciones = null
+                        lineaEnEdicion = l
+                    },
+                    alEnviar = {
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) {
+                                    a.copy(lineas = a.lineas.map { if (it.id == linea.id) it.copy(estado = EstadoLineaPedido.EN_COCINA) else it })
+                                } else a
+                            },
+                        )
+                        lineaParaAcciones = null
+                    },
+                    alCambiarAsiento = { nuevoAsientoId ->
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                when (a.id) {
+                                    asiento.id -> a.copy(lineas = a.lineas.filter { it.id != linea.id })
+                                    nuevoAsientoId -> a.copy(lineas = a.lineas + linea)
+                                    else -> a
+                                }
+                            },
+                        )
+                        lineaParaAcciones = null
+                    },
+                    alCambiarTiempo = { nuevoTiempo ->
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) {
+                                    a.copy(lineas = a.lineas.map { if (it.id == linea.id) it.copy(observacion = "${it.observacion.orEmpty()} ($nuevoTiempo)".trim()) else it })
+                                } else a
+                            },
+                        )
+                    },
+                    alAnular = {
+                        val l = linea
+                        lineaParaAcciones = null
+                        lineaEnEdicion = l
+                    },
+                )
+            }
         }
 
         // 12. Pantalla M11: Editar y anular línea
