@@ -966,3 +966,121 @@ body:has(.pos-raiz) .modal-fondo { z-index: 1300; }
   .menu-pasos { grid-template-columns: 1fr; }
   .menu-precio { font-size: 24px; }
 }
+
+/* ===== Pedido de la mesa (OrdenDeLaMesa.tsx, diseño 2026-10-29): "Por persona" / "Todos", una tarjeta plegable por
+   comensal con su menú ⋮, líneas con foto, estado, precio y cantidad, y "Enviar a cocina" a todo el ancho. */
+.ped6-orden { gap: 14px; }
+.ped6-cabecera { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.ped6-vistas { display: flex; padding: 3px; border-radius: 12px; background: #f1f4f9; border: 1px solid #e4e9f2; }
+.ped6-vistas button {
+  height: 34px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; font: inherit; font-size: 13.5px; font-weight: 600;
+  color: #334155; cursor: pointer; white-space: nowrap;
+}
+.ped6-vistas button[aria-pressed='true'] { background: #2563eb; color: #fff; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3); }
+.ped6-cuerpo { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 12px; align-content: start; padding: 2px 4px 2px 0; }
+.ped6-persona { border: 1px solid #e4e9f2; border-radius: 16px; background: #fff; }
+.ped6-persona.elegida { border-color: #9db7f2; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08); }
+.ped6-persona-cabeza { display: flex; align-items: center; gap: 4px; padding: 12px 10px 12px 12px; }
+.ped6-persona-elegir {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: none; font: inherit; text-align: left;
+  cursor: pointer;
+}
+.ped6-avatar {
+  width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #e4edff; color: #1d4ed8;
+  font-size: 15px; font-weight: 800;
+}
+.ped6-avatar.pensionista { background: #2563eb; color: #fff; }
+.ped6-persona-texto { display: grid; min-width: 0; line-height: 1.3; }
+.ped6-persona-texto strong { font-size: 16px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ped6-persona-texto small { font-size: 13px; color: #526079; }
+.ped6-icono {
+  width: 36px; height: 36px; flex-shrink: 0; border: 0; border-radius: 10px; background: transparent; color: #334155; display: grid;
+  place-items: center; cursor: pointer;
+}
+.ped6-icono:hover { background: #f1f4f9; color: #0f172a; }
+.ped6-ancla { position: relative; }
+.ped6-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; padding: 6px; border: 1px solid #e4e9f2; border-radius: 12px;
+  background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); display: grid; gap: 2px;
+}
+.ped6-menu button {
+  display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 8px; background: none; font: inherit;
+  font-size: 14.5px; font-weight: 600; color: #0f172a; text-align: left; cursor: pointer;
+}
+.ped6-menu button:hover:not(:disabled) { background: #f1f4f9; }
+.ped6-menu button:disabled { color: #9aa6bb; cursor: not-allowed; }
+.ped6-menu button.peligro { color: #b42318; }
+.ped6-menu button.peligro:hover:not(:disabled) { background: #fef2f2; }
+.ped6-menu-nota { margin: 0; padding: 2px 12px 6px 39px; font-size: 12.5px; color: #8592a8; }
+.ped6-persona-vacia { margin: 0; padding: 12px 16px 14px; border-top: 1px solid #eef1f6; font-size: 13.5px; color: #8592a8; }
+.ped6-lineas { list-style: none; margin: 0; padding: 0; }
+.ped6-persona .ped6-lineas { border-top: 1px solid #eef1f6; }
+.ped6-linea { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 12px; }
+.ped6-linea + .ped6-linea { border-top: 1px solid #eef1f6; }
+.ped6-linea.anulada { opacity: 0.55; }
+.ped6-linea.anulada .ped6-linea-texto strong { text-decoration: line-through; }
+.ped6-foto {
+  width: 64px; height: 64px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: linear-gradient(160deg, #eef3fb, #dfe8f6);
+  color: #94a3b8;
+}
+.ped6-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ped6-linea-texto { display: grid; gap: 2px; min-width: 0; justify-items: start; }
+.ped6-linea-texto strong { font-size: 15.5px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+.ped6-sigla { padding: 1px 8px; border-radius: 999px; background: #e4edff; color: #1d4ed8; font-size: 11.5px; font-weight: 800; }
+.ped6-detalle { font-size: 13px; color: #526079; line-height: 1.35; }
+.ped6-nota { font-size: 12.5px; color: #92400e; }
+.ped6-estado { margin-top: 4px; padding: 3px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; }
+.ped6-estado.pendiente { background: #fdf0c8; color: #8a5a00; }
+.ped6-estado.comandado { background: #e4edff; color: #1d4ed8; }
+.ped6-estado.anulado { background: #eef1f6; color: #526079; }
+.ped6-linea-lado { display: grid; justify-items: end; gap: 8px; }
+.ped6-precio { font-size: 16.5px; font-weight: 800; color: #0f172a; white-space: nowrap; }
+.ped6-controles { display: flex; align-items: center; gap: 8px; }
+.ped6-cantidad { display: flex; align-items: center; border: 1px solid #dce2ec; border-radius: 10px; overflow: hidden; background: #fff; }
+.ped6-cantidad button {
+  width: 36px; height: 36px; border: 0; background: #fff; color: #0f172a; display: grid; place-items: center; cursor: pointer;
+}
+.ped6-cantidad button:hover:not(:disabled) { background: #f1f4f9; }
+.ped6-cantidad button:disabled { color: #b4bfd1; cursor: not-allowed; }
+.ped6-cantidad span {
+  min-width: 34px; height: 36px; display: grid; place-items: center; border-left: 1px solid #dce2ec; border-right: 1px solid #dce2ec;
+  font-size: 15px; font-weight: 700;
+}
+.ped6-cantidad-fija { font-size: 14px; font-weight: 700; color: #526079; }
+.ped6-agregar-nota {
+  display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px 14px; border: 0; background: none; font: inherit; font-size: 14px;
+  font-weight: 600; color: #1d4ed8; cursor: pointer;
+}
+.ped6-agregar-nota:hover { text-decoration: underline; }
+.ped6-todos { border: 1px solid #e4e9f2; border-radius: 16px; background: #fff; }
+.ped6-vacio { padding: 18px 12px; }
+.ped6-vacio .ped5-vacio-dibujo { width: 104px; }
+.ped6-vacio strong { font-size: 20px; }
+.ped6-vacio span { font-size: 14.5px; }
+.ped6-pie { gap: 10px; }
+.ped6-resumen { display: flex; justify-content: space-between; font-size: 14px; color: #526079; }
+.ped6-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ped6-total span { font-size: 18px; font-weight: 700; color: #0f172a; }
+.ped6-total strong { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+@media (min-width: 901px) {
+  .ped5 .ped2-orden.ped6-orden > .ped6-cuerpo { flex: 1; min-height: 0; }
+}
+@media (max-width: 900px) {
+  .ped6-cabecera { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ped6-cabecera .ped6-vistas { grid-column: 1 / -1; justify-self: start; }
+}
+
+/* Comensales: tarjetas más chicas y delgadas */
+.ped5 .ped5-comensales .ped2-persona,
+.ped5 .ped5-comensales .ped3-persona-envoltura .ped2-persona,
+.ped5 .ped5-comensales .ped3-persona-envoltura-activa .ped2-persona {
+  min-height: 46px; min-width: 132px; padding: 5px 34px 5px 12px; column-gap: 10px; border-radius: 12px;
+}
+.ped5 .ped5-comensales .ped2-persona span, .ped5 .ped5-comensales .ped2-persona strong { font-size: 13.5px; line-height: 1.25; }
+.ped5 .ped5-comensales .ped2-persona strong { font-weight: 600; color: #526079; }
+.ped5 .ped5-comensales .ped2-persona .ped5-persona-icono { width: 17px; height: 17px; }
+.ped5 .ped5-comensales .ped3-quitar-persona { top: 50%; transform: translateY(-50%); right: 4px; width: 28px; height: 28px; }
+.ped5 .ped5-comensales .ped2-persona.ped2-persona-nueva { min-height: 46px; padding: 0 16px; font-size: 14px; }
+.ped5 .ped6-cabecera .ped3-orden-titulo h2 { font-size: 20px; white-space: nowrap; }
+.ped5 .ped6-cabecera .ped3-orden-titulo { min-width: 0; }
+.ped5 .ped6-cabecera .ped3-circulo { width: 50px; height: 50px; }

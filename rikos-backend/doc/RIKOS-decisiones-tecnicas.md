@@ -1242,3 +1242,20 @@ Un cobro se reabre mientras su turno de origen siga abierto (RN-073): queda con 
 `caja` lleva código único por local (índice sobre `lower(codigo)`) y `principal` (índice único parcial: una por local). El POS no crea cajas. La principal no se desactiva ni se borra; una caja con turnos no se borra (historial) sino que se
 desactiva. La caja sembrada ("Caja Principal", CAJ-01) se crea con `INSERT ... ON CONFLICT DO NOTHING` (DT-066), y al cambiar la principal se quita primero la anterior y se escribe antes de marcar la nueva, porque el índice parcial no admite dos a la vez.
 La nota de apertura vive en `turno_caja.nota_apertura`.
+
+### DT-070 — Identificar a un pensionista con productos ya cargados recalcula sus precios
+
+**Estado:** Implementado (2026-10-29)
+
+Antes, `AsignarPensionista` y `VincularPreTicket` rechazaban a una persona con líneas (`PERSONA_CON_LINEAS`), porque el
+recálculo quedó para US-029. Ahora `RecalculoAlIdentificar` aplica a sus líneas vigentes las mismas reglas que
+`TrasladarLineas` hacia un pensionista (DT-058).
+
+- Primero calcula todo sin guardar nada. Si una línea no puede ser del pensionista (`CANTIDAD_INVALIDA`,
+  `PLAN_SIN_PRECIO`, `LINEA_COBRADA`), no se cambia nada.
+- Si todo sale bien, asigna, guarda y deja el `ajuste` en la bitácora (`transferencia`, tipo
+  `identificacion_de_pensionista`).
+- `PERSONA_CON_LINEAS` queda solo para quitar a una persona.
+
+Ver `rikos-backend/doc/historias/pos-inicio-y-paleta-azul-caja.md`.
+

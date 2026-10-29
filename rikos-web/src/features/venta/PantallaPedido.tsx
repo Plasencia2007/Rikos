@@ -467,6 +467,7 @@ export function PantallaPedido({
           itemsNuevos={itemsNuevos}
           abierta={cajonAbierto}
           onCerrar={() => setCajonAbierto(false)}
+          onElegirPersona={setPersonaId}
           onCantidad={(l, cantidad) =>
             ejecutar(modificarLineaDelPedido(token, pedidoId, l.id, { cantidad, observacion: l.observacion }))
           }

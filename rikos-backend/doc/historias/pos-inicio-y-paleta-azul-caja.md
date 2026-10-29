@@ -237,3 +237,76 @@ bloque propio al final de `pos.css`.
 - La lógica no cambió: las mismas validaciones y la misma llamada.
 - Verificado a 1440 px en el navegador (abrir, elegir la entrada, cerrar sin agregar). `tsc` y `eslint` sin errores.
 
+## Pedido de la mesa por persona (2026-10-29)
+
+- Pedido del usuario: el panel de la orden «idéntico» al diseño, con «Identificar pensionista» en el menú ⋮ de cada
+  persona, y las tarjetas de comensales más chicas y delgadas.
+- **`OrdenDeLaMesa.tsx` reescrito:**
+  - Cabecera «Pedido de la mesa · Mesa 04 · N productos» con «Por persona / Todos».
+  - «Por persona»: una tarjeta plegable por comensal (P1, P2…) con «N productos · S/ total».
+    - Su ⋮ lleva «Identificar / Cambiar pensionista»; como antes, solo mientras la persona no tenga productos.
+    - Tocar la cabecera elige a esa persona (los productos del catálogo van a ella) y la tarjeta se resalta.
+  - Cada línea tiene foto, detalle (opciones del menú, plan, táper), nota, estado (Por enviar / En cocina / Anulado),
+    precio y cantidad −/+. Con cantidad 1, el «−» pasa a ser un tacho que quita la línea.
+  - El lápiz abre las acciones de la línea: nota para cocina, pasar a otra persona, anular y quitar. Así siguen
+    disponibles todas las que había antes.
+  - «+ Agregar nota a cocina» edita la nota del último producto por enviar de esa persona.
+  - «Todos» es una sola lista con la sigla de cada persona.
+  - Pie: «N productos · N personas», total de la mesa y «Enviar a cocina • N productos →» (es el mismo «Comandar»,
+    contado en unidades) con «Revisa el pedido antes de enviarlo». Se mantienen Cobrar y «Terminar pedido sin
+    productos».
+- **Comensales:** tarjetas de 46 px de alto (antes 60), texto de 13,5 px y el tacho centrado.
+- **Verificado:**
+  - A 1440 px: se agregaron papas y huevo a la Persona 1 y café a la Persona 2. Se probaron el ⋮, las acciones de
+    la línea y «Todos». Después se quitaron las tres líneas (el total volvió a S/ 0.00).
+  - A 390 px: el cajón del carrito abre con las tarjetas por persona.
+  - `tsc` y `eslint` sin errores.
+
+## Identificar al pensionista con productos ya cargados (2026-10-29)
+
+### Qué se pidió
+
+El usuario preguntó por qué, después de agregar productos, ya no se podía identificar al pensionista. Pidió permitirlo y
+recalcular los precios.
+
+### Por qué no se podía
+
+`AsignarPensionista` y `VincularPreTicket` rechazaban a una persona con líneas (`PERSONA_CON_LINEAS`), porque en US-028
+todavía no había recalculo: se dejó para la entrega 4 (US-029 CA5). Esa entrega hizo el recalculo solo para
+`TrasladarLineas` y nadie volvió a quitar esta regla.
+
+### Qué se construyó
+
+- **`RecalculoAlIdentificar`** (`venta/aplicacion`) aplica las mismas reglas que pasar productos a un pensionista:
+  - El menú normal y la comida del plan van al precio de su plan, con «segundo del día» y táper.
+  - La carta, el menú extra y el extra libre conservan su precio.
+  - Un menú o una comida del plan de varias unidades da `CANTIDAD_INVALIDA`, y algo ya cobrado da `LINEA_COBRADA`.
+  - Las líneas anuladas no cuentan.
+  - Primero calcula todo sin tocar nada. Si algo falla, la persona sigue sin identificar y ningún precio cambia (el
+    pre-ticket tampoco queda vinculado).
+  - Si todo sale bien, guarda los precios y deja en la bitácora (`transferencia`, tipo
+    `identificacion_de_pensionista`) cuánto cambió el total (`ajuste`).
+- **Casos de uso:** `AsignarPensionista` y `VincularPreTicket` lo usan en lugar del rechazo. `PERSONA_CON_LINEAS` queda
+  solo para quitar a una persona.
+- **Pantalla:** el ⋮ de la persona permite identificar aunque tenga productos, salvo que tenga algo cobrado. Avisa que
+  sus productos se recalculan al precio de su plan. Hay mensajes nuevos para `CANTIDAD_INVALIDA`, `PLAN_SIN_PRECIO` y
+  `LINEA_COBRADA` (también en el pre-ticket).
+- La comanda que ya salió no cambia (es una foto); solo cambia el precio de la cuenta.
+
+### Cómo se verificó
+
+- `RecalculoAlIdentificarPensionistaTest` (6 pruebas nuevas):
+  - El menú pasa a S/ 8.00 del plan, con un ajuste de −400 en la bitácora, y la carta conserva su precio.
+  - Un menú ×2 impide identificar sin cambiar nada; lo mismo si el plan no tiene precio.
+  - Lo cobrado impide identificar y una línea anulada no lo impide.
+- `VincularPreTicketTest`: la prueba que esperaba el rechazo ahora comprueba que vincula y que la carta conserva su
+  precio.
+- Siguen pasando `PersonasDelPedidoTest`, `RecalculoAlTrasladarTest` y `VincularPreTicketTest`.
+- Suite completa: 817 pruebas, 9 fallan, todas ajenas a este cambio y ya existentes:
+  - `ArquitecturaDeModulosTest`: el ciclo conocido.
+  - `PensionistaTest` y `PensionistasAccesoPorRolTest`: esperan un PIN de 4 dígitos y desde el sprint 8 es de 6.
+  - `KioscoControllerTest`: le falta el limitador de solicitudes.
+- En el POS, pedido 0001 de la mesa 4: se agregó un menú del día a la Persona 3 (S/ 12.00) y se la identificó como
+  Ana Lucia Mendoza (pensionista de prueba). El menú pasó a S/ 10.00 «Precio de su plan». Después se quitó el menú; la
+  Persona 3 quedó identificada como Ana Lucia, sin productos.
+

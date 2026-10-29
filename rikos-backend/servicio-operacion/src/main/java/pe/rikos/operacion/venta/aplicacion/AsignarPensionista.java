@@ -7,28 +7,28 @@ import pe.rikos.operacion.pensionistas.aplicacion.ConsultaPensionistas;
 import pe.rikos.operacion.pensionistas.infraestructura.Pensionista;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersona;
 import pe.rikos.operacion.venta.infraestructura.CuentaPersonaRepositorio;
-import pe.rikos.operacion.venta.infraestructura.DetallePedidoRepositorio;
 import pe.rikos.operacion.venta.infraestructura.PedidoRepositorio;
 
 /**
  * El mozo busca al pensionista (por nombre o DNI) y lo asigna a una persona de la mesa. Paso provisional
- * hasta el ticket del sprint 8. Un inactivo no se asigna (RN-034); uno ya presente en el pedido, tampoco;
- * y una persona con lineas no cambia de tipo aqui (el recalculo es de la entrega 4, US-029 CA5).
+ * hasta el ticket del sprint 8. Un inactivo no se asigna (RN-034); uno ya presente en el pedido, tampoco. Si la
+ * persona ya tiene productos, se recalculan como al pasarlos a un pensionista (RecalculoAlIdentificar, US-029 CA5); si
+ * alguno no puede ser suyo, no cambia nada.
  */
 @Service
 public class AsignarPensionista {
 
     private final PedidoRepositorio pedidos;
     private final CuentaPersonaRepositorio personas;
-    private final DetallePedidoRepositorio lineas;
     private final ConsultaPensionistas consultaPensionistas;
+    private final RecalculoAlIdentificar recalculo;
 
     public AsignarPensionista(PedidoRepositorio pedidos, CuentaPersonaRepositorio personas,
-                              DetallePedidoRepositorio lineas, ConsultaPensionistas consultaPensionistas) {
+                              ConsultaPensionistas consultaPensionistas, RecalculoAlIdentificar recalculo) {
         this.pedidos = pedidos;
         this.personas = personas;
-        this.lineas = lineas;
         this.consultaPensionistas = consultaPensionistas;
+        this.recalculo = recalculo;
     }
 
     @Transactional
@@ -59,10 +59,13 @@ public class AsignarPensionista {
         if (personas.existsByPedidoIdAndPensionistaId(pedidoId, pensionistaId)) {
             return Resultado.fracaso(ErrorPedido.PENSIONISTA_YA_EN_EL_PEDIDO);
         }
-        if (lineas.existsByCuentaPersonaId(personaId)) {
-            return Resultado.fracaso(ErrorPedido.PERSONA_CON_LINEAS);
+        var preparado = recalculo.preparar(pedidoActual, persona, pensionistaId);
+        if (!preparado.esExito()) {
+            return Resultado.fracaso(((Resultado.Fracaso<?, ErrorPedido>) preparado).error());
         }
         persona.asignarPensionista(pensionistaId, pensionista.nombreCompleto());
-        return Resultado.exito(personas.save(persona));
+        CuentaPersona guardada = personas.save(persona);
+        recalculo.aplicar(pedidoActual, guardada, preparado.valorOLanza());
+        return Resultado.exito(guardada);
     }
 }
