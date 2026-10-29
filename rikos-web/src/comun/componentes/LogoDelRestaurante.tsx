@@ -8,14 +8,22 @@ export const LOGO_PREDETERMINADO = '/marca/logo-predeterminado.svg'
  */
 export const MEDIDAS_DEL_LOGO = { ancho: 170, alto: 40 }
 
-/** El logo del restaurante en la cabecera de una barra lateral. */
-export function LogoDelRestaurante({ src = LOGO_PREDETERMINADO, className = '' }: { src?: string; className?: string }) {
+/** El logo del restaurante; por defecto, en la caja de las barras laterales (otras pantallas pasan sus medidas). */
+export function LogoDelRestaurante({
+  src = LOGO_PREDETERMINADO,
+  className = '',
+  medidas = MEDIDAS_DEL_LOGO,
+}: {
+  src?: string
+  className?: string
+  medidas?: { ancho: number; alto: number }
+}) {
   return (
     <img
       className={`logo-restaurante ${className}`}
       src={src}
       alt="Riko's"
-      style={{ maxWidth: MEDIDAS_DEL_LOGO.ancho, maxHeight: MEDIDAS_DEL_LOGO.alto }}
+      style={{ maxWidth: medidas.ancho, maxHeight: medidas.alto }}
     />
   )
 }

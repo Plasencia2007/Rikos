@@ -366,3 +366,37 @@ con cantidad 2. Un menú del día con otras opciones sí debe ir en otra línea.
 - **Cajón en celular:** «Cerrar» es una X redonda en la fila del título, sin tapar «Pedido de la mesa».
 - Verificado a 390 y 1440 px: las 5 tarjetas de comensales en una fila de 46 px y sin desborde de la página.
 
+## Pantalla de PIN del POS (2026-10-29)
+
+- Pedido del usuario: mejorarla según su diseño, con la foto del restaurante que entregó (lomo saltado, ají de gallina,
+  chicha) en `public/imagenes/pos/pin-fondo.webp` (208 KB).
+- **`PantallaPin.tsx` reescrita** (clases `pin2-*` en `estilos/pin.css`):
+  - Izquierda: la foto con un degradado, la marca RIKO'S, «Una pausa. Todo sigue en orden.», el local y «Tu sesión
+    está protegida».
+  - Derecha: «Punto de venta» con el local, y la tarjeta «Desbloquear terminal» con cuatro casillas (la que sigue se
+    resalta), teclado con «Limpiar» y borrar, y «Desbloquear».
+  - Abajo, «¿No recuerdas tu PIN? Contacta al administrador.» y el estado del sistema.
+  - En celular y tableta vertical solo se ve la tarjeta, con la marca arriba.
+- La lógica no cambió: verifica sola al completar los 4 dígitos, acepta el teclado físico y respeta el bloqueo por
+  intentos. El número se calcula fuera de `setPin` para que no se verifique dos veces en modo estricto.
+- Ya no usa `EntradaNumerica` (sigue en el formulario de usuario). Se quitaron 40 reglas viejas `.pantalla-pin` /
+  `.pin-*` de `global.css`.
+- El diseño decía «Terminal 01»; no hay terminales en el sistema, así que muestra el local.
+- Verificado a 1440 px (el título en 2 líneas; con el PIN 1111 entra) y a 390 px (cabe sin desplazar).
+- **Ajuste pedido por el usuario:** en web la pantalla no debe desplazarse.
+  - Con `>= 901 px` ocupa exactamente el alto (`100dvh`, sin scroll). Las casillas, las teclas, el candado y los
+    márgenes siguen el alto disponible (`clamp` con `vh`).
+  - Verificado sin scroll a 1366 × 700, 1440 × 900 y 1920 × 950. En celular sí se puede desplazar.
+- **Logo:** en lugar del gorro y el texto, va el logo de RIKO'S (`LogoDelRestaurante`, ahora con `medidas` opcionales)
+  sobre la foto, con fondo transparente y un halo claro para que el rojo se lea sobre lo oscuro. En celular va arriba
+  de la tarjeta.
+- **Segunda vuelta (pedido del usuario: «más profesional», 50-50, sin la línea azul):**
+  - En web, foto y tarjeta van mitad y mitad, y se quitó el borde azul entre las dos.
+  - El mensaje va centrado en el alto. Hubo una ceja «Terminal en pausa», pero el usuario pidió quitarla.
+  - Titular en **Plus Jakarta Sans**, con la segunda línea en el dorado del logo. Es el paquete local
+    `@fontsource-variable/plus-jakarta-sans@5.2.8`: no depende de Google Fonts y funciona sin conexión. Por ahora solo
+    se usa en esta pantalla.
+  - En lugar de la pastilla «San Isidro», un panel de vidrio con «Local · San Isidro» y la fecha y la hora en vivo
+    (se actualiza cada 15 s).
+  - Verificado sin scroll a 1440 × 860 y 1366 × 700.
+

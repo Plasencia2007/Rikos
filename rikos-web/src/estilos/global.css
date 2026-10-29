@@ -610,274 +610,12 @@ button, input, select {
    quedaba pegado contra el borde izquierdo de cada mitad, dejando todo el
    resto de esa mitad vacio. La correccion es centrar el bloque de
    contenido DENTRO de cada mitad (los dos ejes), no achicar la pantalla. */
-.pantalla-pin {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 100%;
-}
 
 /* ================= Panel Izquierdo: Marca RIKO'S ================= */
-.pin-marca {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--espacio-7);
-  background-color: #1e3a8a;
-  color: #ffffff;
-}
-
-.pin-marca-ondas {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-.pin-onda-oscura {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 65%;
-  display: block;
-}
-
-.pin-doodles-izq {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-.pin-doodle-chef-izq {
-  position: absolute;
-  top: 9%;
-  left: 7%;
-  width: clamp(90px, 9vw, 135px);
-  height: auto;
-  transform: rotate(-8deg);
-  opacity: 0.85;
-}
-.pin-doodle-cubiertos-izq {
-  position: absolute;
-  bottom: 11%;
-  right: 7%;
-  width: clamp(65px, 6vw, 95px);
-  height: auto;
-  transform: rotate(15deg);
-  opacity: 0.8;
-}
-.pin-chispas-plato {
-  position: absolute;
-  bottom: 27%;
-  left: 28%;
-  width: 50px;
-  height: 50px;
-  z-index: 3;
-}
-
-.pin-marca-contenido {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.pin-logo-contenedor {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 22px;
-}
-.pin-logo-chef {
-  width: 76px;
-  height: 64px;
-  display: block;
-  margin-bottom: 4px;
-}
-.pin-marca-titulo {
-  font-size: 38px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 1px;
-  line-height: 1;
-  margin: 4px 0 0 0;
-  font-family: inherit;
-}
-.pin-marca-subtitulo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-.pin-linea-adorno {
-  width: 32px;
-  height: 2px;
-  background-color: #ffffff;
-  opacity: 0.9;
-  border-radius: 2px;
-}
-.pin-texto-adorno {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-}
-
-.pin-bloqueo-titulo {
-  font-size: 28px;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.2px;
-}
-.pin-bloqueo-subtitulo {
-  font-size: 15px;
-  color: #d6deec;
-  margin: 0;
-  line-height: 1.4;
-  max-width: 340px;
-}
-
-.pin-marca-local {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #c3cde0;
-  margin-top: 8px;
-  font-weight: 500;
-}
-
-.pin-plato-envoltorio {
-  position: absolute;
-  bottom: -45px;
-  left: -45px;
-  width: clamp(260px, 24vw, 380px);
-  height: clamp(260px, 24vw, 380px);
-  z-index: 2;
-  pointer-events: none;
-  filter: drop-shadow(0 18px 34px rgba(8, 24, 21, 0.48));
-}
-.pin-plato-imagen {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
 
 /* ================= Panel Derecho: Teclado y Acceso ================= */
-.pin-acceso {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--espacio-7);
-  background-color: #f8fafd;
-}
-
-.pin-fondo-onda-der {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: clamp(260px, 22vw, 370px);
-  height: clamp(190px, 18vw, 290px);
-  pointer-events: none;
-  z-index: 1;
-}
-.pin-fondo-onda-der svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.pin-espiga-trigo {
-  position: absolute;
-  top: 14px;
-  right: 18px;
-  width: 120px;
-  height: 150px;
-  opacity: 0.95;
-}
-
-.pin-doodles-der {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: hidden;
-}
-.pin-doodle-chef-der {
-  position: absolute;
-  bottom: 12%;
-  right: 7%;
-  width: clamp(75px, 8vw, 115px);
-  height: auto;
-  transform: rotate(10deg);
-  opacity: 0.85;
-}
-.pin-chispas-der {
-  position: absolute;
-  bottom: 10%;
-  right: 5%;
-  width: 50px;
-  height: 50px;
-  z-index: 1;
-}
 
 /* Tarjeta Flotante */
-.pin-tarjeta {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  max-width: 390px;
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 36px 38px 30px 38px;
-  box-shadow: 0 16px 45px -8px rgba(15, 23, 42, 0.08), 0 2px 10px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(222, 230, 228, 0.5);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.pin-tarjeta-cabecera {
-  text-align: center;
-  margin-bottom: 20px;
-  width: 100%;
-}
-.pin-tarjeta-titulo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 22px;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.2px;
-}
-.pin-icono-candado {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-}
-.pin-ayuda {
-  font-size: 13.5px;
-  color: #64748b;
-  margin: 0;
-}
 
 .entrada-numerica {
   width: 100%;
@@ -913,16 +651,6 @@ button, input, select {
   background: #1d4ed8;
   border-color: #1d4ed8;
   transform: scale(1.08);
-}
-
-.pin-mensaje {
-  font-size: 13px;
-  margin-top: 14px;
-  text-align: center;
-}
-.pin-mensaje.error {
-  color: var(--color-error);
-  font-weight: 500;
 }
 
 /* Teclado Numérico */
@@ -979,24 +707,6 @@ button, input, select {
 }
 
 /* Responsividad en móvil */
-@media (max-width: 768px) {
-  .pantalla-pin {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-  .pin-marca {
-    padding: var(--espacio-5);
-  }
-  .pin-plato-envoltorio {
-    display: none;
-  }
-  .pin-acceso {
-    padding: var(--espacio-4);
-  }
-  .pin-tarjeta {
-    padding: 24px 20px;
-  }
-}
 
 /* ================= Panel administrativo (Bloque A) ================= */
 
@@ -1496,7 +1206,6 @@ a.panel-lateral-subitem:hover { color: var(--color-texto-principal); }
     flex: none;
   }
 }
-
 
 /* Movil: drawer superpuesto sobre el contenido con apertura limpia */
 @media (max-width: 900px) {
@@ -2686,7 +2395,6 @@ a.panel-lateral-subitem:hover { color: var(--color-texto-principal); }
 .interruptor.activo .interruptor-bola { left: 20px; }
 
 .usuario-formulario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); align-items: start; }
-.pin-code-inputs input { max-width: 140px; letter-spacing: .3em; text-align: center; font-weight: 700; }
 
 .usuario-formulario-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: var(--espacio-4); }
 .usuario-lista-seleccion { display: grid; gap: var(--espacio-1); border: 1px solid var(--color-separador); border-radius: var(--radio-sm); padding: var(--espacio-2); max-height: 320px; overflow-y: auto; }
