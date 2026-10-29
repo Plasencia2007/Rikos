@@ -75,6 +75,10 @@ class MenuDelDiaEnPedidoTest extends PedidosBase {
     pe.rikos.operacion.catalogo.aplicacion.MarcarAgotado marcarAgotado;
     @Autowired
     ConsultaPedidos consulta;
+    @Autowired
+    ComandarPedido comandarPedido;
+    @Autowired
+    ConsultaComandas consultaComandas;
 
     PlanTarifario plan;
     Pedido pedido;
@@ -304,5 +308,18 @@ class MenuDelDiaEnPedidoTest extends PedidosBase {
 
         assertThat(segundo.getId()).isNotEqualTo(primero.getId());
         assertThat(segundo.getCantidad()).isEqualTo(1);
+    }
+
+    @Test
+    void la_comanda_de_un_menu_dice_que_es_cada_opcion_en_el_orden_del_menu() {
+        agregarLinea.ejecutar(menu(TipoDeLinea.MENU_NORMAL, List.of(new ComponenteElegido("segundo", opcionSeco.getId()))),
+                ADMIN_SEMBRADO_ID).valorOLanza();
+        var comanda = comandarPedido.ejecutar(pedido.getId(), null, ADMIN_SEMBRADO_ID).valorOLanza();
+
+        var linea = consultaComandas.detalle(comanda.getId()).valorOLanza().personas().get(0).lineas().get(0);
+
+        assertThat(linea.partes()).extracting(ComponenteDetallado::componente, ComponenteDetallado::productoNombre)
+                .containsExactly(tuple("entrada", entrada.getNombre()), tuple("segundo", seco.getNombre()));
+        assertThat(linea.componentes()).containsExactly(entrada.getNombre(), seco.getNombre());
     }
 }

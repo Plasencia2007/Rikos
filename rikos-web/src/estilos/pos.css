@@ -1136,3 +1136,63 @@ body:has(.pos-raiz) .modal-fondo { z-index: 1300; }
   .ped6-cabecera .ped6-cerrar { width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; align-self: start; }
   .ped6-cabecera .ped3-orden-titulo h2 { font-size: 19px; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* ===== Detalle de comanda (VistaComanda.tsx, diseño 2026-10-29) ===== */
+.com2 { gap: 18px; }
+.com2-mesa {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; border-radius: 14px; background: #eef4ff;
+}
+.com2-mesa strong { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+.com2-en-cocina {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; background: #dbe6fd; color: #1d4ed8;
+  font-size: 15px; font-weight: 700; white-space: nowrap;
+}
+.com2-datos { margin: 0; display: grid; grid-template-columns: 1fr 1fr; padding-bottom: 16px; border-bottom: 1px solid #e4e9f2; row-gap: 14px; }
+.com2-datos > div { display: grid; gap: 4px; padding: 0 18px 0 2px; }
+.com2-datos > div:nth-child(even) { padding-left: 24px; border-left: 1px solid #e4e9f2; }
+.com2-datos dt { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
+.com2-datos dd { margin: 0; font-size: 17px; color: #0f172a; }
+.com2-persona { display: grid; gap: 12px; }
+.com2-persona header { display: flex; align-items: center; gap: 14px; }
+.com2-sigla {
+  width: 46px; height: 46px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #e4edff; color: #1d4ed8;
+  font-size: 15px; font-weight: 800;
+}
+.com2-persona h3 { margin: 0; flex: 1; font-size: 18px; font-weight: 800; color: #0f172a; }
+.com2-cuenta { font-size: 15px; color: #526079; }
+.com2-linea { border: 1px solid #e4e9f2; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; background: #fff; }
+.com2-linea-cabeza { display: flex; align-items: center; gap: 16px; }
+.com2-linea-cabeza > div { display: grid; line-height: 1.3; }
+.com2-linea-cabeza strong { font-size: 18px; font-weight: 800; color: #0f172a; }
+.com2-linea-cabeza > div span { font-size: 14px; color: #526079; }
+.com2-cantidad {
+  min-width: 52px; height: 48px; padding: 0 8px; box-sizing: border-box; border-radius: 10px; display: grid; place-items: center; background: #2563eb;
+  color: #fff; font-size: 19px; font-weight: 800;
+}
+.com2-partes { margin: 0; display: grid; }
+.com2-partes > div { display: grid; grid-template-columns: minmax(110px, 30%) 1fr; gap: 12px; padding: 9px 4px; border-top: 1px solid #eef1f6; }
+.com2-partes dt { font-size: 15px; color: #526079; }
+.com2-partes dd { margin: 0; font-size: 16px; color: #0f172a; }
+.com2-nota { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fff7e6; color: #92400e; font-size: 15px; }
+.com2-resumen { margin: 0; font-size: 14.5px; color: #64748b; }
+.com2-estado { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; }
+.com2-estado-icono { width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; display: grid; place-items: center; background: #fff1e0; color: #b45309; }
+.com2-estado > div { display: grid; line-height: 1.35; }
+.com2-estado strong { display: inline-flex; align-items: center; gap: 8px; font-size: 14.5px; color: #0f172a; }
+.com2-estado strong i { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; }
+.com2-estado strong.impresa i { background: #16a34a; }
+.com2-estado span { font-size: 13.5px; color: #526079; }
+.modal-caja:has(.com2) .modal-pie { align-items: center; flex-wrap: wrap; }
+.modal-caja:has(.com2) .modal-pie .boton { min-height: 50px; padding: 0 22px; display: inline-flex; align-items: center; gap: 10px; }
+@media (max-width: 600px) {
+  .com2-mesa strong { font-size: 26px; }
+  .com2-datos > div:nth-child(even) { padding-left: 14px; }
+  .com2-estado { flex: 1 1 100%; margin-bottom: 4px; }
+  .modal-caja:has(.com2) .modal-pie .boton { flex: 1; justify-content: center; }
+}
+@media print {
+  .com2-mesa, .com2-en-cocina, .com2-cantidad, .com2-sigla, .com2-nota { background: none !important; color: #000 !important; }
+  .com2-mesa { border: 2px solid #000; }
+  .com2-cantidad, .com2-sigla { border: 2px solid #000; }
+  .com2-linea { border-color: #000; }
+}

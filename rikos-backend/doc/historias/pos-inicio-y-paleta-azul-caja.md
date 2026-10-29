@@ -400,3 +400,27 @@ con cantidad 2. Un menú del día con otras opciones sí debe ir en otra línea.
     (se actualiza cada 15 s).
   - Verificado sin scroll a 1440 × 860 y 1366 × 700.
 
+## Detalle de comanda (2026-10-29)
+
+- Pedido del usuario: mejorar el modal de la comanda según su diseño.
+- **Backend:**
+  - `LineaDeComanda` y la respuesta de `GET /comandas/{id}` traen `partes`: cada componente con lo que es (entrada,
+    segundo, guarnición, refresco, postre), en el orden del menú.
+  - `componentes` (solo nombres) sigue igual por compatibilidad, ahora en ese mismo orden.
+  - Prueba nueva en `MenuDelDiaEnPedidoTest`. Siguen pasando `ConsultaDeComandasTest`, `ComandarPedidoTest`,
+    `TablasDeComandaTest`, `RegistrarImpresionTest` y `ComandasIntactasAlAgotarTest`.
+- **`VistaComanda.tsx`:**
+  - Modal ancho, con un ícono y «Comanda #001 · Pedido #0001» bajo el título. `Modal` acepta ahora `subtitulo` e
+    `icono` opcionales.
+  - La mesa destacada con «En cocina».
+  - Servicio, atendido por, fecha y hora de envío.
+  - Cada persona con sigla y cantidad. Cada producto con su cantidad en azul; si es menú, una tabla con Entrada,
+    Segundo, Bebida (el refresco) y Postre.
+  - Pie con el estado («Pendiente de impresión» o «Impresa N veces»), «Cerrar» e «Imprimir comanda» (o «Imprimir
+    copia» si ya se imprimió).
+- **Error corregido de paso:** la impresión ocultaba `#root`, pero la app vive en `#raiz`, así que al imprimir la
+  comanda también salía la pantalla de atrás. Ahora se oculta `#raiz`. En la hoja impresa los fondos de color pasan a
+  bordes negros.
+- Verificado con la comanda 1 de la mesa 4, a 1440 y 390 px. La impresión real no se probó; solo se revisaron los
+  estilos.
+

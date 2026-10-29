@@ -243,6 +243,10 @@ button, input, select {
   border-bottom: 1px solid var(--color-separador);
 }
 .modal-encabezado h2 { font-size: var(--texto-lg-tamano); font-weight: var(--texto-lg-peso); }
+.modal-titulo-con-icono { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.modal-icono { width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center; background: #e4edff; color: #1d4ed8; }
+.modal-titulo-con-icono h2 { margin: 0; font-size: 22px; font-weight: 800; }
+.modal-subtitulo { margin: 2px 0 0; font-size: 14.5px; color: var(--color-texto-secundario); }
 .modal-cerrar {
   background: none; border: none; cursor: pointer;
   font-size: 20px; line-height: 1; color: var(--color-texto-secundario);
@@ -2734,7 +2738,7 @@ button.prog-opcion:hover { border-color: var(--color-marca); }
 .com-nota { font-weight: 700; }
 @media print {
   /* Solo la hoja de la comanda: todo lo demas (la aplicacion, el marco y los botones del dialogo) se oculta. */
-  body > #root { display: none !important; }
+  body > #raiz { display: none !important; }
   .modal-fondo { position: static !important; background: none !important; display: block !important; padding: 0 !important; }
   .modal-caja { box-shadow: none !important; border: 0 !important; max-height: none !important; overflow: visible !important; width: 100% !important; max-width: none !important; }
   .modal-encabezado, .modal-pie { display: none !important; }

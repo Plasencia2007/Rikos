@@ -164,7 +164,9 @@ public class PedidoController {
                                  java.time.OffsetDateTime ultimaImpresionEn, String estadoImpresion) {
     }
 
-    public record LineaDeComandaRespuesta(int cantidad, String nombre, List<String> componentes, String observacion) {
+    /** partes: los componentes con lo que es cada uno (entrada, segundo...), en el orden del menu. */
+    public record LineaDeComandaRespuesta(int cantidad, String nombre, List<String> componentes, String observacion,
+                                          List<ComponenteRespuesta> partes) {
     }
 
     public record PersonaDeComandaRespuesta(String etiqueta, List<LineaDeComandaRespuesta> lineas) {
@@ -191,7 +193,9 @@ public class PedidoController {
                 d.mozo(), c.getEmitidaEn(), c.getImpresiones(),
                 d.personas().stream().map(p -> new PersonaDeComandaRespuesta(p.etiqueta(), p.lineas().stream()
                         .map(l -> new LineaDeComandaRespuesta(l.cantidad(), l.nombre(), l.componentes(),
-                                l.observacion())).toList())).toList());
+                                l.observacion(), l.partes().stream()
+                                        .map(parte -> new ComponenteRespuesta(parte.componente(), parte.productoNombre())).toList()))
+                        .toList())).toList());
     }
 
     public record PersonaRespuesta(String id, String etiqueta, String tipoCliente, String pensionistaId,
