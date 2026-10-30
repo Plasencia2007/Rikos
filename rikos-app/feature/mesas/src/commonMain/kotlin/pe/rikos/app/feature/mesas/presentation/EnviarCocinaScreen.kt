@@ -107,6 +107,9 @@ fun EnviarCocinaScreen(
 
     // Toast flotante al reimprimir comanda anterior
     var toastReimpresion by remember { mutableStateOf(false) }
+    var mostrarAlertaImpresora by remember { mutableStateOf(false) }
+    var estadoImpresoraTexto by remember { mutableStateOf(if (impresoraLista) "Impresora de cocina lista" else "Verificando impresora...") }
+    var impresoraUsandoBarra by remember { mutableStateOf(false) }
 
     fun dispararReimpresion() {
         toastReimpresion = true
@@ -168,7 +171,7 @@ fun EnviarCocinaScreen(
                 )
 
                 // Estado de impresora de cocina
-                FilaEstadoImpresora(impresoraLista = impresoraLista)
+                FilaEstadoImpresora(textoEstado = estadoImpresoraTexto, impresoraLista = !mostrarAlertaImpresora && (impresoraLista || impresoraUsandoBarra), onClick = { mostrarAlertaImpresora = true })
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -199,6 +202,25 @@ fun EnviarCocinaScreen(
         ) {
             ToastReimpresionComanda(comandaId = comandaNumero - 1)
         }
+
+        // M12d: Impresora sin respuesta (Alerta Modal)
+        ImpresoraErrorDialog(
+            visible = mostrarAlertaImpresora,
+            comandaNumero = comandaNumero,
+            alUsarBarra = {
+                impresoraUsandoBarra = true
+                estadoImpresoraTexto = "Impresora de barra lista"
+                mostrarAlertaImpresora = false
+            },
+            alReintentar = {
+                impresoraUsandoBarra = false
+                estadoImpresoraTexto = "Impresora de cocina lista"
+                mostrarAlertaImpresora = false
+            },
+            alCerrar = {
+                mostrarAlertaImpresora = false
+            },
+        )
     }
 }
 
@@ -607,14 +629,24 @@ private fun LineaPunteadaTicket(color: Color) {
  * Fila informativa de estado de impresora de cocina.
  */
 @Composable
-private fun FilaEstadoImpresora(impresoraLista: Boolean) {
+private fun FilaEstadoImpresora(
+    textoEstado: String,
+    impresoraLista: Boolean,
+    onClick: () -> Unit = {},
+) {
     val colors = Rikos.colors
     val type = Rikos.type
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 2.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -656,7 +688,7 @@ private fun FilaEstadoImpresora(impresoraLista: Boolean) {
         }
 
         BasicText(
-            text = if (impresoraLista) "Impresora de cocina lista" else "Verificando impresora...",
+            text = textoEstado,
             style = type.footnote.copy(
                 color = colors.ink2,
                 fontSize = 14.sp,
