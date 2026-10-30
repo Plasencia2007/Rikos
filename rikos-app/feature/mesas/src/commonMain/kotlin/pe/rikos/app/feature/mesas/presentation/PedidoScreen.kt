@@ -118,6 +118,7 @@ fun PedidoScreen(
     var lineaEnEdicion by remember { mutableStateOf<LineaPedido?>(null) }
     var lineaParaAcciones by remember { mutableStateOf<LineaPedido?>(null) }
     var gestionandoTiempos by remember { mutableStateOf(false) }
+    var enviandoACocina by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -249,7 +250,7 @@ fun PedidoScreen(
             totalMonto = pedido.total,
             alVerCuenta = alVerCuenta,
             alEnviarACocina = {
-                gestionandoTiempos = true
+                enviandoACocina = true
             },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -588,6 +589,50 @@ fun PedidoScreen(
                             )
                         },
                     )
+                },
+            )
+        }
+
+        // 14. Pantalla M12: Enviar a cocina
+        AnimatedVisibility(
+            visible = enviandoACocina,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val lineasPorEnviar = pedido.asientos.flatMap { a ->
+                a.lineas.filter { it.estado == EstadoLineaPedido.POR_ENVIAR }.map { l ->
+                    ItemAEnviar(
+                        id = l.id,
+                        cantidad = l.cantidad,
+                        nombre = l.nombre,
+                        detalle = "${a.etiqueta}${if (!l.observacion.isNullOrBlank()) ", ${l.observacion}" else ""}",
+                        destino = if (l.nombre.contains("Postre", ignoreCase = true)) "Postres" else "Cocina",
+                    )
+                }
+            }
+            EnviarCocinaScreen(
+                mesaNumero = pedido.mesaNumero,
+                comandaNumero = 15,
+                mozoNombre = "Luis",
+                horaActual = "13:14",
+                salonNombre = "salón principal",
+                enLinea = enLinea,
+                itemsIniciales = if (lineasPorEnviar.isNotEmpty()) lineasPorEnviar else null,
+                alVolver = { enviandoACocina = false },
+                alEnviarEImprimir = { enviados ->
+                    val enviadosIds = enviados.map { it.id }.toSet()
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            a.copy(
+                                lineas = a.lineas.map { l ->
+                                    if (l.id in enviadosIds || l.estado == EstadoLineaPedido.POR_ENVIAR) {
+                                        l.copy(estado = EstadoLineaPedido.EN_COCINA)
+                                    } else l
+                                },
+                            )
+                        },
+                    )
+                    enviandoACocina = false
                 },
             )
         }
