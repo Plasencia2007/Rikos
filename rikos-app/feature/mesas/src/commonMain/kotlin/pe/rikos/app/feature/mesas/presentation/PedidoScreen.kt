@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -119,6 +120,8 @@ fun PedidoScreen(
     var lineaParaAcciones by remember { mutableStateOf<LineaPedido?>(null) }
     var gestionandoTiempos by remember { mutableStateOf(false) }
     var enviandoACocina by remember { mutableStateOf(false) }
+    var envioParcialVisible by remember { mutableStateOf(false) }
+    var toastMensaje by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = modifier
@@ -138,7 +141,7 @@ fun PedidoScreen(
                 minutosTranscurridos = pedido.minutosTranscurridos,
                 enLinea = enLinea,
                 alVolver = alVolver,
-                alVerAcciones = alVerAcciones,
+                alVerAcciones = { envioParcialVisible = true },
             )
 
             Spacer(Modifier.height(10.dp))
@@ -633,8 +636,63 @@ fun PedidoScreen(
                         },
                     )
                     enviandoACocina = false
+                    envioParcialVisible = true
                 },
             )
+        }
+
+        // 15. Pantalla M12c: Envío parcial (BottomSheet)
+        EnvioParcialSheet(
+            visible = envioParcialVisible,
+            items = listOf(
+                ItemEnvioParcial("1", "Ceviche clásico", true),
+                ItemEnvioParcial("2", "Causa limeña", true),
+                ItemEnvioParcial("3", "Ají de gallina", false),
+            ),
+            alEnviarPendientes = { pendientes ->
+                val nombres = pendientes.joinToString(", ") { it.nombre }
+                toastMensaje = "$nombres enviado a cocina"
+                envioParcialVisible = false
+            },
+            alVolverALaCuenta = {
+                envioParcialVisible = false
+                alVerCuenta()
+            },
+            alCerrar = {
+                envioParcialVisible = false
+            },
+        )
+
+        // Toast de confirmación de reenvío
+        AnimatedVisibility(
+            visible = toastMensaje != null,
+            enter = fadeIn(tween(180)) + slideInVertically(initialOffsetY = { -it }),
+            exit = fadeOut(tween(180)) + slideOutVertically(targetOffsetY = { -it }),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        ) {
+            toastMensaje?.let { msg ->
+                LaunchedEffect(msg) {
+                    kotlinx.coroutines.delay(2600)
+                    toastMensaje = null
+                }
+                Box(
+                    modifier = Modifier
+                        .shadow(12.dp, RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.navy)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
+                    BasicText(
+                        text = "✔ $msg",
+                        style = type.subhead.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                }
+            }
         }
     }
 }
