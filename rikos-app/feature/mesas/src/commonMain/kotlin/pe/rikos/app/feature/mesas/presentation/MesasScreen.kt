@@ -79,6 +79,9 @@ import pe.rikos.app.feature.mesas.domain.Salon
 import pe.rikos.app.feature.mesas.domain.TipoAviso
 import pe.rikos.app.feature.mesas.presentation.components.DrawnTable
 import pe.rikos.app.feature.mesas.presentation.components.MesasBottomNav
+import pe.rikos.app.feature.mesas.presentation.components.NavItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import pe.rikos.app.feature.mesas.presentation.components.VistazoMesaSheet
 import pe.rikos.app.feature.mesas.presentation.components.mesaColores
 
@@ -89,6 +92,7 @@ fun MesasScreen(
     modifier: Modifier = Modifier,
 ) {
     val estado by viewModel.estado.collectAsState()
+    var tabSeleccionado by remember { mutableStateOf(NavItem.MESAS) }
 
     RikosTheme(oscuro = estado.modoNoche) {
         val colors = Rikos.colors
@@ -188,6 +192,8 @@ fun MesasScreen(
 
             // 6. Barra de navegación inferior flotante con animación viva
             MesasBottomNav(
+                itemSeleccionado = tabSeleccionado,
+                alSeleccionarItem = { tabSeleccionado = it },
                 modifier = Modifier.align(Alignment.BottomCenter),
                 alNuevoPedido = {
                     val mesaLibre = estado.mesasFiltradas.find { it.numero == "7" }
@@ -263,6 +269,25 @@ fun MesasScreen(
                         alAgregarPlato = { /* Agregar plato M08 */ },
                     )
                 }
+            }
+
+            // M12b: Pantalla de comandas por estado
+            AnimatedVisibility(
+                visible = tabSeleccionado == NavItem.COMANDAS,
+                enter = fadeIn(tween(220, easing = RikosMotion.Ease)),
+                exit = fadeOut(tween(180, easing = RikosMotion.Ease)),
+            ) {
+                ComandasScreen(
+                    enLinea = estado.enLinea,
+                    alIrAMesas = { tabSeleccionado = NavItem.MESAS },
+                    alNuevoPedido = {
+                        tabSeleccionado = NavItem.MESAS
+                        val mesaLibre = estado.mesasFiltradas.find { it.numero == "7" }
+                            ?: estado.mesasFiltradas.find { it.estado == EstadoMesa.LIBRE }
+                            ?: estado.mesas.firstOrNull()
+                        viewModel.alAbrirMesa(mesaLibre)
+                    },
+                )
             }
         }
     }
