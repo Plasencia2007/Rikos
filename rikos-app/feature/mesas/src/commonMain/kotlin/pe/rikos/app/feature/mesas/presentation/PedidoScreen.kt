@@ -117,6 +117,7 @@ fun PedidoScreen(
     var vinculandoPensionista by remember { mutableStateOf(false) }
     var lineaEnEdicion by remember { mutableStateOf<LineaPedido?>(null) }
     var lineaParaAcciones by remember { mutableStateOf<LineaPedido?>(null) }
+    var gestionandoTiempos by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -248,18 +249,7 @@ fun PedidoScreen(
             totalMonto = pedido.total,
             alVerCuenta = alVerCuenta,
             alEnviarACocina = {
-                // Marcar todas las líneas pendientes como enviadas a cocina
-                pedido = pedido.copy(
-                    asientos = pedido.asientos.map { a ->
-                        a.copy(
-                            lineas = a.lineas.map { l ->
-                                if (l.estado == EstadoLineaPedido.POR_ENVIAR) {
-                                    l.copy(estado = EstadoLineaPedido.EN_COCINA)
-                                } else l
-                            },
-                        )
-                    },
-                )
+                gestionandoTiempos = true
             },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -559,6 +549,47 @@ fun PedidoScreen(
                     },
                 )
             }
+        }
+
+        // 13. Pantalla M12a: Pedido por tiempos (retener y enviar)
+        AnimatedVisibility(
+            visible = gestionandoTiempos,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            PedidoTiemposScreen(
+                mesaNumero = pedido.mesaNumero.toIntOrNull() ?: 5,
+                enLinea = enLinea,
+                alVolver = { gestionandoTiempos = false },
+                alEnviarYVolverAMesas = { _ ->
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            a.copy(
+                                lineas = a.lineas.map { l ->
+                                    if (l.estado == EstadoLineaPedido.POR_ENVIAR) {
+                                        l.copy(estado = EstadoLineaPedido.EN_COCINA)
+                                    } else l
+                                },
+                            )
+                        },
+                    )
+                    gestionandoTiempos = false
+                    alVolver()
+                },
+                alEnviarYSeguir = { _ ->
+                    pedido = pedido.copy(
+                        asientos = pedido.asientos.map { a ->
+                            a.copy(
+                                lineas = a.lineas.map { l ->
+                                    if (l.estado == EstadoLineaPedido.POR_ENVIAR) {
+                                        l.copy(estado = EstadoLineaPedido.EN_COCINA)
+                                    } else l
+                                },
+                            )
+                        },
+                    )
+                },
+            )
         }
     }
 }
