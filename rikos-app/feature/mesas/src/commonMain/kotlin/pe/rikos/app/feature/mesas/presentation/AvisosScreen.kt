@@ -70,6 +70,7 @@ fun AvisosScreen(
     enLinea: Boolean = true,
     alVolver: () -> Unit,
     alVerAgotados: () -> Unit = {},
+    alVerPermisoSupervisor: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = Rikos.colors
@@ -143,6 +144,17 @@ fun AvisosScreen(
                 noLeido = false,
                 colorInsigniaFondo = { Rikos.colors.greenSoft },
                 colorInsigniaTexto = { Rikos.colors.greenText },
+            ),
+            ItemAviso(
+                id = "7",
+                insignia = "P",
+                titulo = "Permiso de supervisor",
+                detalle = "Anular Lomo saltado en Mesa 5",
+                tiempo = "ahora",
+                categoria = CategoriaAviso.SISTEMA,
+                noLeido = true,
+                colorInsigniaFondo = { Rikos.colors.redSoft },
+                colorInsigniaTexto = { Rikos.colors.red },
             ),
         )
     }
@@ -309,6 +321,8 @@ fun AvisosScreen(
                     onClick = {
                         if (aviso.id == "4" || aviso.titulo.contains("agotado", ignoreCase = true)) {
                             alVerAgotados()
+                        } else if (aviso.id == "7" || aviso.titulo.contains("supervisor", ignoreCase = true)) {
+                            alVerPermisoSupervisor()
                         }
                     },
                 )
