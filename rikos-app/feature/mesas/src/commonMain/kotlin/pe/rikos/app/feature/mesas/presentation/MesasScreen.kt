@@ -94,6 +94,7 @@ fun MesasScreen(
     val estado by viewModel.estado.collectAsState()
     var tabSeleccionado by remember { mutableStateOf(NavItem.MESAS) }
     var mostrarAgotados by remember { mutableStateOf(false) }
+    var mostrarPermisoSupervisor by remember { mutableStateOf(false) }
 
     RikosTheme(oscuro = estado.modoNoche) {
         val colors = Rikos.colors
@@ -232,6 +233,10 @@ fun MesasScreen(
                         viewModel.alMostrarAvisos(false)
                         mostrarAgotados = true
                     },
+                    alVerPermisoSupervisor = {
+                        viewModel.alMostrarAvisos(false)
+                        mostrarPermisoSupervisor = true
+                    },
                 )
             }
 
@@ -249,6 +254,25 @@ fun MesasScreen(
                             tabSeleccionado = NavItem.MESAS
                         }
                     },
+                )
+            }
+
+            // M11c: Permiso de supervisor
+            AnimatedVisibility(
+                visible = mostrarPermisoSupervisor,
+                enter = fadeIn(tween(220, easing = RikosMotion.Ease)),
+                exit = fadeOut(tween(180, easing = RikosMotion.Ease)),
+            ) {
+                PermisoSupervisorScreen(
+                    platoNombre = "Lomo saltado",
+                    mesaNumero = "5",
+                    personaNumero = 1,
+                    motivo = "demora en cocina",
+                    monto = "S/ 18.00",
+                    supervisorNombre = "Ana M.",
+                    enLinea = estado.enLinea,
+                    alVolver = { mostrarPermisoSupervisor = false },
+                    alConfirmarAnulacion = { mostrarPermisoSupervisor = false },
                 )
             }
 

@@ -118,6 +118,7 @@ fun PedidoScreen(
     var vinculandoPensionista by remember { mutableStateOf(false) }
     var lineaEnEdicion by remember { mutableStateOf<LineaPedido?>(null) }
     var lineaParaAcciones by remember { mutableStateOf<LineaPedido?>(null) }
+    var lineaParaPermisoSupervisor by remember { mutableStateOf<LineaPedido?>(null) }
     var gestionandoTiempos by remember { mutableStateOf(false) }
     var enviandoACocina by remember { mutableStateOf(false) }
     var envioParcialVisible by remember { mutableStateOf(false) }
@@ -506,7 +507,11 @@ fun PedidoScreen(
                     alAnular = {
                         val l = linea
                         lineaParaAcciones = null
-                        lineaEnEdicion = l
+                        if (l.estado == EstadoLineaPedido.EN_COCINA || l.nombre.contains("Lomo saltado", ignoreCase = true)) {
+                            lineaParaPermisoSupervisor = l
+                        } else {
+                            lineaEnEdicion = l
+                        }
                     },
                 )
             }
@@ -550,6 +555,39 @@ fun PedidoScreen(
                             },
                         )
                         lineaEnEdicion = null
+                    },
+                )
+            }
+        }
+
+        // 13. Pantalla M11c: Permiso de supervisor
+        AnimatedVisibility(
+            visible = lineaParaPermisoSupervisor != null,
+            enter = slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(220, easing = RikosMotion.Ease)) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180, easing = RikosMotion.Ease)) + fadeOut(),
+        ) {
+            val linea = lineaParaPermisoSupervisor
+            val asiento = pedido.asientoActivo ?: pedido.asientos.first()
+            if (linea != null) {
+                PermisoSupervisorScreen(
+                    platoNombre = linea.nombre,
+                    mesaNumero = pedido.mesaNumero,
+                    personaNumero = asiento.numero,
+                    motivo = "demora en cocina",
+                    monto = linea.subtotal.formatear(),
+                    supervisorNombre = "Ana M.",
+                    enLinea = enLinea,
+                    alVolver = { lineaParaPermisoSupervisor = null },
+                    alConfirmarAnulacion = {
+                        pedido = pedido.copy(
+                            asientos = pedido.asientos.map { a ->
+                                if (a.id == asiento.id) {
+                                    a.copy(lineas = a.lineas.filter { it.id != linea.id })
+                                } else a
+                            },
+                        )
+                        lineaParaPermisoSupervisor = null
+                        toastMensaje = "Plato anulado con autorización de supervisor"
                     },
                 )
             }
