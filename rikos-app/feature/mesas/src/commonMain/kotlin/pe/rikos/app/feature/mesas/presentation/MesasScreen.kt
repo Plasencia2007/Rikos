@@ -93,6 +93,7 @@ fun MesasScreen(
 ) {
     val estado by viewModel.estado.collectAsState()
     var tabSeleccionado by remember { mutableStateOf(NavItem.MESAS) }
+    var mostrarAgotados by remember { mutableStateOf(false) }
 
     RikosTheme(oscuro = estado.modoNoche) {
         val colors = Rikos.colors
@@ -227,6 +228,27 @@ fun MesasScreen(
                 AvisosScreen(
                     enLinea = estado.enLinea,
                     alVolver = { viewModel.alMostrarAvisos(false) },
+                    alVerAgotados = {
+                        viewModel.alMostrarAvisos(false)
+                        mostrarAgotados = true
+                    },
+                )
+            }
+
+            // M06: Disponibilidad / Agotados
+            AnimatedVisibility(
+                visible = mostrarAgotados || tabSeleccionado == NavItem.MAS,
+                enter = fadeIn(tween(220, easing = RikosMotion.Ease)),
+                exit = fadeOut(tween(180, easing = RikosMotion.Ease)),
+            ) {
+                AgotadosScreen(
+                    enLinea = estado.enLinea,
+                    alVolver = {
+                        mostrarAgotados = false
+                        if (tabSeleccionado == NavItem.MAS) {
+                            tabSeleccionado = NavItem.MESAS
+                        }
+                    },
                 )
             }
 

@@ -69,6 +69,7 @@ private data class ItemAviso(
 fun AvisosScreen(
     enLinea: Boolean = true,
     alVolver: () -> Unit,
+    alVerAgotados: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val colors = Rikos.colors
@@ -305,6 +306,11 @@ fun AvisosScreen(
                 AvisoFilaItem(
                     aviso = aviso,
                     mostrarSeparador = index < avisosFiltrados.lastIndex,
+                    onClick = {
+                        if (aviso.id == "4" || aviso.titulo.contains("agotado", ignoreCase = true)) {
+                            alVerAgotados()
+                        }
+                    },
                 )
             }
         }
@@ -366,6 +372,7 @@ private fun SegmentedBoton(
 private fun AvisoFilaItem(
     aviso: ItemAviso,
     mostrarSeparador: Boolean,
+    onClick: () -> Unit = {},
 ) {
     val colors = Rikos.colors
     val type = Rikos.type
@@ -384,7 +391,7 @@ private fun AvisoFilaItem(
             .clickable(
                 interactionSource = interaction,
                 indication = null,
-                onClick = { /* Acción al tocar aviso */ },
+                onClick = onClick,
             ),
     ) {
         Row(
